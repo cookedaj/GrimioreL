@@ -6,7 +6,7 @@ One app, one look: a slim icon rail, monochrome line icons, and every spell buil
 | Spell | What it does |
 |---|---|
 | **MuraL** | Customize everything you look at: desktop wallpaper & crossfading playlists (images and video), lock screen, splash, login (SDDM), boot (Plymouth), taskbar, Plasma style, window title bars, motion/effects, colors, icons, fonts, cursor and terminal. Every tab has live previews, and a **Community** view with the top 100 from the KDE Store and Wallhaven, installable in one click. |
-| **SightsL** | A crosshair overlay drawn above every window and fullscreen game (KDE layer-shell), fully click-through. Many styles, outline, offsets, live updates, and a global hotkey (Ctrl+Alt+X) to hide it. |
+| **SightsL** | A crosshair overlay drawn above every window and fullscreen game (KDE layer-shell), fully click-through. Pixel-sharp styles, presets, saved crosshairs and share codes, rotation, outline, offsets, screen choice, live updates, and global hotkeys: Ctrl+Alt+X hides it, Ctrl+Alt+Shift+X flips to the next crosshair. |
 | **FileL** | A file manager that can replace Dolphin: places & drives sidebar, breadcrumbs, grid with image thumbnails or a details list, preview panel, Trash with restore, KDE-compatible copy/cut/paste, Dolphin's keyboard shortcuts. Runs inside Grimoire or as its own window, and can be set as the default for opening folders. |
 | **TidyL** | Keeps `~/Downloads` sorted by file type in the background, sends stale installers/archives to the Trash, finds big files and duplicates. Never deletes: everything goes to the Trash, and every move can be undone. |
 
@@ -28,7 +28,7 @@ cd Grimoire
 grimoire              # or open "Grimoire" from the app menu
 ```
 
-Command-line helpers: `grimoire-sightc on|off|toggle`, `grimoire-tidyl run|undo|enable|disable|status`,
+Command-line helpers: `grimoire-sightc on|off|toggle|next`, `grimoire-tidyl run|undo|enable|disable|status`,
 `grimoire-filel [folder]`.
 
 To make FileL the default file manager: `xdg-mime default grimoire-filel.desktop inode/directory`

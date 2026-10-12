@@ -7,7 +7,7 @@ Public repo: github.com/cookedaj/Grimoire. Runs on the owner's own Kubuntu 26.04
 | Spell | Package | What |
 |---|---|---|
 | MuraL | `grimoire/spells/mural/` | customizes every screen/surface; tabs built on `screens.py:ScreenTab`; community store in `store.py` + `storeview.py` |
-| SightsL | `grimoire/spells/sightc/` | layer-shell crosshair overlay (`overlay.py`/`overlay.qml`), hotkey via KGlobalAccel |
+| SightsL | `grimoire/spells/sightc/` | layer-shell crosshair overlay (`overlay.py`/`overlay.qml`), drawing in `draw.py`, settings/presets/profiles in `config.py`, hotkeys via KGlobalAccel |
 | FileL | `grimoire/spells/filel/` | file manager; `page.py` UI, `ops.py` operations, `__main__.py` standalone window (default for inode/directory) |
 | TidyL | `grimoire/spells/tidyl/` | Downloads sorter; `engine.py`, `cli.py` (systemd user timer `grimoire-tidyl.timer`) |
 
@@ -39,7 +39,7 @@ status)`). Folder names stay as-is when display names change (e.g. SightsL lives
 
 ## Install / run
 `./install.sh` links `bin/*` into `~/.local/bin`, installs desktop entries and the MuraL wallpaper plugin.
-Run `grimoire [spell-id]`, `grimoire-filel [folder]`, `grimoire-sightc on|off`, `grimoire-tidyl run`.
+Run `grimoire [spell-id]`, `grimoire-filel [folder]`, `grimoire-sightc on|off|next`, `grimoire-tidyl run`.
 Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); `uv` is available for side tools.
 
 ## Git
