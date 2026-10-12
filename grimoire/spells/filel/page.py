@@ -17,10 +17,11 @@ from PySide6.QtWidgets import (QAbstractItemView, QFileSystemModel, QFrame, QHBo
                                QPushButton, QSplitter, QStackedWidget, QStyle, QStyledItemDelegate, QToolButton,
                                QTreeView, QVBoxLayout, QWidget)
 
+from grimoire.fsutil import human, tilde
 from grimoire.glyphs import glyph
+from grimoire.jobs import Job
 from grimoire.paths import HOME
 from grimoire.spells.filel import ops
-from grimoire.spells.mural.screens import _Job
 
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".avif", ".tif", ".tiff", ".svg"}
 TEXT_EXT = {".txt", ".md", ".py", ".lua", ".luau", ".json", ".toml", ".yaml", ".yml", ".sh", ".ini", ".cfg",
@@ -33,19 +34,6 @@ THUMBS = QThreadPool()
 THUMBS.setMaxThreadCount(3)
 GRID = QSize(128, 132)
 ICON = 72
-
-
-def human(n: float) -> str:
-    for unit in ("B", "KB", "MB", "GB", "TB"):
-        if n < 1024 or unit == "TB":
-            return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
-        n /= 1024
-    return ""
-
-
-def tilde(p: Path) -> str:
-    s = str(p)
-    return "~" + s[len(str(HOME)):] if s.startswith(str(HOME)) else s
 
 
 class _Signals(QObject):
@@ -116,7 +104,7 @@ class GridDelegate(QStyledItemDelegate):
                     reader.setScaledSize(size.scaled(QSize(ICON * 2, ICON * 2), Qt.AspectRatioMode.KeepAspectRatio))
                 return reader.read()
 
-            THUMBS.start(_Job(work, lambda img: sig.thumb.emit(fpath, img)))
+            THUMBS.start(Job(work, lambda img: sig.thumb.emit(fpath, img)))
         return None
 
     def ready(self, fpath: str, img: QImage):
@@ -542,7 +530,7 @@ class FileLPage(QWidget):
             lines.append(f"Folder · {n} item{'s' if n != 1 else ''}")
             self.pv_image.setPixmap(glyph("folder", 96).pixmap(96, 96, QIcon.Mode.Active))
             sig = self._sig
-            THUMBS.start(_Job(lambda p=p: ops.folder_size(p), lambda r, p=p: sig.sized.emit(str(p), *r)))
+            THUMBS.start(Job(lambda p=p: ops.folder_size(p), lambda r, p=p: sig.sized.emit(str(p), *r)))
         else:
             lines.append(f"{human(st.st_size)} · {self.model.type(self.model.index(str(p)))}")
             ext = p.suffix.lower()
@@ -643,7 +631,7 @@ class FileLPage(QWidget):
         move = bytes(data.data("application/x-kde-cutselection")) == b"1"
         dest, sig = self.cwd, self._sig
         self.status.setText(f"{'Moving' if move else 'Copying'} {len(sources)} item(s)…")
-        THUMBS.start(_Job(lambda: ops.transfer(sources, dest, move),
+        THUMBS.start(Job(lambda: ops.transfer(sources, dest, move),
                           lambda r: sig.transferred.emit(r[0], r[1], "moved" if move else "copied")))
         if move:
             QGuiApplication.clipboard().clear()

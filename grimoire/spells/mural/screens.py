@@ -14,17 +14,16 @@ import json
 import threading
 from dataclasses import dataclass
 
-from PySide6.QtCore import QObject, QRunnable, QSize, Qt, QThreadPool, QTimer, Signal
+from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
                                QPushButton, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget)
 
+from grimoire.jobs import POOL, Job
 from grimoire.paths import CONFIG
 
 STATE = CONFIG / "mural-screens.json"
 THUMB = QSize(184, 104)
-POOL = QThreadPool()
-POOL.setMaxThreadCount(4)
 
 
 @dataclass(frozen=True)
@@ -87,19 +86,6 @@ def placeholder(size: QSize = THUMB) -> QPixmap:
 class _Signals(QObject):
     image = Signal(int, str, QImage)          # generation, slot ("big" or design index), image
     applied = Signal(bool, str)               # ok, message
-
-
-class _Job(QRunnable):
-    def __init__(self, fn, done):
-        super().__init__()
-        self.fn, self.done = fn, done
-
-    def run(self):
-        result = self.fn()
-        try:
-            self.done(result)
-        except RuntimeError:     # the tab was closed while this was rendering
-            pass
 
 
 _render_locks: dict[str, threading.Lock] = {}
@@ -292,7 +278,7 @@ class ScreenTab(QWidget):
                 print(f"MuraL preview failed ({self.key}/{slot}): {e}")
                 return QImage()
 
-        POOL.start(_Job(work, lambda img: sig.image.emit(gen, slot, img)))
+        POOL.start(Job(work, lambda img: sig.image.emit(gen, slot, img)))
 
     def _rerender(self):
         """Options changed: re-render the big preview first, then every card."""
@@ -368,7 +354,7 @@ class ScreenTab(QWidget):
             except (RuntimeError, OSError) as e:
                 return False, f"Couldn't apply: {e}"
 
-        POOL.start(_Job(work, lambda result: sig.applied.emit(*result)))
+        POOL.start(Job(work, lambda result: sig.applied.emit(*result)))
 
     def _on_applied(self, ok: bool, msg: str):
         self.apply_btn.setEnabled(True)

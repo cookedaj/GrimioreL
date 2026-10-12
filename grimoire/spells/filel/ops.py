@@ -1,26 +1,14 @@
 """FileL file operations. Everything goes through the normal Linux/KDE system: plain filesystem calls for
 copy/move/rename, and `gio` for the Trash (the same freedesktop Trash Dolphin uses)."""
 import shutil
-import subprocess
 from pathlib import Path
 from urllib.parse import unquote
 
+from grimoire.fsutil import free_name
+from grimoire.fsutil import trash as trash_one
 from grimoire.paths import HOME
 
 TRASH_FILES = HOME / ".local/share/Trash/files"
-
-
-def free_name(dest: Path) -> Path:
-    """dest, or 'name (2).ext', 'name (3).ext'… if taken. Never overwrites."""
-    if not dest.exists() and not dest.is_symlink():
-        return dest
-    stem, suffix = (dest.name, "") if dest.is_dir() else (dest.stem, dest.suffix)
-    n = 2
-    while True:
-        cand = dest.with_name(f"{stem} ({n}){suffix}")
-        if not cand.exists() and not cand.is_symlink():
-            return cand
-        n += 1
 
 
 def transfer(sources: list[Path], dest_dir: Path, move: bool, progress=None) -> tuple[int, list[str]]:
@@ -48,11 +36,13 @@ def transfer(sources: list[Path], dest_dir: Path, move: bool, progress=None) -> 
 
 
 def trash(paths: list[Path]) -> list[str]:
+    """Send paths to the Trash. Returns one message per item that failed."""
     errors = []
     for p in paths:
-        r = subprocess.run(["gio", "trash", str(p)], capture_output=True, text=True)
-        if r.returncode:
-            errors.append(f"{p.name}: {r.stderr.strip()}")
+        try:
+            trash_one(p)
+        except OSError as e:
+            errors.append(f"{p.name}: {e}")
     return errors
 
 

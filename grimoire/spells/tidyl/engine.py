@@ -9,11 +9,11 @@ import hashlib
 import json
 import os
 import shutil
-import subprocess
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from grimoire.fsutil import free_name, trash
 from grimoire.paths import CONFIG, DATA, HOME
 
 SETTINGS = CONFIG / "tidyl.json"
@@ -82,16 +82,6 @@ def _ext(path: Path) -> str:
     return path.suffix.lower().lstrip(".")
 
 
-def _free_name(dest: Path) -> Path:
-    """dest, or 'name (2).ext', 'name (3).ext'… if taken."""
-    if not dest.exists():
-        return dest
-    stem, suffix, n = dest.stem, dest.suffix, 2
-    while (cand := dest.with_name(f"{stem} ({n}){suffix}")).exists():
-        n += 1
-    return cand
-
-
 def _log(entry: dict):
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG, "a") as f:
@@ -106,10 +96,10 @@ def history(limit=200) -> list[dict]:
     return [json.loads(l) for l in reversed(lines) if l.strip()]
 
 
-def trash(path: Path):
-    r = subprocess.run(["gio", "trash", str(path)], capture_output=True, text=True)
-    if r.returncode:
-        raise OSError(r.stderr.strip() or f"couldn't trash {path}")
+def trash_by_hand(path: Path, rule: str, reason: str):
+    """Trash a file the user picked in TidyL (big files, duplicates) and log it. Raises OSError."""
+    trash(path)
+    _log({"action": "trash", "batch": "manual", "rule": rule, "from": str(path), "reason": reason})
 
 
 # ---------------------------------------------------------------- sorting
@@ -144,7 +134,7 @@ def run(s: Settings | None = None) -> dict:
     for src, dest, rule in plan(s):
         try:
             dest.parent.mkdir(parents=True, exist_ok=True)
-            final = _free_name(dest)
+            final = free_name(dest)
             shutil.move(str(src), str(final))
             _log({"action": "move", "batch": batch, "rule": rule, "from": str(src), "to": str(final)})
             moved += 1

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QFrame, 
                                QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget)
 
 from grimoire.spells.mural import store
-from grimoire.spells.mural.screens import POOL, _Job
+from grimoire.jobs import POOL, Job
 
 CARD = QSize(232, 146)
 SORTS = {"Most downloaded": "down", "Best rated": "high", "Newest": "new"}
@@ -142,7 +142,7 @@ class StoreView(QWidget):
             except Exception as e:      # network errors are shown, not raised
                 return e
 
-        POOL.start(_Job(work, lambda r: sig.listed.emit(gen, r)))
+        POOL.start(Job(work, lambda r: sig.listed.emit(gen, r)))
 
     def _on_listed(self, gen, result):
         if gen != self._gen:
@@ -161,7 +161,7 @@ class StoreView(QWidget):
             row.setToolTip(it.summary or it.name)
             self.grid.addItem(row)
             url, sig = it.preview, self._sig
-            POOL.start(_Job(lambda url=url: _load_thumb(url),
+            POOL.start(Job(lambda url=url: _load_thumb(url),
                             lambda img, i=i: sig.thumb.emit(gen, i, img)))
 
     def _on_thumb(self, gen, row, img):
@@ -205,7 +205,7 @@ class StoreView(QWidget):
             except Exception as e:
                 return False, f"Couldn't install {it.name}: {e}"
 
-        POOL.start(_Job(work, lambda r: sig.installed.emit(*r)))
+        POOL.start(Job(work, lambda r: sig.installed.emit(*r)))
 
     def _on_installed(self, ok, msg):
         self.d_meta.setText(msg)

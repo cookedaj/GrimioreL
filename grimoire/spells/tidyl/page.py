@@ -8,21 +8,10 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QFileDialog, QHBoxL
                                QListWidget, QListWidgetItem, QMessageBox, QPushButton, QSpinBox, QStackedWidget,
                                QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
+from grimoire.fsutil import human, tilde
+from grimoire.jobs import POOL, Job
 from grimoire.paths import HOME
-from grimoire.spells.mural.screens import POOL, _Job
 from grimoire.spells.tidyl import cli, engine
-
-
-def nice(p: Path | str) -> str:
-    return str(p).replace(str(HOME), "~", 1)
-
-
-def size(n: int) -> str:
-    for unit in ("B", "KB", "MB", "GB"):
-        if n < 1024 or unit == "GB":
-            return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
-        n /= 1024
-    return f"{n:.1f} GB"
 
 
 class _Signals(QObject):
@@ -46,7 +35,7 @@ class TidyLPage(QWidget):
         titles.setSpacing(2)
         t = QLabel("TidyL")
         t.setObjectName("Title")
-        sub = QLabel(f"Keeps {nice(engine.expand(self.settings.watch))} sorted and clears stale installers. "
+        sub = QLabel(f"Keeps {tilde(engine.expand(self.settings.watch))} sorted and clears stale installers. "
                      "Nothing is ever deleted: cleanup goes to the Trash, and every move can be undone.")
         sub.setObjectName("Subtitle")
         sub.setWordWrap(True)
@@ -184,7 +173,7 @@ class TidyLPage(QWidget):
         start = str(engine.expand(rule.dest)) if engine.expand(rule.dest).exists() else str(HOME)
         d = QFileDialog.getExistingDirectory(self, f"Where should {rule.name.lower()} go?", start)
         if d:
-            rule.dest = nice(d)
+            rule.dest = tilde(d)
             btn.setText(rule.dest)
             self.settings.save()
 
@@ -201,7 +190,7 @@ class TidyLPage(QWidget):
             when = datetime.fromtimestamp(e["time"]).strftime("%b %-d  %-I:%M %p")
             if e["action"] == "move":
                 tail = "   (undone)" if e["batch"] in undone else ""
-                text = f"{when}    {e['rule']:<12}  {Path(e['from']).name}  →  {nice(Path(e['to']).parent)}{tail}"
+                text = f"{when}    {e['rule']:<12}  {Path(e['from']).name}  →  {tilde(Path(e['to']).parent)}{tail}"
             elif e["action"] == "trash":
                 text = f"{when}    Trash         {Path(e['from']).name}  ({e['reason']})"
             else:
@@ -244,16 +233,14 @@ class TidyLPage(QWidget):
         paths = [Path(self.big.item(r, 1).data(Qt.ItemDataRole.UserRole)) for r in rows]
         if not paths:
             return
-        listing = "\n".join(nice(p) for p in paths[:12]) + ("\n…" if len(paths) > 12 else "")
+        listing = "\n".join(tilde(p) for p in paths[:12]) + ("\n…" if len(paths) > 12 else "")
         if QMessageBox.question(self, "Move to Trash?",
                                 f"Move {len(paths)} file(s) to the Trash?\n\n{listing}\n\n"
                                 "You can restore them from the Trash in Dolphin.") != QMessageBox.StandardButton.Yes:
             return
         for r, p in sorted(zip(rows, paths), reverse=True):
             try:
-                engine.trash(p)
-                engine._log({"action": "trash", "batch": "manual", "rule": "Big files", "from": str(p),
-                             "reason": "you chose it"})
+                engine.trash_by_hand(p, "Big files", "you chose it")
                 self.big.removeRow(r)
             except OSError as e:
                 QMessageBox.warning(self, "TidyL", str(e))
@@ -294,9 +281,7 @@ class TidyLPage(QWidget):
             return
         for p in extras:
             try:
-                engine.trash(Path(p))
-                engine._log({"action": "trash", "batch": "manual", "rule": "Duplicates", "from": p,
-                             "reason": "duplicate copy"})
+                engine.trash_by_hand(Path(p), "Duplicates", "duplicate copy")
             except OSError:
                 pass
         self._scan("dupes")
@@ -307,7 +292,7 @@ class TidyLPage(QWidget):
         note.setText("Scanning…")
         fn = engine.biggest if kind == "big" else engine.duplicates
         sig = self._sig
-        POOL.start(_Job(fn, lambda result: sig.done.emit(kind, result)))
+        POOL.start(Job(fn, lambda result: sig.done.emit(kind, result)))
 
     def _on_done(self, kind, result):
         if kind == "big":
@@ -315,8 +300,8 @@ class TidyLPage(QWidget):
             for n, p in result:
                 r = self.big.rowCount()
                 self.big.insertRow(r)
-                self.big.setItem(r, 0, QTableWidgetItem(size(n)))
-                item = QTableWidgetItem(nice(p))
+                self.big.setItem(r, 0, QTableWidgetItem(human(n)))
+                item = QTableWidgetItem(tilde(p))
                 item.setData(Qt.ItemDataRole.UserRole, str(p))
                 self.big.setItem(r, 1, item)
             self.big_note.setText(f"{len(result)} files over 50 MB. Double-click to show one in Dolphin.")
@@ -326,12 +311,12 @@ class TidyLPage(QWidget):
             for group in result:
                 s = group[0].stat().st_size
                 wasted += s * (len(group) - 1)
-                top = QTreeWidgetItem([f"{group[0].name}  ×{len(group)}", size(s)])
+                top = QTreeWidgetItem([f"{group[0].name}  ×{len(group)}", human(s)])
                 for i, p in enumerate(group):
-                    child = QTreeWidgetItem([("keep    " if i == 0 else "extra   ") + nice(p), ""])
+                    child = QTreeWidgetItem([("keep    " if i == 0 else "extra   ") + tilde(p), ""])
                     child.setData(0, Qt.ItemDataRole.UserRole, str(p))
                     top.addChild(child)
                 self.dupes.addTopLevelItem(top)
                 top.setExpanded(True)
-            self.dupe_note.setText(f"{len(result)} duplicate group(s), {size(wasted)} in extra copies."
+            self.dupe_note.setText(f"{len(result)} duplicate group(s), {human(wasted)} in extra copies."
                                    if result else "No duplicates found.")
