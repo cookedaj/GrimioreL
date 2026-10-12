@@ -4,6 +4,7 @@
 
 run     start the overlay in this process (used by `on`)
 on/off  start / stop the background overlay
+next    switch to the next saved crosshair (also Ctrl+Alt+Shift+X)
 """
 import os
 import signal
@@ -47,33 +48,56 @@ def stop():
     PID.unlink(missing_ok=True)
 
 
-# ---------------------------------------------------------------- global hotkey (KDE kglobalaccel)
-COMPONENT, ACTION = "grimoire-sightc", "toggle-crosshair"
-ACTION_ID = [COMPONENT, ACTION, "Grimoire SightsL", "Show/hide crosshair"]
-DEFAULT_KEY = 0x04000000 | 0x08000000 | 0x58     # Qt: Ctrl + Alt + X
+# ---------------------------------------------------------------- global hotkeys (KDE kglobalaccel)
+COMPONENT, ACTION, NEXT_ACTION = "grimoire-sightc", "toggle-crosshair", "next-crosshair"
+CTRL, ALT, SHIFT = 0x04000000, 0x08000000, 0x02000000
+HOTKEYS = {   # action -> (friendly name, default key as a Qt key code)
+    ACTION: ("Show/hide crosshair", CTRL | ALT | 0x58),                 # Ctrl+Alt+X
+    NEXT_ACTION: ("Next crosshair", CTRL | ALT | SHIFT | 0x58),         # Ctrl+Alt+Shift+X
+}
+KGA = ["busctl", "--user", "call", "org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel"]
 
 
-def register_hotkey(callback):
-    """Register Ctrl+Alt+X with KDE (rebindable in System Settings → Shortcuts) and call
-    `callback` when pressed. Returns the receiver object (keep a reference), or None."""
+def _action_id(action: str) -> list[str]:
+    return [COMPONENT, action, "Grimoire SightsL", HOTKEYS[action][0]]
+
+
+def hotkey_text(action: str = ACTION) -> str:
+    """The key currently bound in KDE (it may have been rebound in System Settings), e.g. "Ctrl+Alt+X"."""
+    from PySide6.QtGui import QKeySequence
+    key = HOTKEYS[action][1]
+    try:
+        out = subprocess.run(KGA + ["shortcut", "as", "4", *_action_id(action)], capture_output=True, text=True,
+                             timeout=2).stdout.split()        # "ai 1 201326680" (or "ai 0" when unbound)
+        if len(out) >= 2 and out[0] == "ai":
+            if out[1] != "0":           # 0 keys: not registered yet (overlay never ran), so the default applies
+                key = int(out[2])
+    except (OSError, ValueError, IndexError, subprocess.SubprocessError):
+        pass
+    return QKeySequence(key).toString(QKeySequence.SequenceFormat.NativeText)
+
+
+def register_hotkeys(callbacks: dict):
+    """Register the SightsL shortcuts with KDE (rebindable in System Settings → Shortcuts) and call
+    callbacks[action] when one is pressed. Returns the receiver object (keep a reference), or None."""
     from PySide6.QtCore import SLOT, QObject, Slot
     from PySide6.QtDBus import QDBusConnection
 
-    base = ["busctl", "--user", "call", "org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel"]
     try:
-        subprocess.run(base + ["doRegister", "as", "4", *ACTION_ID], check=True, capture_output=True)
-        # flags 0x1 IsDefault | 0x2 SetPresent: default key, but a key you rebind in Settings wins
-        subprocess.run(base + ["setShortcut", "asaiu", "4", *ACTION_ID, "1", str(DEFAULT_KEY), "3"],
-                       check=True, capture_output=True)
+        for action in callbacks:
+            subprocess.run(KGA + ["doRegister", "as", "4", *_action_id(action)], check=True, capture_output=True)
+            # flags 0x1 IsDefault | 0x2 SetPresent: default key, but a key you rebind in Settings wins
+            subprocess.run(KGA + ["setShortcut", "asaiu", "4", *_action_id(action), "1", str(HOTKEYS[action][1]),
+                                  "3"], check=True, capture_output=True)
     except (OSError, subprocess.CalledProcessError) as e:
-        print("SightsL: couldn't register hotkey:", e, file=sys.stderr)
+        print("SightsL: couldn't register hotkeys:", e, file=sys.stderr)
         return None
 
     class Receiver(QObject):
         @Slot(str, str, "qlonglong")
         def pressed(self, component, action, _timestamp):
-            if component == COMPONENT and action == ACTION:
-                callback()
+            if component == COMPONENT and action in callbacks:
+                callbacks[action]()
 
     receiver = Receiver()
     path = "/component/" + "".join(ch if ch.isalnum() else "_" for ch in COMPONENT)
@@ -81,8 +105,18 @@ def register_hotkey(callback):
                                               "globalShortcutPressed", receiver,
                                               SLOT("pressed(QString,QString,qlonglong)"))
     if not ok:
-        print("SightsL: couldn't listen for hotkey on", path, file=sys.stderr)
+        print("SightsL: couldn't listen for hotkeys on", path, file=sys.stderr)
     return receiver
+
+
+def next_crosshair():
+    """Switch to the next saved profile (or preset), keeping the screen choice. Used by the hotkey."""
+    from grimoire.spells.sightc.config import cycle_order
+    cur = Crosshair.load()
+    order = cycle_order()
+    looks = [c.look() for c in order]
+    i = looks.index(cur.look()) + 1 if cur.look() in looks else 0
+    order[i % len(order)].copy(screen=cur.screen).save()
 
 
 # ---------------------------------------------------------------- the overlay itself
@@ -100,12 +134,9 @@ def run():
             self.cfg = Crosshair.load()
             self.setAntialiasing(True)
 
-        def reload(self):
-            self.cfg = Crosshair.load()
-            self.update()
-
         def paint(self, painter):
-            draw.paint(painter, self.cfg, self.width() / 2, self.height() / 2)
+            # whole-pixel center: the window size is even, so this is exactly the screen's middle
+            draw.paint(painter, self.cfg, int(self.width()) // 2, int(self.height()) // 2)
 
     app = QGuiApplication(sys.argv)
     app.setApplicationName("grimoire-sightc")
@@ -115,12 +146,40 @@ def run():
     engine.load(QUrl.fromLocalFile(str(Path(__file__).with_name("overlay.qml"))))
     if not engine.rootObjects():
         sys.exit("SightsL: failed to load overlay.qml")
-    item = engine.rootObjects()[0].findChild(CrosshairItem, "crosshair")
+    win = engine.rootObjects()[0]
+    item = win.findChild(CrosshairItem, "crosshair")
+
+    def pick_screen(name: str):
+        screens = {s.name(): s for s in app.screens()}
+        return screens.get(name) or app.primaryScreen()
+
+    def apply():
+        cfg = item.cfg
+        side = 2 * max(64, draw.extent(cfg) + 2)            # even, so the centre lands on a pixel edge
+        if (win.width(), win.height()) != (side, side):
+            win.setWidth(side)
+            win.setHeight(side)
+        screen = pick_screen(cfg.screen)
+        if win.property("targetScreen") != screen:
+            win.setProperty("targetScreen", screen)          # overlay.qml re-maps the layer surface on change
+        item.update()
+
+    def reload():
+        item.cfg = Crosshair.load()
+        apply()
 
     # sightc.json is replaced atomically, so watch the folder rather than the file
     watcher = QFileSystemWatcher([str(CONFIG)])
-    watcher.directoryChanged.connect(lambda _: item.reload())
-    _hotkey = register_hotkey(lambda: item.setVisible(not item.isVisible()))   # keep a reference alive
+    watcher.directoryChanged.connect(lambda _: reload())
+    app.screenAdded.connect(lambda _: apply())
+    app.screenRemoved.connect(lambda _: QTimer.singleShot(0, apply))
+    apply()
+    win.setProperty("ready", True)
+
+    _hotkeys = register_hotkeys({                          # keep a reference alive
+        ACTION: lambda: win.setProperty("shown", not win.property("shown")),
+        NEXT_ACTION: next_crosshair,
+    })
 
     PID.write_text(str(os.getpid()))
     signal.signal(signal.SIGTERM, lambda *_: app.quit())
@@ -146,6 +205,8 @@ def main():
         stop()
     elif cmd == "toggle":
         stop() if running_pid() else start()
+    elif cmd == "next":
+        next_crosshair()
     elif cmd == "status":
         print("on" if running_pid() else "off")
     else:
