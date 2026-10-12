@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [{ "Name": "cookedaj" }],
+        "Description": "Grimoire MuraL: image and video wallpapers with crossfading playlists",
+        "Icon": "preferences-desktop-wallpaper",
+        "Id": "com.cookedaj.grimoire.mural",
+        "License": "GPL-2.0-or-later",
+        "Name": "MuraL (Grimoire)",
+        "Version": "1.0"
+    },
+    "X-KDE-ParentApp": "org.kde.plasmashell"
+}

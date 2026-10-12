@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <!-- Written by Grimoire (grimoire/spells/mural/plasma.py). -->
+  <group name="General">
+    <entry name="Items" type="String">
+      <label>JSON array of file URLs (images and videos). More than one = playlist.</label>
+      <default>[]</default>
+    </entry>
+    <entry name="Interval" type="Int">
+      <label>Seconds each playlist item stays on screen</label>
+      <default>300</default>
+    </entry>
+    <entry name="FadeMs" type="Int">
+      <label>Crossfade duration in milliseconds</label>
+      <default>1200</default>
+    </entry>
+    <entry name="Shuffle" type="Bool">
+      <default>false</default>
+    </entry>
+    <entry name="FillMode" type="Int">
+      <label>0 = stretch, 1 = fit, 2 = crop</label>
+      <default>2</default>
+    </entry>
+    <entry name="PauseOnFullscreen" type="Bool">
+      <label>Pause videos and the playlist while a window is fullscreen or maximized</label>
+      <default>true</default>
+    </entry>
+    <entry name="Muted" type="Bool">
+      <default>true</default>
+    </entry>
+  </group>
+</kcfg>

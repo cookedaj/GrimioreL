@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=Grimoire
+Description=Black & white login screen from Grimoire MuraL
+Author=cookedaj
+License=GPL-2.0-or-later
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=grimoire
+Theme-API=2.0
+QtVersion=6

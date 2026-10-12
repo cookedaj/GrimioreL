@@ -1,0 +1,256 @@
+"""TidyL engine: sort ~/Downloads by file type, send stale installers/archives to the Trash, undo moves,
+and find big files and duplicates.
+
+Safety rules: only loose files directly in the watched folder are touched (never folders, hidden files,
+in-progress downloads or anything changed in the last 2 minutes); nothing is ever deleted: cleanup goes
+to the Trash via `gio trash`, and every move is logged so it can be undone.
+"""
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import time
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+
+from grimoire.paths import CONFIG, DATA, HOME
+
+SETTINGS = CONFIG / "tidyl.json"
+LOG = DATA / "tidyl" / "log.jsonl"
+SETTLE_SECONDS = 120
+PARTIAL = (".part", ".crdownload", ".download", ".tmp", ".partial", ".!qB", ".opdownload")
+
+
+@dataclass
+class Rule:
+    name: str
+    extensions: list[str]
+    dest: str                     # "~/..." path
+    enabled: bool = True
+    clean_days: int = 0           # >0: files in dest older than this go to the Trash
+
+
+def default_rules() -> list[Rule]:
+    return [
+        Rule("Images", ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "heic", "avif", "tif", "tiff"],
+             "~/Pictures/Downloaded"),
+        Rule("Videos", ["mp4", "mkv", "webm", "mov", "avi", "m4v", "flv"], "~/Videos"),
+        Rule("Audio", ["mp3", "wav", "flac", "ogg", "m4a", "aac", "opus"], "~/Music"),
+        Rule("Documents", ["pdf", "doc", "docx", "odt", "txt", "md", "rtf", "xls", "xlsx", "ods", "csv",
+                           "ppt", "pptx", "odp", "epub"], "~/Documents"),
+        Rule("Disk images", ["iso", "img"], "~/Documents/ISOs"),
+        Rule("Roblox", ["rbxl", "rbxlx", "rbxm", "rbxmx"], "~/Documents/Roblox"),
+        Rule("3D models", ["fbx", "blend", "obj", "glb", "gltf", "stl", "dae"], "~/Documents/3D"),
+        Rule("Fonts", ["ttf", "otf", "woff", "woff2"], "~/Downloads/Fonts"),
+        Rule("Installers", ["deb", "rpm", "appimage", "run", "flatpakref", "flatpak", "snap", "exe", "msi"],
+             "~/Downloads/Installers", clean_days=14),
+        Rule("Archives", ["zip", "7z", "rar", "tar", "gz", "tgz", "xz", "bz2", "zst"], "~/Downloads/Archives",
+             clean_days=14),
+    ]
+
+
+@dataclass
+class Settings:
+    watch: str = "~/Downloads"
+    auto: bool = True
+    rules: list[Rule] = field(default_factory=default_rules)
+
+    @classmethod
+    def load(cls) -> "Settings":
+        try:
+            d = json.loads(SETTINGS.read_text())
+            return cls(watch=d.get("watch", "~/Downloads"), auto=d.get("auto", True),
+                       rules=[Rule(**r) for r in d["rules"]])
+        except (OSError, ValueError, KeyError, TypeError):
+            return cls()
+
+    def save(self):
+        SETTINGS.parent.mkdir(parents=True, exist_ok=True)
+        SETTINGS.write_text(json.dumps(asdict(self), indent=2))
+
+
+def expand(p: str) -> Path:
+    return Path(os.path.expanduser(p))
+
+
+def _ext(path: Path) -> str:
+    name = path.name.lower()
+    for double in (".tar.gz", ".tar.xz", ".tar.bz2", ".tar.zst"):
+        if name.endswith(double):
+            return name.rsplit(".", 1)[-1]
+    return path.suffix.lower().lstrip(".")
+
+
+def _free_name(dest: Path) -> Path:
+    """dest, or 'name (2).ext', 'name (3).ext'… if taken."""
+    if not dest.exists():
+        return dest
+    stem, suffix, n = dest.stem, dest.suffix, 2
+    while (cand := dest.with_name(f"{stem} ({n}){suffix}")).exists():
+        n += 1
+    return cand
+
+
+def _log(entry: dict):
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG, "a") as f:
+        f.write(json.dumps({"time": time.time(), **entry}) + "\n")
+
+
+def history(limit=200) -> list[dict]:
+    try:
+        lines = LOG.read_text().splitlines()[-limit:]
+    except OSError:
+        return []
+    return [json.loads(l) for l in reversed(lines) if l.strip()]
+
+
+def trash(path: Path):
+    r = subprocess.run(["gio", "trash", str(path)], capture_output=True, text=True)
+    if r.returncode:
+        raise OSError(r.stderr.strip() or f"couldn't trash {path}")
+
+
+# ---------------------------------------------------------------- sorting
+def plan(s: Settings) -> list[tuple[Path, Path, str]]:
+    """[(file, destination, rule name)] for loose files that a rule matches."""
+    watch = expand(s.watch)
+    by_ext = {e: r for r in s.rules if r.enabled for e in r.extensions}
+    now = time.time()
+    moves = []
+    if not watch.is_dir():
+        return moves
+    for f in sorted(watch.iterdir()):
+        if not f.is_file() or f.is_symlink() or f.name.startswith("."):
+            continue
+        if f.name.lower().endswith(PARTIAL) or now - f.stat().st_mtime < SETTLE_SECONDS:
+            continue                          # still downloading / just landed
+        rule = by_ext.get(_ext(f))
+        if not rule:
+            continue
+        dest_dir = expand(rule.dest)
+        if dest_dir.resolve() == watch.resolve():
+            continue
+        moves.append((f, dest_dir / f.name, rule.name))
+    return moves
+
+
+def run(s: Settings | None = None) -> dict:
+    """One tidy pass: sort the watched folder, then clean stale files. Returns counts."""
+    s = s or Settings.load()
+    batch = f"{time.time():.0f}"
+    moved, cleaned, errors = 0, 0, []
+    for src, dest, rule in plan(s):
+        try:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            final = _free_name(dest)
+            shutil.move(str(src), str(final))
+            _log({"action": "move", "batch": batch, "rule": rule, "from": str(src), "to": str(final)})
+            moved += 1
+        except OSError as e:
+            errors.append(f"{src.name}: {e}")
+    now = time.time()
+    for rule in s.rules:
+        if not rule.enabled or rule.clean_days <= 0:
+            continue
+        d = expand(rule.dest)
+        if not d.is_dir():
+            continue
+        for f in d.iterdir():
+            if f.is_file() and not f.name.startswith(".") and now - f.stat().st_mtime > rule.clean_days * 86400:
+                try:
+                    trash(f)
+                    _log({"action": "trash", "batch": batch, "rule": rule.name, "from": str(f),
+                          "reason": f"older than {rule.clean_days} days"})
+                    cleaned += 1
+                except OSError as e:
+                    errors.append(f"{f.name}: {e}")
+    return {"moved": moved, "cleaned": cleaned, "errors": errors}
+
+
+def undo_last() -> int:
+    """Move the files of the most recent batch of moves back where they were. Returns how many."""
+    entries = history(5000)
+    done = undone_batches()
+    batch = next((e["batch"] for e in entries if e["action"] == "move" and e["batch"] not in done), None)
+    if batch is None:
+        return 0
+    n = 0
+    for e in entries:
+        if e.get("batch") == batch and e["action"] == "move":
+            src, dst = Path(e["to"]), Path(e["from"])
+            if src.exists() and not dst.exists():
+                shutil.move(str(src), str(dst))
+                n += 1
+    _log({"action": "undo", "batch": batch, "count": n})
+    return n
+
+
+def undone_batches() -> set[str]:
+    return {e["batch"] for e in history(5000) if e["action"] == "undo"}
+
+
+# ---------------------------------------------------------------- insights
+SKIP_DIRS = {".cache", ".local/share/Trash", ".var", "snap", ".git", "node_modules", "__pycache__",
+             ".local/share/flatpak", ".rokit", ".steam", ".local/share/Steam"}
+
+
+def _walk(root: Path):
+    for dirpath, dirnames, filenames in os.walk(root):
+        rel = os.path.relpath(dirpath, HOME)
+        dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__")
+                       and os.path.normpath(os.path.join(rel, d)) not in SKIP_DIRS]
+        for name in filenames:
+            p = Path(dirpath, name)
+            try:
+                if p.is_file() and not p.is_symlink():
+                    yield p
+            except OSError:
+                continue
+
+
+def biggest(root: Path = HOME, n=40, min_mb=50) -> list[tuple[int, Path]]:
+    out = []
+    for p in _walk(root):
+        try:
+            size = p.stat().st_size
+        except OSError:
+            continue
+        if size >= min_mb * 1_000_000:
+            out.append((size, p))
+    return sorted(out, reverse=True)[:n]
+
+
+def duplicates(roots=("~/Downloads", "~/Documents", "~/Pictures", "~/Videos", "~/Music", "~/Desktop"),
+               min_kb=64) -> list[list[Path]]:
+    """Groups of identical files (same size, then same SHA-1). Repo folders are left out on purpose."""
+    by_size: dict[int, list[Path]] = {}
+    for r in roots:
+        root = expand(r)
+        if not root.is_dir():
+            continue
+        for p in _walk(root):
+            if "Desktop/Repo" in str(p):
+                continue                      # code repos legitimately repeat files (worktrees etc.)
+            try:
+                size = p.stat().st_size
+            except OSError:
+                continue
+            if size >= min_kb * 1024:
+                by_size.setdefault(size, []).append(p)
+    groups: dict[str, list[Path]] = {}
+    for size, paths in by_size.items():
+        if len(paths) < 2:
+            continue
+        for p in paths:
+            h = hashlib.sha1()
+            try:
+                with open(p, "rb") as f:
+                    while chunk := f.read(1 << 20):
+                        h.update(chunk)
+            except OSError:
+                continue
+            groups.setdefault(f"{size}:{h.hexdigest()}", []).append(p)
+    return sorted((sorted(g, key=lambda p: (len(str(p)), str(p))) for g in groups.values() if len(g) > 1),
+                  key=lambda g: -g[0].stat().st_size)

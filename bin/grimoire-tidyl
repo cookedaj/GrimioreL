@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# TidyL: grimoire-tidyl [run|undo|enable|disable|status]
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m grimoire.spells.tidyl.cli "${1:-run}"
