@@ -122,6 +122,7 @@ class FileLPage(QWidget):
         self.history: list[Path] = []
         self.hist_i = -1
         self.show_hidden = False
+        self.standalone = standalone                      # own window: the title follows the folder
         self.cwd = HOME
 
         self.model = QFileSystemModel(self)
@@ -407,8 +408,11 @@ class FileLPage(QWidget):
             it.setSelected(Path(it.data(Qt.ItemDataRole.UserRole)) == path)
         self._update_preview()
         self._update_status()
-        if self.window() and self.window() is not self:
-            self.window().setWindowTitle(f"{path.name or path} — FileL")
+        self._update_title()
+
+    def _update_title(self):
+        if self.standalone and self.window() is not self:
+            self.window().setWindowTitle(f"{self.cwd.name or self.cwd} — FileL")
 
     def back(self):
         if self.hist_i > 0:
@@ -438,7 +442,7 @@ class FileLPage(QWidget):
             p = p.parent
         for i, part in enumerate(reversed(parts)):
             label = "Home" if part == HOME else ("/" if part == part.parent else part.name)
-            if ops.in_trash(part) and part == ops.TRASH_FILES:
+            if part == ops.TRASH_FILES:
                 label = "Trash"
             b = QPushButton(label)
             b.setObjectName("Crumb")
@@ -509,6 +513,7 @@ class FileLPage(QWidget):
             self._sel_hooked = True
             self._connect_selection()
         QTimer.singleShot(0, self._update_preview)      # the panel was hidden until now
+        self._update_title()                            # the first folder opened before we had a window
 
     def _update_preview(self):
         if not self.preview.isVisible():
@@ -526,8 +531,11 @@ class FileLPage(QWidget):
         self.pv_name.setText(p.name or str(p))
         lines = []
         if p.is_dir():
-            n = len(list(p.iterdir())) if p.exists() else 0
-            lines.append(f"Folder · {n} item{'s' if n != 1 else ''}")
+            try:
+                n = sum(1 for _ in p.iterdir())
+                lines.append(f"Folder · {n} item{'s' if n != 1 else ''}")
+            except OSError:                               # e.g. a folder you can't read
+                lines.append("Folder · can't read its contents")
             self.pv_image.setPixmap(glyph("folder", 96).pixmap(96, 96, QIcon.Mode.Active))
             sig = self._sig
             THUMBS.start(Job(lambda p=p: ops.folder_size(p), lambda r, p=p: sig.sized.emit(str(p), *r)))
@@ -577,7 +585,12 @@ class FileLPage(QWidget):
         free = QStorageInfo(str(self.cwd)).bytesAvailable()
         text = f"{n} item{'s' if n != 1 else ''}"
         if sel:
-            size = sum(p.stat().st_size for p in sel if p.is_file())
+            size = 0
+            for p in sel:
+                try:
+                    size += p.stat().st_size if p.is_file() else 0
+                except OSError:                           # deleted since it was selected
+                    pass
             text += f"   ·   {len(sel)} selected" + (f" ({human(size)})" if size else "")
         text += f"   ·   {human(free)} free"
         self.status.setText(text)
@@ -626,6 +639,9 @@ class FileLPage(QWidget):
     def paste(self):
         data = QGuiApplication.clipboard().mimeData()
         if not data or not data.hasUrls():
+            return
+        if ops.in_trash(self.cwd):
+            self.status.setText("Can't paste into the Trash. Use Move to Trash instead.")
             return
         sources = [Path(u.toLocalFile()) for u in data.urls() if u.isLocalFile()]
         move = bytes(data.data("application/x-kde-cutselection")) == b"1"
@@ -714,7 +730,9 @@ class FileLPage(QWidget):
             m.addSeparator()
             m.addAction(glyph("terminal", 16), "Open terminal here\tF4", self.terminal_here)
             m.addAction("Copy path", self.copy_path)
-            m.addAction("Show hidden files\tCtrl+H", self.toggle_hidden).setCheckable(True)
+            hidden = m.addAction("Show hidden files\tCtrl+H", self.toggle_hidden)
+            hidden.setCheckable(True)
+            hidden.setChecked(self.show_hidden)
             if trash_mode:
                 m.addSeparator()
                 m.addAction("Empty Trash…", self.empty_trash)

@@ -25,7 +25,7 @@ def main():
     if start.exists() and not start.is_dir():
         start, select = start.parent, start
     win = QMainWindow()
-    page = FileLPage(start if start.is_dir() else Path.home())
+    page = FileLPage(start if start.is_dir() else Path.home(), standalone=True)
     win.setCentralWidget(page)
     win.resize(1280, 800)
     win.setMinimumSize(820, 520)

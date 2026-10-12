@@ -58,7 +58,6 @@ def restore(paths: list[Path]) -> list[str]:
     read the item's .trashinfo, move it back (recreating the folder; never overwriting), drop the .trashinfo."""
     errors = []
     for p in paths:
-        info = TRASH_FILES.parent / "info" / (p.name + ".trashinfo")
         orig = original_location(p)
         if not orig:
             errors.append(f"{p.name}: no record of where it came from")
@@ -67,16 +66,23 @@ def restore(paths: list[Path]) -> list[str]:
             target = free_name(Path(orig))
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(p), str(target))
-            info.unlink(missing_ok=True)
+            _info_path(p).unlink(missing_ok=True)
         except OSError as e:
             errors.append(f"{p.name}: {e.strerror or e}")
     return errors
 
 
+def _info_path(path: Path) -> Path:
+    return TRASH_FILES.parent / "info" / (path.name + ".trashinfo")
+
+
 def original_location(path: Path) -> str:
-    info = TRASH_FILES.parent / "info" / (path.name + ".trashinfo")
+    """Where a trashed item came from ("" if unknown). Only top-level Trash items have a record: a file
+    inside a trashed folder must not borrow the record of a different trashed item with the same name."""
     try:
-        for line in info.read_text().splitlines():
+        if path.parent.resolve() != TRASH_FILES.resolve():
+            return ""
+        for line in _info_path(path).read_text().splitlines():
             if line.startswith("Path="):
                 return unquote(line[5:])
     except OSError:
@@ -108,17 +114,6 @@ def empty_trash() -> str:
 def new_folder(parent: Path, name="New Folder") -> Path:
     target = free_name(parent / name)
     target.mkdir()
-    return target
-
-
-def rename(path: Path, new_name: str) -> Path:
-    new_name = new_name.strip()
-    if not new_name or "/" in new_name or new_name in (".", ".."):
-        raise OSError("that isn't a valid name")
-    target = path.with_name(new_name)
-    if target.exists() and target != path:
-        raise OSError(f"“{new_name}” already exists here")
-    path.rename(target)
     return target
 
 
