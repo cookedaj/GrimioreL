@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QFileDialog, QHBoxL
 from grimoire.fsutil import human, tilde
 from grimoire.jobs import POOL, Job
 from grimoire.paths import HOME
+from grimoire.spells import filel
 from grimoire.spells.tidyl import cli, engine
 
 
@@ -223,8 +224,7 @@ class TidyLPage(QWidget):
         self.big.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.big.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.big.setColumnWidth(0, 110)
-        self.big.cellDoubleClicked.connect(lambda r, _: subprocess.Popen(
-            ["dolphin", "--select", self.big.item(r, 1).data(Qt.ItemDataRole.UserRole)]))
+        self.big.cellDoubleClicked.connect(lambda r, _: filel.show(self.big.item(r, 1).data(Qt.ItemDataRole.UserRole)))
         v.addWidget(self.big, 1)
         return w
 
@@ -236,7 +236,7 @@ class TidyLPage(QWidget):
         listing = "\n".join(tilde(p) for p in paths[:12]) + ("\n…" if len(paths) > 12 else "")
         if QMessageBox.question(self, "Move to Trash?",
                                 f"Move {len(paths)} file(s) to the Trash?\n\n{listing}\n\n"
-                                "You can restore them from the Trash in Dolphin.") != QMessageBox.StandardButton.Yes:
+                                "You can restore them from the Trash in FileL.") != QMessageBox.StandardButton.Yes:
             return
         for r, p in sorted(zip(rows, paths), reverse=True):
             try:
@@ -279,11 +279,14 @@ class TidyLPage(QWidget):
                                 f"Keep the first copy in each group and move the other {len(extras)} to the "
                                 "Trash?") != QMessageBox.StandardButton.Yes:
             return
+        failed = []
         for p in extras:
             try:
                 engine.trash_by_hand(Path(p), "Duplicates", "duplicate copy")
-            except OSError:
-                pass
+            except OSError as e:
+                failed.append(f"{Path(p).name}: {e}")
+        if failed:
+            QMessageBox.warning(self, "TidyL", f"Couldn't trash {len(failed)} file(s):\n\n" + "\n".join(failed[:8]))
         self._scan("dupes")
 
     # ------------------------------------------------------------------ background scans
@@ -304,12 +307,15 @@ class TidyLPage(QWidget):
                 item = QTableWidgetItem(tilde(p))
                 item.setData(Qt.ItemDataRole.UserRole, str(p))
                 self.big.setItem(r, 1, item)
-            self.big_note.setText(f"{len(result)} files over 50 MB. Double-click to show one in Dolphin.")
+            self.big_note.setText(f"{len(result)} files over 50 MB. Double-click to show one in FileL.")
         else:
             self.dupes.clear()
             wasted = 0
             for group in result:
-                s = group[0].stat().st_size
+                try:
+                    s = group[0].stat().st_size
+                except OSError:                 # moved or deleted since the scan
+                    continue
                 wasted += s * (len(group) - 1)
                 top = QTreeWidgetItem([f"{group[0].name}  ×{len(group)}", human(s)])
                 for i, p in enumerate(group):

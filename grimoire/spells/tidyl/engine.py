@@ -89,11 +89,18 @@ def _log(entry: dict):
 
 
 def history(limit=200) -> list[dict]:
+    """Newest-first log entries. A damaged line (e.g. a run cut off mid-write) is skipped, not fatal."""
     try:
         lines = LOG.read_text().splitlines()[-limit:]
     except OSError:
         return []
-    return [json.loads(l) for l in reversed(lines) if l.strip()]
+    out = []
+    for line in reversed(lines):
+        try:
+            out.append(json.loads(line))
+        except ValueError:
+            continue
+    return out
 
 
 def trash_by_hand(path: Path, rule: str, reason: str):
@@ -114,7 +121,11 @@ def plan(s: Settings) -> list[tuple[Path, Path, str]]:
     for f in sorted(watch.iterdir()):
         if not f.is_file() or f.is_symlink() or f.name.startswith("."):
             continue
-        if f.name.lower().endswith(PARTIAL) or now - f.stat().st_mtime < SETTLE_SECONDS:
+        try:
+            fresh = now - f.stat().st_mtime < SETTLE_SECONDS
+        except OSError:                       # vanished (a browser renaming its download)
+            continue
+        if fresh or f.name.lower().endswith(PARTIAL):
             continue                          # still downloading / just landed
         rule = by_ext.get(_ext(f))
         if not rule:
@@ -148,7 +159,11 @@ def run(s: Settings | None = None) -> dict:
         if not d.is_dir():
             continue
         for f in d.iterdir():
-            if f.is_file() and not f.name.startswith(".") and now - f.stat().st_mtime > rule.clean_days * 86400:
+            try:
+                stale = f.is_file() and not f.name.startswith(".") and now - f.stat().st_mtime > rule.clean_days * 86400
+            except OSError:
+                continue
+            if stale:
                 try:
                     trash(f)
                     _log({"action": "trash", "batch": batch, "rule": rule.name, "from": str(f),
@@ -171,8 +186,11 @@ def undo_last() -> int:
         if e.get("batch") == batch and e["action"] == "move":
             src, dst = Path(e["to"]), Path(e["from"])
             if src.exists() and not dst.exists():
-                shutil.move(str(src), str(dst))
-                n += 1
+                try:
+                    shutil.move(str(src), str(dst))
+                    n += 1
+                except OSError:               # e.g. the watched folder is gone; leave the file where it is
+                    continue
     _log({"action": "undo", "batch": batch, "count": n})
     return n
 
@@ -182,14 +200,15 @@ def undone_batches() -> set[str]:
 
 
 # ---------------------------------------------------------------- insights
-SKIP_DIRS = {".cache", ".local/share/Trash", ".var", "snap", ".git", "node_modules", "__pycache__",
-             ".local/share/flatpak", ".rokit", ".steam", ".local/share/Steam"}
+SKIP_DIRS = {".cache", ".local/share/Trash", ".var", "snap", ".local/share/flatpak", ".rokit", ".steam",
+             ".local/share/Steam"}                       # relative to home
+SKIP_NAMES = {".git", "node_modules", "__pycache__"}    # skipped at any depth
 
 
 def _walk(root: Path):
     for dirpath, dirnames, filenames in os.walk(root):
         rel = os.path.relpath(dirpath, HOME)
-        dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules", "__pycache__")
+        dirnames[:] = [d for d in dirnames if d not in SKIP_NAMES
                        and os.path.normpath(os.path.join(rel, d)) not in SKIP_DIRS]
         for name in filenames:
             p = Path(dirpath, name)
@@ -229,7 +248,7 @@ def duplicates(roots=("~/Downloads", "~/Documents", "~/Pictures", "~/Videos", "~
                 continue
             if size >= min_kb * 1024:
                 by_size.setdefault(size, []).append(p)
-    groups: dict[str, list[Path]] = {}
+    groups: dict[tuple[int, str], list[Path]] = {}
     for size, paths in by_size.items():
         if len(paths) < 2:
             continue
@@ -241,6 +260,6 @@ def duplicates(roots=("~/Downloads", "~/Documents", "~/Pictures", "~/Videos", "~
                         h.update(chunk)
             except OSError:
                 continue
-            groups.setdefault(f"{size}:{h.hexdigest()}", []).append(p)
-    return sorted((sorted(g, key=lambda p: (len(str(p)), str(p))) for g in groups.values() if len(g) > 1),
-                  key=lambda g: -g[0].stat().st_size)
+            groups.setdefault((size, h.hexdigest()), []).append(p)
+    dupes = sorted(((size, g) for (size, _), g in groups.items() if len(g) > 1), key=lambda sg: -sg[0])
+    return [sorted(g, key=lambda p: (len(str(p)), str(p))) for _, g in dupes]   # biggest first
