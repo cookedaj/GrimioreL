@@ -13,6 +13,9 @@ QLabel#Title { font-size: 26px; font-weight: 600; color: #ffffff; }
 QLabel#Subtitle { color: #8c8c8c; }
 QLabel#Section { color: #6f6f6f; font-size: 11px; font-weight: 600; }
 QLabel#Muted { color: #8c8c8c; }
+QLabel#Muted:disabled, QLabel:disabled { color: #4a4a4a; }
+QLabel#Key { font-family: "IBM Plex Mono"; font-size: 11px; color: #d0d0d0; background: #141414;
+             border: 1px solid #2e2e2e; border-bottom-width: 2px; border-radius: 5px; padding: 2px 7px; }
 
 QPushButton {
     background: transparent; border: 1px solid #2e2e2e; border-radius: 6px; padding: 8px 14px;
@@ -61,7 +64,7 @@ QPushButton#Segment {
 }
 QPushButton#Segment[pos="first"] { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
 QPushButton#Segment[pos="last"] { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
-QPushButton#Segment[pos="mid"] { border-left: none; }
+QPushButton#Segment[pos="mid"], QPushButton#Segment[pos="last"] { border-left: none; }
 QPushButton#Segment:checked { background: #f2f2f2; color: #000000; border-color: #f2f2f2; }
 
 QPushButton#Link { border: none; text-align: left; padding: 4px 6px; color: #d0d0d0; }
