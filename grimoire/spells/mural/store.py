@@ -210,7 +210,6 @@ def _extract(archive: Path, dest: Path) -> Path:
     if dest.exists():
         shutil.rmtree(dest)
     dest.mkdir(parents=True)
-    name = archive.name.lower()
     if zipfile.is_zipfile(archive):
         with zipfile.ZipFile(archive) as z:
             total = 0
@@ -263,7 +262,20 @@ def _ini(path: Path) -> ConfigParser:
     return c
 
 
+def _claim(dst: Path):
+    """Refuse to replace something Grimoire didn't install (e.g. your own theme with the same folder name)."""
+    if (dst.exists() or dst.is_symlink()) and str(dst) not in {e["path"] for e in registry().values()}:
+        raise RuntimeError(f"you already have “{dst.name}” in {dst.parent}; Grimoire won't replace it")
+
+
+def _copyfile(src: Path, dst: Path):
+    _claim(dst)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(src, dst)
+
+
 def _copytree(src: Path, dst: Path):
+    _claim(dst)
     if dst.exists():
         shutil.rmtree(dst)
     shutil.copytree(src, dst, symlinks=False, ignore=shutil.ignore_patterns("*.sh", "*.py", "install*"))
@@ -293,14 +305,12 @@ def install(cat: Category, item: Item, to_bw: bool = False) -> list[dict]:
     if k == "colors":
         for f in root.rglob("*.colors"):
             dst = HOME / ".local/share/color-schemes" / f.name
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(f, dst)
+            _copyfile(f, dst)
             add(_ini(f).get("General", "Name", fallback=f.stem), f.stem, dst)
     elif k == "konsole":
         for f in root.rglob("*.colorscheme"):
             dst = HOME / ".local/share/konsole" / f.name
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(f, dst)
+            _copyfile(f, dst)
             add(_ini(f).get("General", "Description", fallback=f.stem), f.stem, dst)
     elif k == "cursor":
         for d in _dirs_with(root, lambda d: (d / "cursors").is_dir()):
