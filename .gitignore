@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+
+# Personal Claude notes (not shared)
+CLAUDE.local.md
+.claude/settings.local.json
