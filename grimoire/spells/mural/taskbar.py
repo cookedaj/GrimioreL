@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QGridLayout, QLabel, QPushBu
 from grimoire.paths import ASSETS, DATA
 from grimoire.spells.mural import plasmastyle
 from grimoire.spells.mural.backdrop import wallpaper as _wallpaper
+from grimoire.spells.mural.kde import kread, kwrite, plasma_script
 from grimoire.spells.mural.screens import Design, ScreenTab
 from grimoire.widgets import Slider
 
@@ -37,8 +38,7 @@ DESIGNS = [
 
 
 def _plasma(script: str) -> str:
-    r = subprocess.run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script],
-                       capture_output=True, text=True)
+    r = plasma_script(script)
     if r.returncode:
         raise RuntimeError(r.stderr.strip() or "plasmashell refused the script")
     return r.stdout.strip()
@@ -55,19 +55,17 @@ def write_panel(props: dict):
     _plasma(f"var p = panels()[0];{sets}")
 
 
-def _panel_group() -> list[str]:
-    pid = _plasma("print(panels()[0].id)")
-    return ["--file", "plasmashellrc", "--group", "PlasmaViews", "--group", f"Panel {pid}"]
+def _panel_groups() -> list[str]:
+    """The first panel's group in plasmashellrc."""
+    return ["PlasmaViews", f"Panel {_plasma('print(panels()[0].id)')}"]
 
 
 def set_opacity(value: int):
     """Opacity is only read at startup: write it and restart plasmashell, but only if it changed."""
-    group = _panel_group()
-    cur = subprocess.run(["kreadconfig6", *group, "--key", "panelOpacity", "--default", "0"],
-                         capture_output=True, text=True).stdout.strip()
-    if cur == str(value):
+    groups = _panel_groups()
+    if kread("plasmashellrc", groups, "panelOpacity", default="0") == str(value):
         return
-    subprocess.run(["kwriteconfig6", *group, "--key", "panelOpacity", str(value)], check=True)
+    kwrite("plasmashellrc", groups, "panelOpacity", value)
     subprocess.run(["systemctl", "--user", "restart", "plasma-plasmashell"], check=True)
     for _ in range(40):                        # wait until plasmashell answers again
         if subprocess.run(["qdbus6", "org.kde.plasmashell", "/PlasmaShell"], capture_output=True).returncode == 0:

@@ -16,11 +16,11 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QGridLayout, QLabel, QPushBu
 
 from grimoire.paths import ASSETS, CACHE
 from grimoire.spells.mural import library
+from grimoire.spells.mural.kde import run_root
 from grimoire.spells.mural.screens import Design, ScreenTab, community_designs, community_entry, render_lock
 from grimoire.widgets import Slider
 
 THEME = Path(__file__).with_name("sddm_theme")
-HELPER = Path(__file__).with_name("root-helper.sh")
 WORK = CACHE / "login"
 DEFAULTS = {"background": "spirit-of-zephyr.png", "dim": 55, "clock24": False, "power": True}
 NO_IMAGE = "Plain black"
@@ -126,27 +126,19 @@ class LoginTab(ScreenTab):
     def preview(self, design, o):
         return render_preview(design.id, o)
 
-    def _run_root(self, *args):
-        r = subprocess.run(["pkexec", "/usr/bin/bash", str(HELPER), *args], capture_output=True, text=True)
-        if r.returncode == 126:
-            raise RuntimeError("cancelled")
-        if r.returncode:
-            raise RuntimeError((r.stderr or r.stdout).strip().splitlines()[-1] if (r.stderr or r.stdout) else
-                               f"helper failed ({r.returncode})")
-
     def apply(self, design, o):
         if design.id.startswith("store:"):
             entry = community_entry(design.id)
-            self._run_root("sddm-install", entry["ident"], entry["path"])
+            run_root("sddm-install", entry["ident"], entry["path"])
             return "Installed ✓  You'll see it next time you log out or reboot."
         staged = WORK / "install"
         stage(design.id, o, staged)
-        self._run_root("sddm", str(staged))
+        run_root("sddm", str(staged))
         return "Installed ✓  You'll see it next time you log out or reboot."
 
     def _restore(self):
         try:
-            self._run_root("sddm-restore")
+            run_root("sddm-restore")
         except RuntimeError as e:
             self.status.setText(f"Couldn't restore: {e}")
             return

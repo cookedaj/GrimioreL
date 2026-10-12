@@ -1,13 +1,12 @@
 """Fonts tab: 5 system font pairings (interface + monospace), size, title weight, hinting, sub-pixel.
 Written to kdeglobals with --notify, so running KDE apps update immediately.
 """
-import subprocess
-
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPainterPath
 from PySide6.QtWidgets import QComboBox, QGridLayout, QLabel
 
 from grimoire.spells.mural.backdrop import wallpaper
+from grimoire.spells.mural.kde import kwin_reconfigure, kwrite
 from grimoire.spells.mural.screens import Design, ScreenTab
 from grimoire.widgets import Slider
 
@@ -127,9 +126,6 @@ class FontsTab(ScreenTab):
             ("General", "XftSubPixel", "rgb" if o["subpixel"] == "On" else "none"),
         ]
         for group, key, value in writes:
-            r = subprocess.run(["kwriteconfig6", "--notify", "--file", "kdeglobals", "--group", group,
-                                "--key", key, value], capture_output=True, text=True)
-            if r.returncode:
-                raise RuntimeError(r.stderr.strip() or "kwriteconfig6 failed")
-        subprocess.run(["qdbus6", "org.kde.KWin", "/KWin", "reconfigure"], capture_output=True)
+            kwrite("kdeglobals", group, key, value, notify=True)
+        kwin_reconfigure()
         return "Applied ✓  Some apps pick up new fonts when reopened."

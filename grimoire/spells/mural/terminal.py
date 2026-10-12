@@ -12,6 +12,7 @@ from PySide6.QtGui import QColor, QFont, QFontMetricsF, QImage, QPainter, QPaint
 from PySide6.QtWidgets import QCheckBox, QComboBox, QGridLayout, QLabel, QPushButton
 
 from grimoire.paths import HOME
+from grimoire.spells.mural.kde import kwrite
 from grimoire.spells.mural.screens import Design, ScreenTab, community_designs, community_entry
 from grimoire.spells.mural.backdrop import wallpaper as _wallpaper
 from grimoire.widgets import Slider
@@ -271,10 +272,7 @@ class TerminalTab(ScreenTab):
             scheme = f"Grimoire-{design.id}"
         (KONSOLE / "Grimoire.profile").write_text(profile(design.id, o).replace(
             f"ColorScheme=Grimoire-{design.id}", f"ColorScheme={scheme}"))
-        r = subprocess.run(["kwriteconfig6", "--file", "konsolerc", "--group", "Desktop Entry",
-                            "--key", "DefaultProfile", "Grimoire.profile"], capture_output=True, text=True)
-        if r.returncode:
-            raise RuntimeError(r.stderr.strip() or "kwriteconfig6 failed")
+        kwrite("konsolerc", "Desktop Entry", "DefaultProfile", "Grimoire.profile")
         write_prompt(o["prompt"])
         extra = "" if o["prompt"] == "Keep mine" else " Prompt takes effect in new terminals."
         return f"Applied ✓  New Konsole windows use it.{extra}"

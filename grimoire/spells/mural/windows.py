@@ -1,13 +1,12 @@
 """Windows tab: title bar button layouts + Breeze decoration options (button size, title alignment,
 border, outline, hide title bar when maximized). Applies live through KWin.
 """
-import subprocess
-
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QCheckBox, QComboBox, QGridLayout, QLabel
 
 from grimoire.spells.mural.backdrop import wallpaper
+from grimoire.spells.mural.kde import kread, kwin_reconfigure, kwrite
 from grimoire.spells.mural.screens import Design, ScreenTab, community_designs, community_entry
 
 #            left  right   (KWin codes: M menu, S on-all-desktops, H help, I minimize, A maximize, X close)
@@ -32,21 +31,10 @@ OUTLINE = {"Off": "OutlineOff", "Low": "OutlineLow", "Medium": "OutlineMedium", 
 DEFAULTS = {"size": "Default", "align": "Center", "border": "No sides", "outline": "Low", "borderless_max": False}
 
 
-def _kwrite(file, groups, key, value, type_=None):
-    args = ["kwriteconfig6", "--file", file]
-    for g in groups:
-        args += ["--group", g]
-    args += ["--key", key] + (["--type", type_] if type_ else []) + [str(value)]
-    r = subprocess.run(args, capture_output=True, text=True)
-    if r.returncode:
-        raise RuntimeError(r.stderr.strip() or "kwriteconfig6 failed")
-
-
 def _header_colors() -> tuple[QColor, QColor]:
     """Active title bar background/foreground from the current color scheme ([WM] in kdeglobals)."""
     def read(key, default):
-        r = subprocess.run(["kreadconfig6", "--file", "kdeglobals", "--group", "WM", "--key", key],
-                           capture_output=True, text=True).stdout.strip()
+        r = kread("kdeglobals", "WM", key)
         try:
             return QColor(*map(int, r.split(",")[:3]))
         except ValueError:
@@ -183,19 +171,19 @@ class WindowsTab(ScreenTab):
     def apply(self, design, o):
         deco = ["org.kde.kdecoration2"]
         if design.id.startswith("store:"):           # community Aurorae decoration; keeps your button layout
-            _kwrite("kwinrc", deco, "library", "org.kde.kwin.aurorae")
-            _kwrite("kwinrc", deco, "theme", "__aurorae__svg__" + community_entry(design.id)["ident"])
+            kwrite("kwinrc", deco, "library", "org.kde.kwin.aurorae")
+            kwrite("kwinrc", deco, "theme", "__aurorae__svg__" + community_entry(design.id)["ident"])
         else:
             left, right = LAYOUTS[design.id]
-            _kwrite("kwinrc", deco, "library", "org.kde.breeze")
-            _kwrite("kwinrc", deco, "theme", "Breeze")
-            _kwrite("kwinrc", deco, "ButtonsOnLeft", left)
-            _kwrite("kwinrc", deco, "ButtonsOnRight", right)
-        _kwrite("kwinrc", deco, "BorderSize", BORDERS[o["border"]])
-        _kwrite("kwinrc", deco, "BorderSizeAuto", "false", "bool")
-        _kwrite("kwinrc", ["Windows"], "BorderlessMaximizedWindows", str(o["borderless_max"]).lower(), "bool")
-        _kwrite("breezerc", ["Windeco"], "ButtonSize", SIZES[o["size"]])
-        _kwrite("breezerc", ["Windeco"], "TitleAlignment", ALIGN[o["align"]])
-        _kwrite("breezerc", ["Common"], "OutlineIntensity", OUTLINE[o["outline"]])
-        subprocess.run(["qdbus6", "org.kde.KWin", "/KWin", "reconfigure"], capture_output=True)
+            kwrite("kwinrc", deco, "library", "org.kde.breeze")
+            kwrite("kwinrc", deco, "theme", "Breeze")
+            kwrite("kwinrc", deco, "ButtonsOnLeft", left)
+            kwrite("kwinrc", deco, "ButtonsOnRight", right)
+        kwrite("kwinrc", deco, "BorderSize", BORDERS[o["border"]])
+        kwrite("kwinrc", deco, "BorderSizeAuto", "false", "bool")
+        kwrite("kwinrc", ["Windows"], "BorderlessMaximizedWindows", str(o["borderless_max"]).lower(), "bool")
+        kwrite("breezerc", ["Windeco"], "ButtonSize", SIZES[o["size"]])
+        kwrite("breezerc", ["Windeco"], "TitleAlignment", ALIGN[o["align"]])
+        kwrite("breezerc", ["Common"], "OutlineIntensity", OUTLINE[o["outline"]])
+        kwin_reconfigure()
         return "Applied ✓"

@@ -7,6 +7,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QCheckBox, QGridLayout, QLabel
 
+from grimoire.spells.mural.kde import kwin_reconfigure, kwrite
 from grimoire.spells.mural.screens import Design, ScreenTab
 from grimoire.widgets import Slider
 
@@ -88,16 +89,8 @@ def render(pid: str, o: dict, w=1280, h=720) -> QImage:
     return img
 
 
-def _set(file, group, key, value, notify=False):
-    args = ["kwriteconfig6"] + (["--notify"] if notify else []) + ["--file", file, "--group", group, "--key", key,
-                                                                   str(value)]
-    r = subprocess.run(args, capture_output=True, text=True)
-    if r.returncode:
-        raise RuntimeError(r.stderr.strip() or "kwriteconfig6 failed")
-
-
 def _effect(name: str, on: bool):
-    _set("kwinrc", "Plugins", f"{name}Enabled", "true" if on else "false")
+    kwrite("kwinrc", "Plugins", f"{name}Enabled", "true" if on else "false")
     method = "loadEffect" if on else "unloadEffect"
     subprocess.run(["qdbus6", "org.kde.KWin", "/Effects", f"org.kde.kwin.Effects.{method}", name],
                    capture_output=True)
@@ -139,16 +132,16 @@ class MotionTab(ScreenTab):
 
     def apply(self, design, o):
         speed, open_, mini, switch, translucent = PRESETS[design.id]
-        _set("kdeglobals", "KDE", "AnimationDurationFactor", speed, notify=True)
+        kwrite("kdeglobals", "KDE", "AnimationDurationFactor", speed, notify=True)
         for group, chosen in ((OPEN_CLOSE, open_), (MINIMIZE, mini), (SWITCH, switch)):
             for name in group:
                 _effect(name, name == chosen)
         _effect("wobblywindows", o["wobbly"])
         _effect("translucency", translucent)
-        _set("kwinrc", "Effect-blur", "BlurStrength", o["blur"])
-        _set("kwinrc", "Effect-blur", "NoiseStrength", o["noise"])
+        kwrite("kwinrc", "Effect-blur", "BlurStrength", o["blur"])
+        kwrite("kwinrc", "Effect-blur", "NoiseStrength", o["noise"])
         _effect("blur", True)
         subprocess.run(["qdbus6", "org.kde.KWin", "/Effects", "org.kde.kwin.Effects.reconfigureEffect", "blur"],
                        capture_output=True)
-        subprocess.run(["qdbus6", "org.kde.KWin", "/KWin", "reconfigure"], capture_output=True)
+        kwin_reconfigure()
         return "Applied ✓"

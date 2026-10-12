@@ -10,8 +10,9 @@ from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPainterPath
 from PySide6.QtWidgets import QComboBox, QGridLayout, QLabel, QPushButton
 
 from grimoire.paths import DATA, HOME
-from grimoire.spells.mural.screens import Design, ScreenTab, community_designs, community_entry
 from grimoire.spells.mural.backdrop import wallpaper as _wallpaper
+from grimoire.spells.mural.kde import kread, run_tool
+from grimoire.spells.mural.screens import Design, ScreenTab, community_designs, community_entry
 
 SCHEMES = HOME / ".local/share/color-schemes"
 PREVIOUS = DATA / "mural" / "colors-previous.txt"
@@ -212,9 +213,7 @@ def render(pid: str, o: dict, w=1280, h=720) -> QImage:
 
 
 def current_scheme() -> str:
-    r = subprocess.run(["kreadconfig6", "--file", "kdeglobals", "--group", "General", "--key", "ColorScheme"],
-                       capture_output=True, text=True)
-    return r.stdout.strip()
+    return kread("kdeglobals", "General", "ColorScheme")
 
 
 class ColorsTab(ScreenTab):
@@ -265,17 +264,13 @@ class ColorsTab(ScreenTab):
             PREVIOUS.write_text(cur or "BreezeDark")
         if design.id.startswith("store:"):
             ident = community_entry(design.id)["ident"]
-            r = subprocess.run(["plasma-apply-colorscheme", ident], capture_output=True, text=True)
-            if r.returncode and "already" not in (r.stdout + r.stderr):
-                raise RuntimeError((r.stderr or r.stdout).strip() or "plasma-apply-colorscheme failed")
+            run_tool(["plasma-apply-colorscheme", ident], ok_if_already=True)
             return "Applied ✓"
         # plasma-apply-colorscheme ignores re-applying the current name, so alternate between two names
         base = f"Grimoire{design.name}"
         ident = base + "B" if cur == base else base
         (SCHEMES / f"{ident}.colors").write_text(scheme_text(design.id, o, f"Grimoire {design.name}", ident))
-        r = subprocess.run(["plasma-apply-colorscheme", ident], capture_output=True, text=True)
-        if r.returncode:
-            raise RuntimeError((r.stderr or r.stdout).strip() or "plasma-apply-colorscheme failed")
+        run_tool(["plasma-apply-colorscheme", ident])
         for old in SCHEMES.glob("Grimoire*.colors"):    # keep only the active one
             if old.stem != ident:
                 old.unlink()

@@ -1,9 +1,8 @@
 """Style tab: the Plasma Style (look of the taskbar, menus, popups, tooltips).
 Grimoire's own Onyx plus any community styles installed from the store.
 """
-import subprocess
-
 from grimoire.spells.mural import plasmastyle, taskbar
+from grimoire.spells.mural.kde import run_tool
 from grimoire.spells.mural.screens import Design, ScreenTab, community_designs, community_entry, load_state
 
 DESIGNS = [
@@ -30,9 +29,7 @@ class StyleTab(ScreenTab):
     def apply(self, design, o):
         if design.id.startswith("store:"):
             ident = community_entry(design.id)["ident"]
-            r = subprocess.run(["plasma-apply-desktoptheme", ident], capture_output=True, text=True)
-            if r.returncode and "already" not in (r.stdout + r.stderr):
-                raise RuntimeError((r.stderr or r.stdout).strip() or "plasma-apply-desktoptheme failed")
+            run_tool(["plasma-apply-desktoptheme", ident], ok_if_already=True)
         else:
             plasmastyle.apply(design.id)
         return "Applied ✓"

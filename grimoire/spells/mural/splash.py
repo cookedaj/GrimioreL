@@ -15,6 +15,7 @@ from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QCheckBox, QComboBox, QGridLayout, QLabel, QLineEdit, QPushButton
 
 from grimoire.paths import ASSETS, CACHE, HOME
+from grimoire.spells.mural.kde import kwrite
 from grimoire.spells.mural.screens import Design, ScreenTab, community_designs, community_entry, render_lock
 
 TEMPLATES = Path(__file__).with_name("splash_designs")
@@ -136,9 +137,6 @@ class SplashTab(ScreenTab):
         else:
             build(design.id, o, INSTALLED)
             theme = PACKAGE_ID
-        for key, value in (("Theme", theme), ("Engine", "KSplashQML")):
-            r = subprocess.run(["kwriteconfig6", "--file", "ksplashrc", "--group", "KSplash", "--key", key, value],
-                               capture_output=True, text=True)
-            if r.returncode:
-                raise RuntimeError(r.stderr.strip() or "kwriteconfig6 failed")
+        kwrite("ksplashrc", "KSplash", "Theme", theme)
+        kwrite("ksplashrc", "KSplash", "Engine", "KSplashQML")
         return "Applied ✓  You'll see it at your next login."

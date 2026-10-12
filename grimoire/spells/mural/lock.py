@@ -4,11 +4,10 @@ Only the background and the stock lock screen's own options are changed; the unl
 Plasma's, so a bad design can never lock you out.
 """
 import math
-import subprocess
 from datetime import datetime
 from functools import lru_cache
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageFilter, ImageOps
 from PySide6.QtCore import QRect, Qt
 from PySide6.QtGui import QColor, QFont, QImage, QPainter
 from PySide6.QtSvg import QSvgRenderer
@@ -16,6 +15,7 @@ from PySide6.QtWidgets import QCheckBox, QGridLayout, QLabel
 
 from grimoire.paths import ASSETS, DATA
 from grimoire.spells.mural import library
+from grimoire.spells.mural.kde import kwrite
 from grimoire.spells.mural.screens import Design, ScreenTab
 from grimoire.widgets import Slider
 
@@ -135,21 +135,12 @@ class LockTab(ScreenTab):
         path = OUT / ("lock-" + design.id.replace("img:", "img-").replace("/", "_") + ".png")
         render(design.id, o["dim"], o["blur"]).save(path, optimize=True)
         url = path.as_uri()
-        cmds = [
-            ["--group", "Greeter", "--key", "WallpaperPlugin", "org.kde.image"],
-            ["--group", "Greeter", "--group", "Wallpaper", "--group", "org.kde.image", "--group", "General",
-             "--key", "Image", url],
-            ["--group", "Greeter", "--group", "Wallpaper", "--group", "org.kde.image", "--group", "General",
-             "--key", "PreviewImage", url],
-            ["--group", "Greeter", "--group", "LnF", "--group", "General", "--key", "alwaysShowClock",
-             "--type", "bool", str(o["clock"]).lower()],
-            ["--group", "Greeter", "--group", "LnF", "--group", "General", "--key", "hideClockWhenIdle",
-             "--type", "bool", str(o["clock_idle"]).lower()],
-            ["--group", "Greeter", "--group", "LnF", "--group", "General", "--key", "showMediaControls",
-             "--type", "bool", str(o["media"]).lower()],
-        ]
-        for args in cmds:
-            r = subprocess.run(["kwriteconfig6", "--file", "kscreenlockerrc", *args], capture_output=True, text=True)
-            if r.returncode:
-                raise RuntimeError(r.stderr.strip() or "kwriteconfig6 failed")
+        image = ["Greeter", "Wallpaper", "org.kde.image", "General"]
+        lnf = ["Greeter", "LnF", "General"]
+        kwrite("kscreenlockerrc", "Greeter", "WallpaperPlugin", "org.kde.image")
+        kwrite("kscreenlockerrc", image, "Image", url)
+        kwrite("kscreenlockerrc", image, "PreviewImage", url)
+        for key, opt in (("alwaysShowClock", "clock"), ("hideClockWhenIdle", "clock_idle"),
+                         ("showMediaControls", "media")):
+            kwrite("kscreenlockerrc", lnf, key, str(o[opt]).lower(), "bool")
         return "Applied ✓  Lock with Meta+L to see it."

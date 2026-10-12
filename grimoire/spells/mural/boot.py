@@ -5,7 +5,6 @@ Each design is a looping throbber rendered here frame by frame; installing needs
 """
 import math
 import shutil
-import subprocess
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -14,9 +13,9 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QGridLayout, QLabel, QPushBu
 
 from grimoire.paths import CACHE
 from grimoire.spells.mural.lock import _clover_mask, to_qimage
+from grimoire.spells.mural.kde import run_root
 from grimoire.spells.mural.screens import Design, ScreenTab, community_designs, community_entry
 
-HELPER = Path(__file__).with_name("root-helper.sh")
 WORK = CACHE / "boot"
 FRAMES = 48                                   # two-step loops the throbber; ~1.6 s at 30 fps
 SIZES = {"Small": 0.75, "Medium": 1.0, "Large": 1.35}
@@ -236,27 +235,19 @@ class BootTab(ScreenTab):
         self.big.setMovie(self._movie)
         self._movie.start()
 
-    def _run_root(self, *args):
-        r = subprocess.run(["pkexec", "/usr/bin/bash", str(HELPER), *args], capture_output=True, text=True)
-        if r.returncode == 126:
-            raise RuntimeError("cancelled")
-        if r.returncode:
-            msg = (r.stderr or r.stdout).strip().splitlines()
-            raise RuntimeError(msg[-1] if msg else f"helper failed ({r.returncode})")
-
     def apply(self, design, o):
         if design.id.startswith("store:"):
             entry = community_entry(design.id)
-            self._run_root("plymouth-install", entry["ident"], entry["path"])
+            run_root("plymouth-install", entry["ident"], entry["path"])
             return "Installed ✓  You'll see it on your next reboot."
         staged = WORK / "install"
         stage(design.id, o, staged)
-        self._run_root("plymouth", str(staged))
+        run_root("plymouth", str(staged))
         return "Installed ✓  You'll see it on your next reboot."
 
     def _restore(self):
         try:
-            self._run_root("plymouth-restore")
+            run_root("plymouth-restore")
         except RuntimeError as e:
             self.status.setText(f"Couldn't restore: {e}")
             return

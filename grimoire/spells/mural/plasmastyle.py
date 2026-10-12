@@ -7,11 +7,11 @@ everything else falls back to Breeze. Text colors come from a Grimoire color sch
 import gzip
 import json
 import shutil
-import subprocess
 from dataclasses import dataclass
 
 from grimoire.paths import HOME
 from grimoire.spells.mural import colors
+from grimoire.spells.mural.kde import kread, run_tool
 
 THEMES = HOME / ".local/share/plasma/desktoptheme"
 
@@ -120,9 +120,7 @@ def build(look_id: str, ident: str):
 
 
 def current() -> str:
-    r = subprocess.run(["kreadconfig6", "--file", "plasmarc", "--group", "Theme", "--key", "name"],
-                       capture_output=True, text=True)
-    return r.stdout.strip() or "default"
+    return kread("plasmarc", "Theme", "name") or "default"
 
 
 def apply(look_id: str) -> str:
@@ -130,9 +128,7 @@ def apply(look_id: str) -> str:
     cur = current()
     ident = "grimoire-b" if cur == "grimoire" else "grimoire"
     build(look_id, ident)
-    r = subprocess.run(["plasma-apply-desktoptheme", ident], capture_output=True, text=True)
-    if r.returncode:
-        raise RuntimeError((r.stderr or r.stdout).strip() or "plasma-apply-desktoptheme failed")
+    run_tool(["plasma-apply-desktoptheme", ident])
     other = THEMES / ("grimoire" if ident == "grimoire-b" else "grimoire-b")
     shutil.rmtree(other, ignore_errors=True)
     return cur

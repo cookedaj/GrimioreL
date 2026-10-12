@@ -1,12 +1,12 @@
 """Bridge to Plasma: applies MuraL settings to every desktop through plasmashell's scripting API."""
 import json
-import subprocess
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from PySide6.QtCore import QUrl
 
 from grimoire.paths import CONFIG
+from grimoire.spells.mural.kde import plasma_script
 
 PLUGIN = "com.cookedaj.grimoire.mural"
 STATE = CONFIG / "mural.json"
@@ -62,9 +62,7 @@ for (var i = 0; i < ds.length; i++) {{
 {writes}
 }}
 """
-    result = subprocess.run(
-        ["qdbus6", "org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell.evaluateScript", script],
-        capture_output=True, text=True)
+    result = plasma_script(script)
     if result.returncode != 0 or result.stdout.strip():
         raise RuntimeError((result.stderr or result.stdout).strip() or "plasmashell rejected the script")
     s.save()

@@ -2,7 +2,6 @@
 Previews are drawn from the real cursor files (a tiny Xcursor reader), on black and on white.
 """
 import struct
-import subprocess
 from functools import lru_cache
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from PySide6.QtGui import QColor, QFont, QImage, QPainter
 from PySide6.QtWidgets import QComboBox, QGridLayout, QLabel
 
 from grimoire.spells.mural import store as community
+from grimoire.spells.mural.kde import kread, run_tool
 from grimoire.spells.mural.screens import Design, ScreenTab
 
 ICONS = Path("/usr/share/icons")
@@ -75,9 +75,7 @@ def render(theme: str, o: dict, w=1280, h=720) -> QImage:
 
 
 def current() -> str:
-    r = subprocess.run(["kreadconfig6", "--file", "kcminputrc", "--group", "Mouse", "--key", "cursorTheme"],
-                       capture_output=True, text=True)
-    return r.stdout.strip()
+    return kread("kcminputrc", "Mouse", "cursorTheme")
 
 
 class CursorTab(ScreenTab):
@@ -110,8 +108,5 @@ class CursorTab(ScreenTab):
         return render(design.id, o)
 
     def apply(self, design, o):
-        r = subprocess.run(["plasma-apply-cursortheme", "--size", o["size"], design.id],
-                           capture_output=True, text=True)
-        if r.returncode and "already" not in (r.stdout + r.stderr):
-            raise RuntimeError((r.stderr or r.stdout).strip() or "plasma-apply-cursortheme failed")
+        run_tool(["plasma-apply-cursortheme", "--size", o["size"], design.id], ok_if_already=True)
         return "Applied ✓"

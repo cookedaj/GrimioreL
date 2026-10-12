@@ -1,7 +1,6 @@
 """Icons tab: the icon theme. Your current theme plus community icon packs; previews draw real icons
 from each theme's own files (following its Inherits= chain for anything it doesn't include).
 """
-import subprocess
 from configparser import ConfigParser
 from functools import lru_cache
 from pathlib import Path
@@ -12,6 +11,7 @@ from PySide6.QtSvg import QSvgRenderer
 
 from grimoire.paths import HOME
 from grimoire.spells.mural import store as community
+from grimoire.spells.mural.kde import kread, run_tool
 from grimoire.spells.mural.screens import Design, ScreenTab
 
 SEARCH = [HOME / ".local/share/icons", HOME / ".icons", Path("/usr/share/icons")]
@@ -82,9 +82,7 @@ def find_icon(theme: str, name: str, seen=None) -> Path | None:
 
 
 def current() -> str:
-    r = subprocess.run(["kreadconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme"],
-                       capture_output=True, text=True)
-    return r.stdout.strip() or "breeze"
+    return kread("kdeglobals", "Icons", "Theme") or "breeze"
 
 
 def render(theme: str, w=1280, h=720) -> QImage:
@@ -130,7 +128,5 @@ class IconsTab(ScreenTab):
         return render(design.id)
 
     def apply(self, design, o):
-        r = subprocess.run([CHANGE_ICONS, design.id], capture_output=True, text=True)
-        if r.returncode:
-            raise RuntimeError((r.stderr or r.stdout).strip() or "plasma-changeicons failed")
+        run_tool([CHANGE_ICONS, design.id])
         return "Applied ✓"
