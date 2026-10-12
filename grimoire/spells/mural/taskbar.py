@@ -1,4 +1,4 @@
-"""Taskbar tab: 5 panel layouts + a black & white look (a generated Plasma Style, see plasmastyle.py),
+"""Taskbar tab: the Dock panel layout + a black & white look (a generated Plasma Style, see plasmastyle.py),
 height, opacity, floating and auto-hide.
 
 Layout properties go through plasmashell scripting; opacity is only read from plasmashellrc at startup,

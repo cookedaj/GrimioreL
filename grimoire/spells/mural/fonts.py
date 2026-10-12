@@ -1,4 +1,4 @@
-"""Fonts tab: 5 system font pairings (interface + monospace), size, title weight, hinting, sub-pixel.
+"""Fonts tab: a system font pairing (interface + monospace), size, title weight, hinting, sub-pixel.
 Written to kdeglobals with --notify, so running KDE apps update immediately.
 """
 from PySide6.QtCore import QRectF, Qt

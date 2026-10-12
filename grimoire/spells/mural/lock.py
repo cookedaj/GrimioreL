@@ -1,4 +1,5 @@
-"""Lock screen tab: 5 black & white backgrounds for Plasma's lock screen (+ dim, blur, clock options).
+"""Lock screen tab: black & white backgrounds for Plasma's lock screen (Negative or any
+library image), with dim, blur and clock options.
 
 Only the background and the stock lock screen's own options are changed; the unlock UI itself stays
 Plasma's, so a bad design can never lock you out.

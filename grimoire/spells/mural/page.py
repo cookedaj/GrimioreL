@@ -2,7 +2,7 @@
 
 SCREENS  desktop, lock screen, splash, login, boot
 SHELL    taskbar, style, windows, motion
-STYLE    colors, icons, fonts, cursor, terminal
+LOOK     colors, icons, fonts, cursor, terminal
 Tabs are built the first time they're opened.
 """
 from importlib import import_module

@@ -31,6 +31,11 @@ def fit(img: QImage, size: QSize) -> QPixmap:
     return pm
 
 
+def _label(it: store.Item, installed: bool) -> str:
+    stats = f"{it.downloads:,} ↓" + (f"  ·  {it.score}%" if it.score else "")
+    return f"{'✓ ' if installed else ''}{it.name}\n{stats}"
+
+
 def _load_thumb(url: str) -> QImage:
     path = store.thumbnail(url)
     return QImage(str(path)) if path else QImage()
@@ -153,16 +158,15 @@ class StoreView(QWidget):
         self.items = result
         self.count.setText(f"Top {len(result)}")
         placeholder = QIcon(fit(QImage(), CARD))
+        installed = {e["item"] for e in store.registry().values()}
+        sig = self._sig
         for i, it in enumerate(result):
-            mark = "✓ " if store.is_installed(it.id) else ""
-            stats = f"{it.downloads:,} ↓" + (f"  ·  {it.score}%" if it.score else "")
-            row = QListWidgetItem(placeholder, f"{mark}{it.name}\n{stats}")
+            row = QListWidgetItem(placeholder, _label(it, it.id in installed))
             row.setTextAlignment(Qt.AlignmentFlag.AlignHCenter)
             row.setToolTip(it.summary or it.name)
             self.grid.addItem(row)
-            url, sig = it.preview, self._sig
-            POOL.start(Job(lambda url=url: _load_thumb(url),
-                            lambda img, i=i: sig.thumb.emit(gen, i, img)))
+            POOL.start(Job(lambda url=it.preview: _load_thumb(url),
+                           lambda img, i=i: sig.thumb.emit(gen, i, img)))
 
     def _on_thumb(self, gen, row, img):
         if gen == self._gen and row < self.grid.count():
@@ -212,9 +216,7 @@ class StoreView(QWidget):
         row = self.grid.currentRow()
         if ok and 0 <= row < len(self.items):
             it = self.items[row]
-            mark = "✓ " if store.is_installed(it.id) else ""
-            stats = f"{it.downloads:,} ↓" + (f"  ·  {it.score}%" if it.score else "")
-            self.grid.item(row).setText(f"{mark}{it.name}\n{stats}")
+            self.grid.item(row).setText(_label(it, store.is_installed(it.id)))
         self.install_btn.setEnabled(True)
         it = self._current()
         if it:

@@ -307,18 +307,18 @@ class SightCPage(QWidget):
 
     # ------------------------------------------------------------------ overlay process
     def _toggle_overlay(self):
-        if overlay.running_pid():
+        was_on = overlay.running_pid() is not None
+        if was_on:
             overlay.stop()
         else:
             self.cfg.save()
             overlay.start()
+        self._refresh_running(on=not was_on)        # the new process takes a moment to write its pid
         QTimer.singleShot(600, self._refresh_running)
-        self._refresh_running(expect_change=True)
 
-    def _refresh_running(self, expect_change=False):
-        on = overlay.running_pid() is not None
-        if expect_change:
-            on = not on
+    def _refresh_running(self, on: bool | None = None):
+        if on is None:
+            on = overlay.running_pid() is not None
         self.toggle.setText("Hide crosshair" if on else "Show crosshair")
         self.state.setText(f"Overlay running · {HOTKEY} hides it in-game" if on else "Overlay off")
 

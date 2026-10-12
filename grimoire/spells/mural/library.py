@@ -50,8 +50,14 @@ def remove(path: Path):
     _thumb_path(path).unlink(missing_ok=True)
 
 
+def _head(p: Path, n=65536) -> bytes:
+    with open(p, "rb") as f:
+        return f.read(n)
+
+
 def _same_file(a: Path, b: Path) -> bool:
-    return a.stat().st_size == b.stat().st_size and a.read_bytes()[:65536] == b.read_bytes()[:65536]
+    """Same size and same first 64 KB (reads only that much: wallpapers can be multi-GB videos)."""
+    return a.stat().st_size == b.stat().st_size and _head(a) == _head(b)
 
 
 def _thumb_path(path: Path) -> Path:
@@ -60,7 +66,7 @@ def _thumb_path(path: Path) -> Path:
 
 
 def thumbnail(path: Path) -> QImage:
-    """Cached 320x180 cropped thumbnail. Videos use a frame from 1s in (needs ffmpeg)."""
+    """Cached 288x162 cropped thumbnail. Videos use a frame from 1s in (needs ffmpeg)."""
     cached = _thumb_path(path)
     if cached.exists():
         return QImage(str(cached))

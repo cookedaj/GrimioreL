@@ -55,7 +55,7 @@ def render(design_id: str, o: dict, w=1280, h=720) -> QImage:
     border = {"None": 0, "No sides": 0, "Tiny": 2, "Normal": 4, "Large": 7}[o["border"]]
     bottom_border = 0 if o["border"] in ("None",) else max(border, 2 if o["border"] == "No sides" else border)
 
-    for k, (x, y, ww, hh, active) in enumerate(((150, 170, 760, 420, False), (330, 110, 800, 470, True))):
+    for x, y, ww, hh, active in ((150, 170, 760, 420, False), (330, 110, 800, 470, True)):
         win = QRectF(x, y, ww, hh)
         path = QPainterPath()
         path.addRoundedRect(win, 6, 6)

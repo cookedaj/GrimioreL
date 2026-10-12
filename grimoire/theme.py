@@ -31,7 +31,7 @@ QPushButton#RailItem:checked { background: #1e1e1e; }
 QLabel#Tiny { color: #4a4a4a; font-size: 10px; }
 
 QFrame#SubNav, QScrollArea > QWidget > QWidget#SubNav { background: #070707; }
-QScrollArea { border: none; }
+QScrollArea { border: none; background: transparent; }
 QFrame#SubNav { border-right: 1px solid #161616; }
 QLabel#NavSection { color: #555555; font-size: 10px; font-weight: 700; padding: 6px 10px 4px 10px; }
 QPushButton#SubNavItem {
@@ -61,9 +61,9 @@ QPushButton#Segment {
 }
 QPushButton#Segment[pos="first"] { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
 QPushButton#Segment[pos="last"] { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+QPushButton#Segment[pos="mid"] { border-left: none; }
 QPushButton#Segment:checked { background: #f2f2f2; color: #000000; border-color: #f2f2f2; }
 
-QPushButton#Segment[pos="mid"] { border-left: none; }
 QPushButton#Link { border: none; text-align: left; padding: 4px 6px; color: #d0d0d0; }
 QPushButton#Link:hover { color: #ffffff; text-decoration: underline; }
 QTableWidget, QTreeWidget { background: #0b0b0b; border: 1px solid #1c1c1c; border-radius: 8px; gridline-color: #1a1a1a; }
@@ -114,7 +114,6 @@ QSlider::groove:horizontal { height: 2px; background: #2a2a2a; }
 QSlider::sub-page:horizontal { background: #d0d0d0; }
 QSlider::handle:horizontal { background: #f2f2f2; width: 14px; height: 14px; margin: -6px 0; border-radius: 7px; }
 QSlider::handle:horizontal:disabled { background: #444; }
-QScrollArea { background: transparent; }
 
 QScrollBar:vertical { background: transparent; width: 8px; margin: 0; }
 QScrollBar::handle:vertical { background: #2a2a2a; border-radius: 4px; min-height: 30px; }

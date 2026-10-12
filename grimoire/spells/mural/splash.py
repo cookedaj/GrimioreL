@@ -1,4 +1,5 @@
-"""Splash tab: 5 animated splash screens (shown after login), installed as one Plasma look-and-feel package.
+"""Splash tab: Grimoire's animated splash (shown after login), installed as a Plasma look-and-feel package,
+plus community splash screens.
 
 Templates live in splash_designs/<id>.qml with these placeholders:
     @TAGLINE@ (JSON string)  @SHOW_TAGLINE@ (true/false)  @SPEED@ (0.6 slow … 1.6 fast)

@@ -1,4 +1,4 @@
-"""Cursor tab: the 5 black & white cursor themes on this system, at any size.
+"""Cursor tab: black & white cursor themes on this system and from the store, at any size.
 Previews are drawn from the real cursor files (a tiny Xcursor reader), on black and on white.
 """
 import struct

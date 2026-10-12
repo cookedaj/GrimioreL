@@ -3,13 +3,13 @@
 #   - links the launcher into ~/.local/bin
 #   - adds an app-menu entry
 #   - links the MuraL wallpaper plugin into Plasma
-# Requires (apt): python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick}
+# Requires (apt): python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick} python3-pil
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
-python3 -c "import PySide6.QtWidgets" 2>/dev/null || {
-    echo "PySide6 missing. Run:"
-    echo "  sudo apt install python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets python3-pyside6.qtsvg python3-pyside6.qtdbus python3-pyside6.qtqml python3-pyside6.qtquick"
+python3 -c "import PySide6.QtWidgets, PIL" 2>/dev/null || {
+    echo "PySide6 or Pillow missing. Run:"
+    echo "  sudo apt install python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets python3-pyside6.qtsvg python3-pyside6.qtdbus python3-pyside6.qtqml python3-pyside6.qtquick python3-pil"
     exit 1
 }
 

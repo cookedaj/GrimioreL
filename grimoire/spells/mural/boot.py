@@ -1,4 +1,4 @@
-"""Boot tab: 5 Plymouth boot animations, built on Plymouth's stock "two-step" engine
+"""Boot tab: Grimoire's Plymouth boot animation, built on Plymouth's stock "two-step" engine
 (the one Kubuntu's own logo uses), so password prompts and messages keep working.
 
 Each design is a looping throbber rendered here frame by frame; installing needs root (pkexec).

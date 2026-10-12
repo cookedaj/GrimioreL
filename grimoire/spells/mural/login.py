@@ -1,4 +1,5 @@
-"""Login tab: the SDDM login screen, one "grimoire" theme with 5 layouts.
+"""Login tab: the SDDM login screen, Grimoire's own "grimoire" theme (Card layout) plus
+community themes.
 
 Applying needs root, so it goes through pkexec (a password prompt) and root-helper.sh.
 """

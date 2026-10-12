@@ -32,15 +32,18 @@ def start():
         return
     repo = Path(__file__).resolve().parents[3]
     env = dict(os.environ, PYTHONPATH=f"{repo}:{os.environ.get('PYTHONPATH', '')}".rstrip(":"))
-    log = open(CACHE / "sightc.log", "w")
-    subprocess.Popen([sys.executable, "-m", "grimoire.spells.sightc.overlay", "run"], env=env,
-                     stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
+    with open(CACHE / "sightc.log", "w") as log:          # the child keeps its own copy of the handle
+        subprocess.Popen([sys.executable, "-m", "grimoire.spells.sightc.overlay", "run"], env=env,
+                         stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
 
 
 def stop():
     pid = running_pid()
     if pid:
-        os.kill(pid, signal.SIGTERM)
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:                         # it exited on its own just now
+            pass
     PID.unlink(missing_ok=True)
 
 
@@ -117,7 +120,7 @@ def run():
     # sightc.json is replaced atomically, so watch the folder rather than the file
     watcher = QFileSystemWatcher([str(CONFIG)])
     watcher.directoryChanged.connect(lambda _: item.reload())
-    hotkey = register_hotkey(lambda: item.setVisible(not item.isVisible()))
+    _hotkey = register_hotkey(lambda: item.setVisible(not item.isVisible()))   # keep a reference alive
 
     PID.write_text(str(os.getpid()))
     signal.signal(signal.SIGTERM, lambda *_: app.quit())

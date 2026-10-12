@@ -1,4 +1,4 @@
-"""Terminal tab: Konsole in black & white. 5 grayscale palettes + font, size, transparency, padding,
+"""Terminal tab: Konsole in black & white. a grayscale palette (Ink) + font, size, transparency, padding,
 cursor, and an optional shell prompt.
 
 Writes ~/.local/share/konsole/Grimoire.profile + Grimoire-<palette>.colorscheme, makes Grimoire the default
