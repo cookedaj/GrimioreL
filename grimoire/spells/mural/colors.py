@@ -3,8 +3,6 @@
 Generates ~/.local/share/color-schemes/Grimoire<Name>.colors and applies it with plasma-apply-colorscheme.
 Every role (links, warnings, focus…) maps to a gray, so nothing on screen keeps a hue.
 """
-import subprocess
-
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPainterPath
 from PySide6.QtWidgets import QComboBox, QGridLayout, QLabel, QPushButton
@@ -278,5 +276,8 @@ class ColorsTab(ScreenTab):
 
     def _restore(self):
         prev = PREVIOUS.read_text().strip() if PREVIOUS.exists() else "BreezeDark"
-        r = subprocess.run(["plasma-apply-colorscheme", prev], capture_output=True, text=True)
-        self.status.setText(f"Restored {prev}." if r.returncode == 0 else f"Couldn't restore: {r.stderr.strip()}")
+
+        def work():
+            run_tool(["plasma-apply-colorscheme", prev])
+            return f"Restored {prev}."
+        self.background(work, "Restoring…")

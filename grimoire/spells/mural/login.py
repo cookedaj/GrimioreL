@@ -137,9 +137,7 @@ class LoginTab(ScreenTab):
         return "Installed ✓  You'll see it next time you log out or reboot."
 
     def _restore(self):
-        try:
+        def work():
             run_root("sddm-restore")
-        except RuntimeError as e:
-            self.status.setText(f"Couldn't restore: {e}")
-            return
-        self.status.setText("Previous login screen restored.")
+            return "Previous login screen restored."
+        self.background(work, "Waiting for your password…")

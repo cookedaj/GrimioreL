@@ -237,7 +237,8 @@ class TaskbarTab(ScreenTab):
         if not ORIGINAL.exists():
             self.status.setText("Nothing to restore — the taskbar hasn't been changed by MuraL.")
             return
-        try:
+
+        def work():                             # may restart plasmashell, so it runs off the UI thread
             original = json.loads(ORIGINAL.read_text())
             style = original.pop("style", None)
             opacity = original.pop("opacity", 0)
@@ -245,8 +246,5 @@ class TaskbarTab(ScreenTab):
             write_panel(original)
             if style:
                 subprocess.run(["plasma-apply-desktoptheme", style], capture_output=True)
-        except (RuntimeError, subprocess.CalledProcessError) as e:
-            self.status.setText(f"Couldn't restore: {e}")
-            return
-        self.status.setText("Original taskbar restored.")
-
+            return "Original taskbar restored."
+        self.background(work, "Restoring…")

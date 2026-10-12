@@ -9,6 +9,7 @@ A tab subclasses ScreenTab and implements:
     preview(design, options) -> QImage (16:9) for the big preview      } called on worker threads:
     thumbnail(design, options) -> QImage for the gallery card         } must not touch widgets
     apply(design, options)   -> do it; return a status message; raise RuntimeError on failure (worker thread)
+Slow extra actions (e.g. a "Restore" button) go through self.background(fn, busy_text) so the window never freezes.
 """
 import json
 import threading
@@ -86,6 +87,7 @@ def placeholder(size: QSize = THUMB) -> QPixmap:
 class _Signals(QObject):
     image = Signal(int, str, QImage)          # generation, slot ("big" or design index), image
     applied = Signal(bool, str)               # ok, message
+    finished = Signal(str)                    # message from a background() action
 
 
 _render_locks: dict[str, threading.Lock] = {}
@@ -116,6 +118,7 @@ class ScreenTab(QWidget):
         self._sig = _Signals()
         self._sig.image.connect(self._on_image)
         self._sig.applied.connect(self._on_applied)
+        self._sig.finished.connect(self._on_finished)
         self._render_timer = QTimer(self, singleShot=True, interval=150, timeout=self._rerender)
 
         root = QHBoxLayout(self)
@@ -351,7 +354,7 @@ class ScreenTab(QWidget):
         def work():
             try:
                 return True, self.apply(d, opts) or "Applied ✓"
-            except (RuntimeError, OSError) as e:
+            except Exception as e:        # anything else would leave the button stuck on "Applying…"
                 return False, f"Couldn't apply: {e}"
 
         POOL.start(Job(work, lambda result: sig.applied.emit(*result)))
@@ -364,3 +367,21 @@ class ScreenTab(QWidget):
             self.applied = d.id
             save_state(self.key, {"design": d.id, "options": opts})
             self._label_in_use()
+
+    def background(self, fn, busy: str, failed: str = "Couldn't restore"):
+        """Run fn() (returns a status message, raises on failure) on a worker thread, Apply disabled meanwhile."""
+        sig = self._sig
+        self.apply_btn.setEnabled(False)
+        self.status.setText(busy)
+
+        def work():
+            try:
+                return fn()
+            except Exception as e:
+                return f"{failed}: {e}"
+
+        POOL.start(Job(work, lambda msg: sig.finished.emit(msg)))
+
+    def _on_finished(self, msg: str):
+        self.apply_btn.setEnabled(True)
+        self.status.setText(msg)

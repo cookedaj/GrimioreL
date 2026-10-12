@@ -246,10 +246,8 @@ class BootTab(ScreenTab):
         return "Installed ✓  You'll see it on your next reboot."
 
     def _restore(self):
-        try:
+        def work():
             run_root("plymouth-restore")
-        except RuntimeError as e:
-            self.status.setText(f"Couldn't restore: {e}")
-            return
-        self.status.setText("Previous boot screen restored.")
+            return "Previous boot screen restored."
+        self.background(work, "Restoring… enter your password, then this takes about a minute.")
 
