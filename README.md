@@ -7,6 +7,7 @@ One app, one look: a slim icon rail, monochrome line icons, and every spell buil
 |---|---|
 | **MuraL** | Customize everything you look at: desktop wallpaper & crossfading playlists (images and video), lock screen, splash, login (SDDM), boot (Plymouth), taskbar, Plasma style, window title bars, motion/effects, colors, icons, fonts, cursor and terminal. Every tab has live previews, and a **Community** view with the top 100 from the KDE Store and Wallhaven, installable in one click. |
 | **SightsL** | A crosshair overlay drawn above every window and fullscreen game (KDE layer-shell), fully click-through. Many styles, outline, offsets, live updates, and a global hotkey (Ctrl+Alt+X) to hide it. |
+| **FileL** | A file manager that can replace Dolphin: places & drives sidebar, breadcrumbs, grid with image thumbnails or a details list, preview panel, Trash with restore, KDE-compatible copy/cut/paste, Dolphin's keyboard shortcuts. Runs inside Grimoire or as its own window, and can be set as the default for opening folders. |
 | **TidyL** | Keeps `~/Downloads` sorted by file type in the background, sends stale installers/archives to the Trash, finds big files and duplicates. Never deletes: everything goes to the Trash, and every move can be undone. |
 
 ## Requirements
@@ -27,7 +28,11 @@ cd Grimoire
 grimoire              # or open "Grimoire" from the app menu
 ```
 
-Command-line helpers: `grimoire-sightc on|off|toggle`, `grimoire-tidyl run|undo|enable|disable|status`.
+Command-line helpers: `grimoire-sightc on|off|toggle`, `grimoire-tidyl run|undo|enable|disable|status`,
+`grimoire-filel [folder]`.
+
+To make FileL the default file manager: `xdg-mime default grimoire-filel.desktop inode/directory`
+(switch back any time in System Settings → Default Applications → File manager).
 
 ## How it works
 
@@ -40,6 +45,8 @@ Command-line helpers: `grimoire-sightc on|off|toggle`, `grimoire-tidyl run|undo|
   (no absolute paths, no `..`, regular files only, size-capped) and only theme files are copied into place.
   Community login/boot themes run code at login/boot, so prefer popular, well-rated ones.
 - **SightsL** runs a small layer-shell overlay process and registers its hotkey with KGlobalAccel.
+- **FileL** uses the same system underneath (Qt's `QFileSystemModel`, the freedesktop Trash that Dolphin uses,
+  KDE's clipboard format), so files, Trash and clipboard are shared with every other KDE app.
 - **TidyL** runs as a systemd user timer every 10 minutes; rules live in `~/.config/grimoire/tidyl.json`.
 
 ## Layout
@@ -50,6 +57,7 @@ grimoire/            the app (PySide6)
   glyphs.py          monochrome line icons drawn in code
   spells/mural/      MuraL tabs, store, previews, root helper, SDDM theme, splash templates
   spells/sightc/     SightsL overlay + page
+  spells/filel/      FileL page, file operations, standalone window
   spells/tidyl/      TidyL engine, CLI/timer, page
 plasma/              the MuraL wallpaper plugin
 bin/                 launchers

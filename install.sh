@@ -13,11 +13,12 @@ python3 -c "import PySide6.QtWidgets" 2>/dev/null || {
     exit 1
 }
 
-chmod +x "$DIR/bin/grimoire" "$DIR/bin/grimoire-sightc" "$DIR/bin/grimoire-tidyl"
+chmod +x "$DIR/bin/grimoire" "$DIR/bin/grimoire-sightc" "$DIR/bin/grimoire-tidyl" "$DIR/bin/grimoire-filel"
 mkdir -p ~/.local/bin ~/.local/share/applications ~/.local/share/plasma/wallpapers ~/.local/share/icons/hicolor/scalable/apps
 ln -sfn "$DIR/bin/grimoire" ~/.local/bin/grimoire
 ln -sfn "$DIR/bin/grimoire-sightc" ~/.local/bin/grimoire-sightc
 ln -sfn "$DIR/bin/grimoire-tidyl" ~/.local/bin/grimoire-tidyl
+ln -sfn "$DIR/bin/grimoire-filel" ~/.local/bin/grimoire-filel
 ln -sfn "$DIR/plasma/com.cookedaj.grimoire.mural" ~/.local/share/plasma/wallpapers/com.cookedaj.grimoire.mural
 cp "$DIR/grimoire/assets/clover5.svg" ~/.local/share/icons/hicolor/scalable/apps/grimoire.svg
 
@@ -45,5 +46,18 @@ Exec=$HOME/.local/bin/grimoire sightc
 Name=TidyL
 Exec=$HOME/.local/bin/grimoire tidyl
 EOF
+cat > ~/.local/share/applications/grimoire-filel.desktop <<DESKTOP
+[Desktop Entry]
+Type=Application
+Name=FileL
+GenericName=File Manager
+Comment=Grimoire's file manager
+Exec=$HOME/.local/bin/grimoire-filel %u
+Icon=grimoire
+Terminal=false
+Categories=Utility;System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupWMClass=grimoire-filel
+DESKTOP
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 echo "Grimoire installed. Launch it from the app menu or run: grimoire"

@@ -73,6 +73,24 @@ QHeaderView::section { background: #0e0e0e; color: #6f6f6f; border: none; border
                        padding: 8px; font-size: 11px; font-weight: 600; }
 QListWidget#Plain::item { padding: 6px; }
 
+QListWidget#Places { background: transparent; border: none; }
+QListWidget#Places::item { padding: 7px 8px; border-radius: 8px; color: #a8a8a8; border: none; }
+QListWidget#Places::item:hover { background: #101010; color: #ffffff; }
+QListWidget#Places::item:selected { background: #1a1a1a; color: #ffffff; }
+QFrame#Crumbs { background: #121212; border: 1px solid #262626; border-radius: 8px; }
+QPushButton#Crumb { border: none; padding: 4px 8px; color: #cfcfcf; border-radius: 6px; }
+QPushButton#Crumb:hover { background: #1e1e1e; color: #ffffff; }
+QToolButton#Tool { border: none; border-radius: 8px; padding: 6px; }
+QToolButton#Tool:hover { background: #151515; }
+QToolButton#Tool:checked { background: #1f1f1f; }
+QListView#FileGrid, QTreeView#FileDetails { background: #0b0b0b; border: none; }
+QTreeView#FileDetails::item { padding: 4px 2px; }
+QTreeView#FileDetails::item:selected { background: #222222; }
+QTreeView#FileDetails::item:hover { background: #121212; }
+QLabel#Mono { font-family: "IBM Plex Mono"; font-size: 11px; color: #a8a8a8; background: #080808;
+              border: 1px solid #1c1c1c; border-radius: 6px; padding: 8px; }
+QSplitter::handle { background: #1a1a1a; }
+
 QFrame#Card { background: #101010; border: 1px solid #1f1f1f; border-radius: 10px; }
 QFrame#Card:hover { border-color: #5a5a5a; }
 QFrame#CardSoon { background: transparent; border: 1px dashed #262626; border-radius: 10px; }

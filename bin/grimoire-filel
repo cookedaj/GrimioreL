@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# FileL, Grimoire's file manager: grimoire-filel [folder]
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m grimoire.spells.filel "$@"

@@ -175,10 +175,8 @@ class Window(QMainWindow):
         btn.setChecked(True)
 
 
-def main():
-    app = QApplication(sys.argv)
-    app.setApplicationName("Grimoire")
-    app.setDesktopFileName("grimoire")
+def style_app(app: QApplication):
+    """Grimoire's black & white look (also used by standalone spells like FileL)."""
     app.setWindowIcon(QIcon(str(ASSETS / "clover5.svg")))
     app.setStyle("Fusion")
     app.setFont(QFont(FONT, 10))
@@ -190,6 +188,13 @@ def main():
         pal.setColor(role, QColor(color))
     app.setPalette(pal)
     app.setStyleSheet(QSS)
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("Grimoire")
+    app.setDesktopFileName("grimoire")
+    style_app(app)
     win = Window()
     start = sys.argv[1] if len(sys.argv) > 1 else "home"
     win.open(start if start in win.pages else "home")

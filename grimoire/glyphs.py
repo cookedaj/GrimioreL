@@ -85,6 +85,59 @@ def _draw(name: str, p: QPainter):
         path.lineTo(15.5, 13); path.lineTo(20.5, 13); p.drawPath(path)
         for y, (a, b) in ((5, (7, 17)), (8, (8.5, 15.5)), (10.8, (10, 14))):
             p.drawLine(QPointF(a, y), QPointF(b, y))
+    elif name == "folder":
+        path = QPainterPath(QPointF(3.5, 7)); path.lineTo(3.5, 18.5); path.lineTo(20.5, 18.5); path.lineTo(20.5, 8.5)
+        path.lineTo(11.5, 8.5); path.lineTo(9.5, 5.5); path.lineTo(3.5, 5.5); path.closeSubpath(); p.drawPath(path)
+    elif name == "files":                                  # two stacked folders
+        path = QPainterPath(QPointF(5.5, 9)); path.lineTo(5.5, 19.5); path.lineTo(20.5, 19.5); path.lineTo(20.5, 10.5)
+        path.lineTo(12.5, 10.5); path.lineTo(11, 8); path.lineTo(5.5, 8); path.closeSubpath(); p.drawPath(path)
+        path = QPainterPath(QPointF(3, 16.5)); path.lineTo(3, 5); path.lineTo(8.5, 5); path.lineTo(10, 7)
+        p.drawPath(path)
+    elif name == "document":
+        path = QPainterPath(QPointF(6, 3.5)); path.lineTo(14, 3.5); path.lineTo(18.5, 8); path.lineTo(18.5, 20.5)
+        path.lineTo(6, 20.5); path.closeSubpath(); p.drawPath(path)
+        for y in (11, 14, 17):
+            p.drawLine(QPointF(8.5, y), QPointF(16, y))
+    elif name == "video":
+        p.drawRoundedRect(r(3, 6, 13, 12), 2, 2)
+        path = QPainterPath(QPointF(16, 10.5)); path.lineTo(21, 7.5); path.lineTo(21, 16.5); path.lineTo(16, 13.5)
+        p.drawPath(path)
+    elif name == "music":
+        p.drawLine(QPointF(9.5, 17), QPointF(9.5, 5)); p.drawLine(QPointF(9.5, 5), QPointF(18.5, 3.5))
+        p.drawLine(QPointF(18.5, 3.5), QPointF(18.5, 15.5))
+        p.drawEllipse(QPointF(7, 17.5), 2.5, 2.2); p.drawEllipse(QPointF(16, 16), 2.5, 2.2)
+    elif name == "trash":
+        p.drawLine(QPointF(4, 6.5), QPointF(20, 6.5))
+        path = QPainterPath(QPointF(9, 6.5)); path.lineTo(9.5, 4); path.lineTo(14.5, 4); path.lineTo(15, 6.5); p.drawPath(path)
+        path = QPainterPath(QPointF(6, 6.5)); path.lineTo(7, 20.5); path.lineTo(17, 20.5); path.lineTo(18, 6.5); p.drawPath(path)
+        p.drawLine(QPointF(10, 10), QPointF(10.3, 17)); p.drawLine(QPointF(14, 10), QPointF(13.7, 17))
+    elif name == "drive":
+        p.drawRoundedRect(r(3, 7, 18, 10), 2, 2)
+        p.drawLine(QPointF(6, 12), QPointF(12, 12)); p.drawPoint(QPointF(17.5, 12))
+    elif name in ("back", "forward"):
+        d = -1 if name == "back" else 1
+        path = QPainterPath(QPointF(12 - 3.5 * d, 6)); path.lineTo(12 + 3.5 * d, 12); path.lineTo(12 - 3.5 * d, 18)
+        p.drawPath(path)
+    elif name == "up":
+        path = QPainterPath(QPointF(6, 14.5)); path.lineTo(12, 8.5); path.lineTo(18, 14.5); p.drawPath(path)
+    elif name == "grid":
+        for x in (4.5, 13.5):
+            for y in (4.5, 13.5):
+                p.drawRect(r(x, y, 6, 6))
+    elif name == "list":
+        for y in (6.5, 12, 17.5):
+            p.drawLine(QPointF(8.5, y), QPointF(20, y)); p.drawPoint(QPointF(4.5, y))
+    elif name == "search":
+        p.drawEllipse(QPointF(10.5, 10.5), 6, 6); p.drawLine(QPointF(15, 15), QPointF(20, 20))
+    elif name == "hidden":                                 # an eye
+        path = QPainterPath(QPointF(3, 12)); path.quadTo(12, 3.5, 21, 12); path.quadTo(12, 20.5, 3, 12); p.drawPath(path)
+        p.drawEllipse(QPointF(12, 12), 2.8, 2.8)
+    elif name == "preview":                                # panel on the right
+        p.drawRoundedRect(r(3, 4.5, 18, 15), 2, 2); p.drawLine(QPointF(14, 4.5), QPointF(14, 19.5))
+    elif name == "newfolder":
+        path = QPainterPath(QPointF(3.5, 7)); path.lineTo(3.5, 18.5); path.lineTo(20.5, 18.5); path.lineTo(20.5, 8.5)
+        path.lineTo(11.5, 8.5); path.lineTo(9.5, 5.5); path.lineTo(3.5, 5.5); path.closeSubpath(); p.drawPath(path)
+        p.drawLine(QPointF(12, 11), QPointF(12, 16.5)); p.drawLine(QPointF(9.25, 13.75), QPointF(14.75, 13.75))
     elif name == "store":                                  # download tray
         p.drawLine(QPointF(12, 4), QPointF(12, 14))
         path = QPainterPath(QPointF(8, 10.5)); path.lineTo(12, 14.5); path.lineTo(16, 10.5); p.drawPath(path)

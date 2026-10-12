@@ -51,10 +51,17 @@ def _tidyl_status() -> str:
     return ("Auto-tidy on" if cli.timer_active() else "Auto-tidy off") + f" · {moved} file(s) sorted so far"
 
 
+def _filel():
+    from grimoire.spells.filel.page import FileLPage
+    return FileLPage()
+
+
 SPELLS = [
     Spell("mural", "MuraL", "Every screen and surface: wallpaper, lock, login, boot, taskbar, windows, colors, "
           "icons, fonts, cursor, terminal, plus the community store", _mural, "mural", _mural_status),
     Spell("sightc", "SightsL", "Crosshair overlay above every game, click-through", _sightc, "sight", _sightc_status),
+    Spell("filel", "FileL", "Your file manager: places, drives, thumbnails, previews, trash with restore; "
+          "opens whenever you open a folder", _filel, "files", lambda: "Default file manager"),
     Spell("tidyl", "TidyL", "Keeps Downloads sorted, clears stale installers, finds big files and duplicates",
           _tidyl, "tidy", _tidyl_status),
 ]
