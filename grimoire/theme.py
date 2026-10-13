@@ -27,6 +27,12 @@ QPushButton#Primary { background: #f2f2f2; color: #000000; border: none; font-we
 QPushButton#Primary:hover { background: #ffffff; }
 QPushButton#Primary:disabled { background: #2a2a2a; color: #555555; }
 
+QPushButton#Pill { border-radius: 13px; padding: 4px 14px; font-size: 11px; min-height: 16px; }
+QPushButton#Pill[on="false"] { background: #f2f2f2; color: #000000; border: 1px solid #f2f2f2; border-radius: 13px; font-weight: 600; }
+QPushButton#Pill[on="false"]:hover { background: #ffffff; border-color: #ffffff; }
+QPushButton#Pill[on="true"] { color: #8c8c8c; border-color: #2a2a2a; }
+QPushButton#Pill[on="true"]:hover { color: #ffffff; border-color: #8a8a8a; }
+
 QWidget#Rail { background: #030303; border-right: 1px solid #161616; }
 QPushButton#RailItem { border: none; border-radius: 12px; padding: 0; background: transparent; }
 QPushButton#RailItem:hover { background: #121212; }

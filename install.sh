@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Install Grimoire for the current user (no sudo). Re-run any time; it only (re)creates links.
 #   - links the launcher into ~/.local/bin
-#   - adds an app-menu entry
+#   - adds an app-menu entry, plus FileL's (each spell's Install button on the home page adds its own;
+#     ./install.sh --all adds every spell's launcher)
 #   - links the MuraL wallpaper plugin into Plasma
 # Requires (apt): python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick} python3-pil
 set -euo pipefail
@@ -13,12 +14,9 @@ python3 -c "import PySide6.QtWidgets, PIL" 2>/dev/null || {
     exit 1
 }
 
-chmod +x "$DIR/bin/grimoire" "$DIR/bin/grimoire-sightc" "$DIR/bin/grimoire-tidyl" "$DIR/bin/grimoire-filel"
+chmod +x "$DIR"/bin/grimoire*
 mkdir -p ~/.local/bin ~/.local/share/applications ~/.local/share/plasma/wallpapers ~/.local/share/icons/hicolor/scalable/apps
-ln -sfn "$DIR/bin/grimoire" ~/.local/bin/grimoire
-ln -sfn "$DIR/bin/grimoire-sightc" ~/.local/bin/grimoire-sightc
-ln -sfn "$DIR/bin/grimoire-tidyl" ~/.local/bin/grimoire-tidyl
-ln -sfn "$DIR/bin/grimoire-filel" ~/.local/bin/grimoire-filel
+for cmd in "$DIR"/bin/grimoire*; do ln -sfn "$cmd" ~/.local/bin/"$(basename "$cmd")"; done
 ln -sfn "$DIR/plasma/com.cookedaj.grimoire.mural" ~/.local/share/plasma/wallpapers/com.cookedaj.grimoire.mural
 cp "$DIR/grimoire/assets/clover5.svg" ~/.local/share/icons/hicolor/scalable/apps/grimoire.svg
 
@@ -46,18 +44,10 @@ Exec=$HOME/.local/bin/grimoire sightc
 Name=TidyL
 Exec=$HOME/.local/bin/grimoire tidyl
 EOF
-cat > ~/.local/share/applications/grimoire-filel.desktop <<DESKTOP
-[Desktop Entry]
-Type=Application
-Name=FileL
-GenericName=File Manager
-Comment=Grimoire's file manager
-Exec=$HOME/.local/bin/grimoire-filel %u
-Icon=grimoire
-Terminal=false
-Categories=Utility;System;FileTools;FileManager;
-MimeType=inode/directory;
-StartupWMClass=grimoire-filel
-DESKTOP
+# standalone spells: FileL always (it's the default folder handler), the rest when installed or with --all
+standalone() { PYTHONPATH="$DIR" QT_QPA_PLATFORM=offscreen python3 -m grimoire.standalone "$@"; }
+standalone install filel >/dev/null
+standalone refresh
+[ "${1:-}" = "--all" ] && standalone install all
 update-desktop-database ~/.local/share/applications 2>/dev/null || true
 echo "Grimoire installed. Launch it from the app menu or run: grimoire"

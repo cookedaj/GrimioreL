@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# TidyL: grimoire-tidyl [run|undo|enable|disable|status]
+# TidyL: grimoire-tidyl opens its window; grimoire-tidyl run|undo|enable|disable|status works from the terminal
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m grimoire.spells.tidyl.cli "${1:-run}"
+[ $# -eq 0 ] && exec python3 -m grimoire.standalone tidyl
+exec python3 -m grimoire.spells.tidyl.cli "$1"

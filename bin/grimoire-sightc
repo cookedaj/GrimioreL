@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# SightsL crosshair overlay control: grimoire-sightc [on|off|toggle|next|status]
+# SightsL: grimoire-sightc opens its window; grimoire-sightc on|off|toggle|next|status controls the overlay
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m grimoire.spells.sightc.overlay "${1:-toggle}"
+[ $# -eq 0 ] && exec python3 -m grimoire.standalone sightc
+exec python3 -m grimoire.spells.sightc.overlay "$1"

@@ -5,9 +5,9 @@ from datetime import datetime
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QFont, QIcon, QPalette
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QFrame, QGridLayout, QHBoxLayout, QLabel, QMainWindow,
-                               QPushButton, QStackedWidget, QVBoxLayout, QWidget)
+                               QMessageBox, QPushButton, QStackedWidget, QVBoxLayout, QWidget)
 
-from grimoire import __version__
+from grimoire import __version__, standalone
 from grimoire.glyphs import clover, glyph
 from grimoire.paths import ASSETS
 from grimoire.spells import SPELLS
@@ -20,6 +20,47 @@ def spaced(text: str, size: int, spacing: float, weight=QFont.Weight.DemiBold) -
     font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, spacing)
     label.setFont(font)
     return label
+
+
+class InstallButton(QPushButton):
+    """Top-right of a spell card: installs the spell as its own app in the menu; once installed it reads
+    "Installed" and offers "Uninstall" on hover."""
+    def __init__(self, spell):
+        super().__init__()
+        self.setObjectName("Pill")
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.spell = spell
+        self.clicked.connect(self._toggle)
+        self._show(False)
+
+    def _show(self, hover: bool):
+        on = standalone.installed(self.spell.id)
+        self.setProperty("on", on)
+        self.setText(("Uninstall" if hover else "Installed") if on else "Install")
+        self.setToolTip(f"{'Remove' if on else 'Add'} {self.spell.name} as its own app in the app menu")
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+    def enterEvent(self, e):
+        self._show(True)
+        super().enterEvent(e)
+
+    def leaveEvent(self, e):
+        self._show(False)
+        super().leaveEvent(e)
+
+    def _toggle(self):
+        sid = self.spell.id
+        try:
+            if not standalone.installed(sid):
+                standalone.install(sid)
+            elif sid != "filel" or QMessageBox.question(
+                    self, "Uninstall FileL", "Remove FileL from the app menu? Folders will open in "
+                    "your other file manager until you install it again.") == QMessageBox.StandardButton.Yes:
+                standalone.uninstall(sid)
+        except (OSError, ValueError) as err:
+            QMessageBox.warning(self, self.spell.name, f"Couldn't change the launcher: {err}")
+        self._show(self.underMouse())
 
 
 class SpellCard(QFrame):
@@ -40,6 +81,8 @@ class SpellCard(QFrame):
         top.addSpacing(8)
         top.addWidget(spaced(spell.name.upper(), 14, 4))
         top.addStretch(1)
+        if standalone.available(spell.id):
+            top.addWidget(InstallButton(spell))
         lay.addLayout(top)
         tag = QLabel(spell.tagline)
         tag.setObjectName("Muted")

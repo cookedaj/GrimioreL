@@ -28,6 +28,10 @@ cd Grimoire
 grimoire              # or open "Grimoire" from the app menu
 ```
 
+Every spell also runs as its own app: press **Install** on its card on the home page (or run
+`./install.sh --all`) to add it to the app menu, or run `grimoire-mural`, `grimoire-sightc`, `grimoire-tidyl`,
+`grimoire-filel` directly.
+
 Command-line helpers: `grimoire-sightc on|off|toggle|next`, `grimoire-tidyl run|undo|enable|disable|status`,
 `grimoire-filel [folder]`.
 
