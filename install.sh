@@ -30,7 +30,7 @@ Exec=$HOME/.local/bin/grimoire %u
 Icon=grimoire
 Categories=Utility;Settings;
 StartupWMClass=grimoire
-Actions=mural;sightc;tidyl;
+Actions=mural;sightc;tidyl;optimizel;
 
 [Desktop Action mural]
 Name=MuraL
@@ -43,6 +43,10 @@ Exec=$HOME/.local/bin/grimoire sightc
 [Desktop Action tidyl]
 Name=TidyL
 Exec=$HOME/.local/bin/grimoire tidyl
+
+[Desktop Action optimizel]
+Name=OptimizeL
+Exec=$HOME/.local/bin/grimoire optimizel
 EOF
 # standalone spells: FileL always (it's the default folder handler), the rest when installed or with --all
 standalone() { PYTHONPATH="$DIR" QT_QPA_PLATFORM=offscreen python3 -m grimoire.standalone "$@"; }

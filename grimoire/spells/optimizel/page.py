@@ -51,10 +51,13 @@ class Row(QFrame):
         top.setSpacing(8)
         self.title = _label(t.title, "RowTitle")
         top.addWidget(self.title)
-        self.badges = QHBoxLayout()
+        holder = QWidget()                 # in a narrow window badges get clipped, never the switch
+        holder.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.badges = QHBoxLayout(holder)
+        self.badges.setContentsMargins(0, 0, 0, 0)
         self.badges.setSpacing(6)
-        top.addLayout(self.badges)
-        top.addStretch(1)
+        self.badges.addStretch(1)
+        top.addWidget(holder, 1)
         text.addLayout(top)
         self.why = _label(t.why, "Muted", wrap=True)
         text.addWidget(self.why)
@@ -74,20 +77,24 @@ class Row(QFrame):
         """info is one scan result; pending is the staged on/off, or None when nothing is staged."""
         self.state = info["state"]
         on = self.state == "on"
-        while self.badges.count():
-            w = self.badges.takeAt(0).widget()
-            w.deleteLater()
+        while self.badges.count() > 1:      # keep the trailing stretch
+            self.badges.takeAt(0).widget().deleteLater()
+        badges = []
         if info["note"]:
-            self.badges.addWidget(_badge(info["note"], solid=True))
+            badges.append(_badge(info["note"], solid=True))
         if self.state in ("on", "off"):
             if self.t.when != "now":
-                self.badges.addWidget(_badge(tweaks.WHEN[self.t.when]))
+                badges.append(_badge(tweaks.WHEN[self.t.when]))
             if self.t.root:
-                self.badges.addWidget(_badge("Password"))
+                badges.append(_badge("Password"))
             if self.t.installs and self.state == "off":
-                self.badges.addWidget(_badge(f"Installs {self.t.installs}"))
+                b = _badge("Installs a package")
+                b.setToolTip(f"Turning this on installs {self.t.installs} from Ubuntu's archive")
+                badges.append(b)
             if self.t.recommended and self.state == "off":
-                self.badges.addWidget(_badge("Recommended"))
+                badges.append(_badge("Recommended"))
+        for i, b in enumerate(badges):
+            self.badges.insertWidget(i, b)
 
         live = info["current"]
         if self.state == "na":
