@@ -132,5 +132,32 @@ QScrollBar::add-line, QScrollBar::sub-line { height: 0; width: 0; }
 QMenu { background: #121212; border: 1px solid #262626; padding: 4px; }
 QMenu::item { padding: 6px 18px; border-radius: 4px; }
 QMenu::item:selected { background: #2a2a2a; }
+QFrame#Row { background: #0f0f0f; border: 1px solid #1c1c1c; border-radius: 10px; }
+QFrame#Row:hover { border-color: #333333; }
+QFrame#Row[pending="true"] { border: 1px solid #f2f2f2; }
+QFrame#Row[muted="true"] { background: transparent; border: 1px solid #161616; }
+QLabel#RowTitle { font-size: 14px; font-weight: 600; color: #ffffff; }
+QLabel#RowTitle[muted="true"] { color: #8c8c8c; }
+QLabel#Value { font-family: "IBM Plex Mono"; font-size: 11px; color: #6f6f6f; }
+QLabel#Badge { font-size: 9px; font-weight: 600; letter-spacing: 1px; color: #8c8c8c; border: 1px solid #2a2a2a;
+               border-radius: 4px; padding: 1px 6px; }
+QLabel#BadgeSolid { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #000000; background: #f2f2f2;
+                    border-radius: 4px; padding: 2px 7px; }
+QLabel#Done { color: #6f6f6f; font-size: 12px; padding-right: 4px; }
+QLabel#SectionTitle { font-size: 17px; font-weight: 600; color: #ffffff; }
+QLabel#GoodLine { color: #6f6f6f; font-size: 12px; }
+QLabel#NavName { color: #9a9a9a; }
+QLabel#NavName[on="true"] { color: #ffffff; }
+QLabel#NavCount { font-family: "IBM Plex Mono"; font-size: 11px; color: #555555; }
+QFrame#Stat { background: #0f0f0f; border: 1px solid #1c1c1c; border-radius: 10px; }
+QLabel#StatNum { font-size: 28px; font-weight: 300; color: #ffffff; }
+QLabel#StatLabel { font-size: 10px; font-weight: 600; letter-spacing: 2px; color: #6f6f6f; }
+QFrame#Pending { background: #f2f2f2; border-radius: 10px; }
+QLabel#PendingText { color: #000000; font-weight: 500; }
+QFrame#Pending QPushButton { color: #000000; border: 1px solid #b5b5b5; background: transparent; }
+QFrame#Pending QPushButton:hover { border-color: #000000; }
+QFrame#Pending QPushButton#Primary { background: #000000; color: #ffffff; border: none; }
+QFrame#Pending QPushButton#Primary:disabled, QFrame#Pending QPushButton:disabled { color: #8c8c8c; background: #d6d6d6; }
+QLabel#Toast { color: #e8e8e8; background: #141414; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px 14px; }
 QToolTip { background: #121212; color: #e8e8e8; border: 1px solid #333; }
 """.replace("@ASSETS@", ASSETS.as_posix())

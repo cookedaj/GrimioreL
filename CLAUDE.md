@@ -10,6 +10,7 @@ Public repo: github.com/cookedaj/Grimoire. Runs on the owner's own Kubuntu 26.04
 | SightsL | `grimoire/spells/sightc/` | layer-shell crosshair overlay (`overlay.py`/`overlay.qml`), drawing in `draw.py`, settings/presets/profiles in `config.py`, hotkeys via KGlobalAccel |
 | FileL | `grimoire/spells/filel/` | file manager; `page.py` UI, `ops.py` operations, `__main__.py` standalone window (default for inode/directory) |
 | TidyL | `grimoire/spells/tidyl/` | Downloads sorter; `engine.py`, `cli.py` (systemd user timer `grimoire-tidyl.timer`) |
+| OptimizeL | `grimoire/spells/optimizel/` | speed tweaks as persistent on/off switches; catalog + detection in `tweaks.py`, system ones in its own whitelisted `root-helper.sh` (test with `OPTIMIZEL_ROOT=<sandbox> OPTIMIZEL_DRY=1`) |
 
 Shell: `grimoire/app.py` (icon rail, home, `style_app()`), icons drawn in code in `grimoire/glyphs.py`, styles in
 `grimoire/theme.py` (QSS). New spells register in `grimoire/spells/__init__.py` (`Spell(id, name, tagline, page, icon,
@@ -24,7 +25,8 @@ status)`). Folder names stay as-is when display names change (e.g. SightsL lives
 ## Safety rules
 - Never permanently delete user files: use the Trash (`gio trash`, or the freedesktop spec as in `filel/ops.py`);
   never overwrite on name clashes (`free_name()` → "name (2).ext").
-- Anything needing root goes through `grimoire/spells/mural/root-helper.sh` via `pkexec` (validates input, backs up).
+- Anything needing root goes through a spell's `root-helper.sh` via `pkexec` (MuraL's or OptimizeL's: whitelisted
+  actions, validated input, old values backed up).
 - Simulate package removals (`apt-get -s`) before suggesting them; never let `kubuntu-desktop` or IBM Plex fonts go.
 - Community store downloads happen only on the user's Install click; keep the defensive extraction in `store.py`.
 - Never commit personal info: author `cookedaj` with the GitHub noreply email; no `/home/<user>` paths or real names.

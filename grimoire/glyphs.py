@@ -143,6 +143,12 @@ def _draw(name: str, p: QPainter):
         path = QPainterPath(QPointF(8, 10.5)); path.lineTo(12, 14.5); path.lineTo(16, 10.5); p.drawPath(path)
         path = QPainterPath(QPointF(4.5, 15)); path.lineTo(4.5, 19.5); path.lineTo(19.5, 19.5); path.lineTo(19.5, 15)
         p.drawPath(path)
+    elif name == "optimize":                               # speedometer: an open dial with the needle up high
+        path = QPainterPath(); path.arcMoveTo(r(3.5, 5, 17, 17), 200); path.arcTo(r(3.5, 5, 17, 17), 200, -220)
+        p.drawPath(path)
+        p.drawLine(QPointF(12, 13.5), QPointF(16.2, 8.6)); p.drawEllipse(QPointF(12, 13.5), 1.3, 1.3)
+    elif name == "check":
+        path = QPainterPath(QPointF(5, 12.5)); path.lineTo(10, 17.5); path.lineTo(19, 7); p.drawPath(path)
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:

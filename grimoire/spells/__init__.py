@@ -56,6 +56,19 @@ def _filel():
     return FileLPage()
 
 
+def _optimizel():
+    from grimoire.spells.optimizel.page import OptimizeLPage
+    return OptimizeLPage()
+
+
+def _optimizel_status() -> str:
+    from grimoire.spells.optimizel import tweaks
+    saved = tweaks.load_saved()
+    on = sum(t.is_on() for t in tweaks.TWEAKS)
+    waiting = sum(bool(tweaks.pending_note(t, saved)) for t in tweaks.TWEAKS)
+    return f"{on} of {len(tweaks.TWEAKS)} optimizations on" + (f" · restart to finish {waiting}" if waiting else "")
+
+
 SPELLS = [
     Spell("mural", "MuraL", "Every screen and surface: wallpaper, lock, login, boot, taskbar, windows, colors, "
           "icons, fonts, cursor, terminal, plus the community store", _mural, "mural", _mural_status),
@@ -64,4 +77,7 @@ SPELLS = [
           "opens whenever you open a folder", _filel, "files", lambda: "Default file manager"),
     Spell("tidyl", "TidyL", "Keeps Downloads sorted, clears stale installers, finds big files and duplicates",
           _tidyl, "tidy", _tidyl_status),
+    Spell("optimizel", "OptimizeL", "Tunes the PC for speed: CPU, memory, boot, network, startup apps and "
+          "games. Every tweak is a switch that survives restarts and turns back off cleanly",
+          _optimizel, "optimize", _optimizel_status),
 ]

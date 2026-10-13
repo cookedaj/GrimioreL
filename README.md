@@ -9,6 +9,7 @@ One app, one look: a slim icon rail, monochrome line icons, and every spell buil
 | **SightsL** | A crosshair overlay drawn above every window and fullscreen game (KDE layer-shell), fully click-through. Pixel-sharp styles, presets, saved crosshairs and share codes, rotation, outline, offsets, screen choice, live updates, and global hotkeys: Ctrl+Alt+X hides it, Ctrl+Alt+Shift+X flips to the next crosshair. |
 | **FileL** | A file manager that can replace Dolphin: places & drives sidebar, breadcrumbs, grid with image thumbnails or a details list, preview panel, Trash with restore, KDE-compatible copy/cut/paste, Dolphin's keyboard shortcuts. Runs inside Grimoire or as its own window, and can be set as the default for opening folders. |
 | **TidyL** | Keeps `~/Downloads` sorted by file type in the background, sends stale installers/archives to the Trash, finds big files and duplicates. Never deletes: everything goes to the Trash, and every move can be undone. |
+| **OptimizeL** | Scans the PC and lays out ~24 speed tweaks as on/off switches, grouped by power, memory (zram, earlyoom), storage & boot, network (BBR), services, startup apps, desktop and gaming. Every switch is written to persistent config, so it survives restarts, and turning it off restores exactly what was there. Also lists what's already set the fast way. |
 
 ## Requirements
 
@@ -52,6 +53,13 @@ To make FileL the default file manager: `xdg-mime default grimoire-filel.desktop
 - **FileL** uses the same system underneath (Qt's `QFileSystemModel`, the freedesktop Trash that Dolphin uses,
   KDE's clipboard format), so files, Trash and clipboard are shared with every other KDE app.
 - **TidyL** runs as a systemd user timer every 10 minutes; rules live in `~/.config/grimoire/tidyl.json`.
+- **OptimizeL** stages switch flips and applies them in one go. System tweaks go through `pkexec` to
+  `grimoire/spells/optimizel/root-helper.sh`, which only knows a fixed list of tweaks, writes files whose names
+  contain `grimoire-optimizel` (sysctl.d, journald.conf.d, apt.conf.d, systemd drop-ins, zram-generator.conf),
+  and saves the old values in `/var/lib/grimoire-optimizel` so "off" puts them back. Your own tweaks (power
+  profile, KDE settings, autostart overrides, `~/.config/environment.d`) keep their old values in
+  `~/.local/share/grimoire/optimizel.json`. Nothing deletes your files; the apt tweak only clears downloaded
+  `.deb` installers.
 
 ## Layout
 
@@ -63,6 +71,7 @@ grimoire/            the app (PySide6)
   spells/sightc/     SightsL overlay + page
   spells/filel/      FileL page, file operations, standalone window
   spells/tidyl/      TidyL engine, CLI/timer, page
+  spells/optimizel/  OptimizeL tweak catalog, root helper, page
 plasma/              the MuraL wallpaper plugin
 bin/                 launchers
 ```
