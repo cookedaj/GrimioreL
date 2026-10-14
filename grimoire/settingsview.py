@@ -4,10 +4,11 @@
 The work lives in Qt-free modules (hotkeys.py, backup.py, github.py, keystore.py, prefs.py); this file only lays it
 out and runs every slow or networked call off the UI thread.
 """
+import threading
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSize, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QCoreApplication, QObject, QSize, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImage, QKeySequence, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import (QCheckBox, QDialog, QFileDialog, QFrame, QHBoxLayout, QKeySequenceEdit, QLabel,
                                QPushButton, QScrollArea, QStackedWidget, QVBoxLayout, QWidget)
@@ -531,6 +532,7 @@ class AccountPanel(QWidget):
         self._dc = None
         self._loaded = False
         self._view(0)
+        QCoreApplication.instance().aboutToQuit.connect(_quitting.set)   # a running sign-in poll stops with the app
 
     # ---- state
     def _view(self, i):
@@ -603,7 +605,8 @@ class AccountPanel(QWidget):
         self.say("Waiting for you to approve on GitHub…")
         self._open_device_page()
         n = self._attempt
-        run(lambda: _finish_signin(dc, lambda: self._attempt != n), lambda ok, v: self._signed_in(n, ok, v))
+        run(lambda: _finish_signin(dc, lambda: self._attempt != n or _quitting.is_set()),
+            lambda ok, v: self._signed_in(n, ok, v))
 
     def _open_device_page(self):
         if self._dc:
@@ -672,6 +675,9 @@ class AccountPanel(QWidget):
         gid = prefs.load()["gist_id"]
         if gid:
             QDesktopServices.openUrl(QUrl(f"https://gist.github.com/{gid}"))
+
+
+_quitting = threading.Event()      # set when the app quits: Python waits for pool threads, so a poll must end
 
 
 def _token():
