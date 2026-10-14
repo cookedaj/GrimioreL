@@ -144,13 +144,22 @@ def key_mgmt(security: str) -> str | None:
     return "wpa-psk"
 
 
+def _passwd_value(password: str) -> str:
+    """The key as nmcli's passwd-file reads it back unchanged: nmcli strips unescaped leading/trailing spaces and
+    undoes backslash escapes, so a backslash or a space in the key gets a backslash in front."""
+    if "\n" in password or "\r" in password or "\0" in password:
+        raise RuntimeError("the password can't contain line breaks")
+    return "".join("\\" + c if c in "\\ \t\f\v" else c for c in password)
+
+
 def _secret_file(password: str) -> Path:
     """A 0600 file in the per-user runtime dir (tmpfs) holding the key in nmcli's passwd-file format."""
+    value = _passwd_value(password)
     base = Path(os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}")
     path = base / f"grimoire-netl-{secrets.token_hex(8)}"
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(fd, "w") as f:
-        f.write(f"802-11-wireless-security.psk:{password}\n")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(f"802-11-wireless-security.psk:{value}\n")
     return path
 
 
@@ -184,7 +193,11 @@ def connect_wifi(net: dict, password: str | None = None, saved_uuid: str | None 
     uuid = _new_uuid(r.stdout)
     if not uuid:
         raise RuntimeError("NetworkManager didn't say which profile it made")
-    r = _up_with_key(uuid, password)
+    try:
+        r = _up_with_key(uuid, password)
+    except Exception:
+        _nmcli("connection", "delete", "uuid", uuid)      # never leave a half-made profile behind
+        raise
     if r.returncode:
         _nmcli("connection", "delete", "uuid", uuid)      # a profile NetL just made, with a key that didn't work
     return _check(r, "connect") and f"connected to {net['ssid']}"

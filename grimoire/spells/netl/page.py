@@ -482,6 +482,7 @@ class NetLPage(QWidget):
             self.stack.addWidget(p)
         right.addWidget(self.stack, 1)
         self.toast = _label("", "Toast", wrap=True)
+        self.toast.setTextFormat(Qt.TextFormat.PlainText)    # carries SSIDs and nmcli's messages
         self.toast.hide()
         right.addWidget(self.toast)
         self._toast_timer = QTimer(self, singleShot=True, interval=7000, timeout=self.toast.hide)

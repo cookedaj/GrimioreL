@@ -36,11 +36,15 @@ case "${1:-}" in
         [[ "${2:-}" =~ ^(start|stop|restart|enable|disable)$ ]] || { echo "bad action: ${2:-}" >&2; exit 2; }
         [[ "${3:-}" =~ ^[-A-Za-z0-9@._:]+\.(service|timer|socket)$ ]] || { echo "bad unit name: ${3:-}" >&2; exit 2; }
         if [[ "$2" =~ ^(stop|disable|restart)$ ]]; then
-            case "$3" in
-                dbus*|systemd-*|sddm.service|display-manager.service|polkit.service|user@*|getty@*|udisks2.service|\
-                plasma-kwin_wayland*|plasma-workspace*|plasma-plasmashell*)
-                    echo "$3 keeps the system running; not stopping it" >&2; exit 3 ;;
-            esac
+            # check the unit's real name too: an alias (messagebus.service is dbus.service) mustn't slip past
+            real=$(systemctl show -p Id --value -- "$3" 2>/dev/null || true)
+            for u in "$3" "$real"; do
+                case "$u" in
+                    dbus*|messagebus*|systemd-*|sddm.service|display-manager.service|polkit.service|user@*|getty@*|\
+                    udisks2.service|plasma-kwin_wayland*|plasma-workspace*|plasma-plasmashell*)
+                        echo "$3 keeps the system running; not stopping it" >&2; exit 3 ;;
+                esac
+            done
         fi
         systemctl "$2" -- "$3"
         ;;

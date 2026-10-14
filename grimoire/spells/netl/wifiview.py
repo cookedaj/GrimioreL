@@ -39,7 +39,9 @@ class PasswordDialog(QDialog):
         lay = QVBoxLayout(self)
         lay.setContentsMargins(24, 22, 24, 18)
         lay.setSpacing(12)
-        lay.addWidget(_label(net["ssid"], "RowTitle"))
+        name = _label(net["ssid"], "RowTitle")
+        name.setTextFormat(Qt.TextFormat.PlainText)       # network names come from whoever runs the access point
+        lay.addWidget(name)
         lay.addWidget(_label(f"{net['security'] or 'Open'} · signal {net['signal']}%. Enter the network's password.",
                              "Muted", wrap=True))
         self.edit = QLineEdit()
@@ -62,9 +64,12 @@ class PasswordDialog(QDialog):
         btns.addWidget(self.ok)
         lay.addLayout(btns)
         mgmt = nm.key_mgmt(net["security"])
-        need = 8 if mgmt in ("wpa-psk", "sae") else 1      # WPA keys are 8 to 63 characters
-        self.edit.textChanged.connect(lambda t: self.ok.setEnabled(need <= len(t) <= 63 or mgmt == "sae"
-                                                                   and len(t) >= 1))
+        need = 8 if mgmt in ("wpa-psk", "sae") else 1      # WPA passphrases are 8 to 63 characters
+
+        def fits(t: str) -> bool:                          # ... or the raw key as 64 hex digits
+            return need <= len(t) <= 63 or mgmt == "sae" and len(t) >= 1 or len(t) == 64 and all(
+                c in "0123456789abcdefABCDEF" for c in t)
+        self.edit.textChanged.connect(lambda t: self.ok.setEnabled(fits(t)))
         self.ok.setEnabled(False)
 
     def password(self) -> str:
@@ -93,6 +98,7 @@ class WifiPanel(QScrollArea):
         cl.setSpacing(6)
         top = QHBoxLayout()
         self.cur_name = _label("–", "RowTitle")
+        self.cur_name.setTextFormat(Qt.TextFormat.PlainText)     # an SSID, which anyone nearby can pick
         self.cur_badge = _label("", "Badge")
         top.addWidget(self.cur_name)
         top.addWidget(self.cur_badge)
@@ -102,6 +108,7 @@ class WifiPanel(QScrollArea):
         top.addWidget(self.disc_btn)
         cl.addLayout(top)
         self.cur_info = _label("", "Muted", wrap=True)
+        self.cur_info.setTextFormat(Qt.TextFormat.PlainText)
         self.cur_info.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         cl.addWidget(self.cur_info)
         self.signal = Bar()
