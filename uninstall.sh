@@ -178,7 +178,9 @@ LAUNCHL="$DATA/plasma/plasmoids/com.cookedaj.grimoire.launchl"
 CODE="$APP"                                                      # a distro package's copy when there's no per-user one
 if [ ! -d "$CODE/grimoire" ]; then CODE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"; fi
 if [ -d "$LAUNCHL" ]; then
-    if [ -d "$CODE/grimoire" ] && PYTHONPATH="$CODE" python3 -P -m grimoire.spells.launchl uninstall; then
+    if [ -n "$DRY" ]; then
+        echo "[dry] put Kickoff back if LaunchL replaced it, then rm -rf $LAUNCHL" >&3
+    elif [ -d "$CODE/grimoire" ] && PYTHONPATH="$CODE" python3 -P -m grimoire.spells.launchl uninstall; then
         rm -rf "$LAUNCHL"
     elif [ ! -d "$CODE/grimoire" ]; then
         rm -rf "$LAUNCHL"
