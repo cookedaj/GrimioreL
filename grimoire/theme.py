@@ -38,6 +38,12 @@ QPushButton#RailItem { border: none; border-radius: 12px; padding: 0; background
 QPushButton#RailItem:hover { background: #121212; }
 QPushButton#RailItem:checked { background: #1e1e1e; }
 QLabel#Tiny { color: #4a4a4a; font-size: 10px; }
+QToolButton#RailVersion { border: none; background: transparent; color: #4a4a4a; font-size: 10px; padding: 2px; }
+QToolButton#RailVersion:hover { color: #bdbdbd; }
+QToolButton#RailVersion[avail="true"] { color: #ffffff; }
+QDialog#WhatsNew { background: #0b0b0b; }
+QLabel#ChangeTitle { font-size: 14px; font-weight: 600; color: #ffffff; }
+QFrame#Rule { background: #1c1c1c; border: none; }
 
 QFrame#SubNav, QScrollArea > QWidget > QWidget#SubNav { background: #070707; }
 QScrollArea { border: none; background: transparent; }

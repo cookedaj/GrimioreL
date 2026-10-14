@@ -48,6 +48,10 @@ Run `grimoire [spell-id]`, `grimoire-vaultl [folder]`, `grimoire-sightc on|off|n
 Standalone spells: `grimoire/standalone.py` opens any spell in its own window and writes its launcher (command link,
 glyph icon, menu entry; links target the installed copy when there is one); a spell gets an Install button on its home card once `bin/grimoire-<id>` exists (no args
 opens the window). `./install.sh --all` installs every launcher; plain `./install.sh` refreshes installed ones.
+Self-update: install.sh records the source commit in `app/INSTALLED.json` (`GRIMOIRE_SOURCE_SHA` from the updater, else
+the checkout's HEAD); `grimoire/update.py` compares it with GitHub main (API answers cached in CACHE, 60 req/h limit),
+downloads codeload's tarball, extracts it defensively and runs its install.sh; `updateview.py` is the hub's UI and
+`grimoire update [--check]` the CLI. Test it with HOME/XDG dirs in a sandbox, never against the real install.
 Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); `uv` is available for side tools.
 
 ## Git
