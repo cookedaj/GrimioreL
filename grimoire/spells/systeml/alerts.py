@@ -101,8 +101,11 @@ def load_settings() -> dict:
     if not isinstance(d, dict):
         return out
     for k, v in d.items():
-        if isinstance(out.get(k), dict) and isinstance(v, dict):
-            out[k].update(v)
+        if k == "disks" and isinstance(v, dict):
+            out[k] = v                                   # each rule is checked by disk_rule()
+        elif isinstance(out.get(k), dict) and isinstance(v, dict):
+            # same type as the default only: a hand-edited "90" or 90.5 would crash the panel's spin boxes
+            out[k].update({f: x for f, x in v.items() if f in out[k] and type(x) is type(out[k][f])})
         elif k in out and type(v) is type(out[k]):
             out[k] = v
     return out
@@ -128,6 +131,8 @@ def mounts() -> list[dict]:
             u = psutil.disk_usage(p.mountpoint)
         except OSError:
             continue
+        if not u.total:                          # some FUSE mounts report no size; free % would divide by zero
+            continue
         seen.add(p.device)
         out.append({"mount": p.mountpoint, "device": p.device, "free": u.free, "total": u.total})
     return out
@@ -136,7 +141,8 @@ def mounts() -> list[dict]:
 def disk_rule(s: dict, d: dict) -> dict:
     """A mount's rule: what you set, else 10 GB free on big disks, 10 % on small ones, off under 1 GB (EFI)."""
     rule = s["disks"].get(d["mount"])
-    if isinstance(rule, dict) and {"on", "value", "unit"} <= rule.keys():
+    if isinstance(rule, dict) and isinstance(rule.get("on"), bool) and rule.get("unit") in ("GB", "%") \
+            and type(rule.get("value")) is int:             # a hand-edited bad rule falls back to the default
         return rule
     if d["total"] < 2**30:
         return {"on": False, "value": 10, "unit": "%"}
@@ -317,7 +323,15 @@ def check(now: float | None = None) -> list[dict]:
     state = _read(STATE, {})
     if not isinstance(state, dict):
         state = {}
-    active = state.setdefault("active", {})       # key -> last notified time
+    for k in ("active", "streaks"):               # a damaged state file must not break every check after it
+        if not isinstance(state.get(k), dict):
+            state[k] = {}
+    active = state["active"]                      # key -> last notified time
+    for k in [k for k, v in active.items() if type(v) not in (int, float)]:
+        del active[k]
+    streaks = state["streaks"]
+    for k in [k for k, v in streaks.items() if not (isinstance(v, dict) and type(v.get("since")) in (int, float))]:
+        del streaks[k]
     cooldown = max(1, s["cooldown"]) * 60
     sent = []
     for section in (_ram, _temps, _disks, _hung):
