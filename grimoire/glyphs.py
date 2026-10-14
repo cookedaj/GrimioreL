@@ -210,6 +210,11 @@ def _draw(name: str, p: QPainter):
     elif name == "palette":                                # a bolt: quick commands
         path = QPainterPath(QPointF(13.5, 3.5)); path.lineTo(6.5, 13.5); path.lineTo(11.5, 13.5); path.lineTo(10.5, 20.5)
         path.lineTo(17.5, 10.5); path.lineTo(12.5, 10.5); path.closeSubpath(); p.drawPath(path)
+    elif name == "focus":                                  # a stopwatch: crown, open ring and one hand
+        path = QPainterPath(); path.arcMoveTo(r(4.5, 6, 15, 15), 75); path.arcTo(r(4.5, 6, 15, 15), 75, 330)
+        p.drawPath(path)
+        p.drawLine(QPointF(10, 3), QPointF(14, 3)); p.drawLine(QPointF(12, 3), QPointF(12, 6))
+        p.drawLine(QPointF(12, 13.5), QPointF(14.8, 10.7))
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:

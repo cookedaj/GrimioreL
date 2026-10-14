@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# FocusL in its own window:   grimoire-focusl
+# the focus timer:            grimoire-focusl start|stop|pause|resume|skip|status|unblock
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+[ $# -eq 0 ] && exec python3 -m grimoire.standalone focusl
+exec python3 -m grimoire.spells.focusl.runner "$@"

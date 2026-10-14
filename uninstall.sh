@@ -17,6 +17,7 @@ UNITS="$CONFIG/systemd/user"
 # background pieces first
 pkill -f '^(/usr/bin/)?python3 -m grimoire\.spells\.sightc\.overlay' 2>/dev/null || true   # it relaunches via sys.executable
 pkill -f '^(/usr/bin/)?python3 -m grimoire\.tray' 2>/dev/null || true
+pkill -f '^(/usr/bin/)?python3 -m grimoire\.spells\.focusl\.runner' 2>/dev/null || true   # ends a FocusL session cleanly
 for unit in grimoire-tidyl grimoire-systeml-alerts; do              # VaultL's auto-tidy, SystemL's alerts
     if [ -f "$UNITS/$unit.timer" ]; then
         systemctl --user disable --now "$unit.timer" 2>/dev/null || true

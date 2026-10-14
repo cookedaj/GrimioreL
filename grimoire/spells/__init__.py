@@ -106,3 +106,18 @@ SPELLS = [
     Spell("terminall", "TerminalL", "Your terminal: tabs and splits, full color, scrollback search, profiles and "
           "saved commands, opening right in VaultL's folder", _terminall, "terminall", _terminall_status),
 ]
+
+
+def _focusl():
+    from grimoire.spells.focusl.page import FocusLPage
+    return FocusLPage()
+
+
+def _focusl_status() -> str:
+    from grimoire.spells.focusl import store
+    return store.status_line()
+
+
+SPELLS.append(Spell("focusl", "FocusL", "A focus timer in rounds with breaks: Do Not Disturb, no crosshair and your "
+                    "distracting apps and sites kept away while you focus, plus your streak and stats",
+                    _focusl, "focus", _focusl_status))
