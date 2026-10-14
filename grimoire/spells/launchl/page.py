@@ -132,8 +132,8 @@ class LaunchLPage(QWidget):
         def guarded():
             try:
                 return "", fn()
-            except RuntimeError as err:
-                return str(err), None
+            except Exception as err:      # anything uncaught would leave the buttons off and "Working…" for good
+                return str(err) or type(err).__name__, None
         POOL.start(Job(guarded, lambda r: self.sig.done.emit((what, r[0], r[1]))))
 
     def _install(self):

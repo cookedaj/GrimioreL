@@ -306,6 +306,10 @@ if (!l || l.type !== {_js(PLUGIN)}) {{
     var ws = panel.widgets({_js(PLUGIN)});
     if (ws.length) {{ l = ws[0]; }}
 }}
+var kept = panel.widgetById({_js(record["widget"])});
+if (!l && kept && kept.type === {_js(record["type"])}) {{
+    print(kept.id);         // LaunchL never took its place: the launcher is still there, don't add a second one
+}} else {{
 var k;
 if (l) {{
     var g = l.geometry;
@@ -322,6 +326,7 @@ if (shortcut) {{ k.globalShortcut = shortcut; }}
 k.reloadConfig();
 if (l) {{ l.remove(); }}
 print(k.id);
+}}
 """.strip() + "\n"
 
 
@@ -366,7 +371,18 @@ def replace(dry_run: bool = False) -> dict:
     state = load_state()
     state["replaced"] = record
     save_state(state)
-    out = _run(record["script"])
+    try:
+        out = _run(record["script"])
+    except RuntimeError:
+        # the script checks before it changes anything: when LaunchL isn't in the panel, nothing was replaced, so
+        # drop the record (else Restore and uninstall would add a second launcher). Unreadable panels: keep it.
+        try:
+            if not in_panel(scan()):
+                state.pop("replaced", None)
+                save_state(state)
+        except (RuntimeError, ValueError):
+            pass
+        raise
     record["launchl"] = int(out.splitlines()[-1]) if out and out.splitlines()[-1].isdigit() else -1
     record.pop("script", None)
     record["check"] = _position_check(record)
