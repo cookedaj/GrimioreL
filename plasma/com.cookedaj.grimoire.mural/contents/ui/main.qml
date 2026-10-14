@@ -57,6 +57,13 @@ WallpaperItem {
     Connections {
         target: root.back
         function onReadyChanged() { if (root.pending && root.back.ready) root.reveal(); }
+        // a missing/broken file: stop holding the splash screen; the playlist timer moves on to the next one
+        function onFailedChanged() {
+            if (root.pending && root.back.failed) {
+                root.pending = false;
+                root.loading = false;
+            }
+        }
     }
 
     function reveal() {

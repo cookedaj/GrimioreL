@@ -116,7 +116,7 @@ FocusScope {
             if (matches(q, s.name + " " + s.id + " grimoire spell")) {
                 const look = spellIcon(s.id)
                 out.push({ name: s.name, description: s.tagline, icon: look.icon, mask: look.mask,
-                           run: () => launchl.runDetached("grimoire " + s.id) })
+                           run: () => launchl.runDetached("grimoire " + launchl.shq(s.id)) })
             }
         }
         return out.slice(0, 6)

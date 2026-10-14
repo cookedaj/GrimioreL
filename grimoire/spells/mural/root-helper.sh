@@ -20,8 +20,8 @@ valid_name() {
     [[ "$1" =~ ^[A-Za-z0-9._-]+$ && "$1" != "." && "$1" != ".." ]] || { echo "bad theme name: $1" >&2; exit 2; }
 }
 
-need_dir() {
-    [[ -d "$1" && -f "$1/$2" ]] || { echo "not a staged theme: $1" >&2; exit 2; }
+need_dir() {    # a real folder, not a link: a link would be copied as a link into /usr/share, pointing back at ~
+    [[ -d "$1" && ! -L "$1" && -f "$1/$2" ]] || { echo "not a staged theme: $1" >&2; exit 2; }
 }
 
 # put_theme SRC DST: replace DST with a root-owned copy of SRC, but only if DST is free or ours
@@ -95,7 +95,7 @@ case "${1:-}" in
         ;;
     plymouth-install)
         valid_name "${2:-}"
-        [[ -d "${3:-}" ]] || { echo "not a directory: ${3:-}" >&2; exit 2; }
+        [[ -d "${3:-}" && ! -L "${3:-}" ]] || { echo "not a directory: ${3:-}" >&2; exit 2; }
         file=$(find "$3" -maxdepth 1 -name '*.plymouth' | head -1)
         [[ -n "$file" ]] || { echo "no .plymouth file in $3" >&2; exit 2; }
         [[ -f /var/lib/grimoire-plymouth-previous ]] || readlink -f "$PLY_LINK" > /var/lib/grimoire-plymouth-previous
