@@ -191,6 +191,11 @@ def _draw(name: str, p: QPainter):
         path.closeSubpath(); p.drawPath(path)
         path = QPainterPath(QPointF(10, 19.5)); path.quadTo(12, 21.5, 14, 19.5); p.drawPath(path)
         p.drawLine(QPointF(12, 3), QPointF(12, 4.6))
+    elif name == "focus":                                  # a stopwatch: crown, open ring and one hand
+        path = QPainterPath(); path.arcMoveTo(r(4.5, 6, 15, 15), 75); path.arcTo(r(4.5, 6, 15, 15), 75, 330)
+        p.drawPath(path)
+        p.drawLine(QPointF(10, 3), QPointF(14, 3)); p.drawLine(QPointF(12, 3), QPointF(12, 6))
+        p.drawLine(QPointF(12, 13.5), QPointF(14.8, 10.7))
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:

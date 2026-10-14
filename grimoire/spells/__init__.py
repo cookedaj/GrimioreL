@@ -94,3 +94,18 @@ SPELLS = [
     Spell("systeml", "SystemL", "Your system monitor: live graphs, processes, per-app history, services, startup "
           "apps, disks and background alerts", _systeml, "system", _systeml_status),
 ]
+
+
+def _focusl():
+    from grimoire.spells.focusl.page import FocusLPage
+    return FocusLPage()
+
+
+def _focusl_status() -> str:
+    from grimoire.spells.focusl import store
+    return store.status_line()
+
+
+SPELLS.append(Spell("focusl", "FocusL", "A focus timer in rounds with breaks: Do Not Disturb, no crosshair and your "
+                    "distracting apps and sites kept away while you focus, plus your streak and stats",
+                    _focusl, "focus", _focusl_status))

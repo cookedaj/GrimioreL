@@ -137,3 +137,14 @@ uninstall.sh         removes it again (--purge also clears settings)
 ```
 
 Personal project; artwork you add (wallpapers, community themes) belongs to its creators and isn't part of this repo.
+
+## FocusL
+
+A focus timer in rounds (focus, short breaks, a long break; lengths, rounds and auto-start are yours to set) with a
+big countdown ring, a notification and a soft chime at each change, and stats: sessions today and this week, total
+focus time, your streak and the last 14 days as bars. While you focus it turns on Plasma's Do Not Disturb, hides the
+SightsL crosshair (back after, if it was on), and can keep apps away (a warning, then a polite quit after a grace
+time, or only the warning) and sites (a marked block in `/etc/hosts`, which asks for your password when the session
+starts and ends). The timer runs in the background, so closing Grimoire doesn't stop it:
+`grimoire-focusl start|stop|pause|resume|skip|status`, and `grimoire-focusl unblock` if a session that was killed
+left sites blocked. Code: `grimoire/spells/focusl/` (store, guards, background runner, root helper, ring, page).

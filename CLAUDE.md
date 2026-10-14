@@ -63,3 +63,11 @@ Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); 
 Branch `main`, push to `origin` (github.com/cookedaj/Grimoire). Commit messages: a short title + bullet body.
 Parallel work goes in git worktrees under `.worktrees/<name>` (gitignored, skipped by `install.sh`), never as sibling
 folders next to the repo; remove them with `git worktree remove` once merged, keep the branch.
+
+## FocusL
+`grimoire/spells/focusl/`: Pomodoro timer. `store.py` settings/state/control/history/stats (no Qt), `runner.py` the
+background session (`grimoire-focusl run`, single instance by flock on `CACHE/focusl.lock`, cleans up on
+SIGTERM/INT/HUP; the page and CLI steer it through `focusl-control.json`), `guards.py` DND (`Inhibit` on
+org.freedesktop.Notifications, auto-released by Plasma if we die), crosshair, app blocking, sites via its
+`root-helper.sh` (marked block in /etc/hosts; test with `FOCUSL_ROOT=<sandbox>`), `dial.py` ring + bars, `page.py`.
+Test with `FOCUSL_DRY=1` (logs DND/notify/kill/crosshair, hosts helper on a sandbox copy) and a sandbox HOME.
