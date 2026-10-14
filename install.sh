@@ -44,7 +44,7 @@ if [ -z "$SHA" ] && [ -e "$SRC/.git" ] && SHA="$(git -C "$SRC" rev-parse HEAD 2>
     if [ -n "$(git -C "$SRC" status --porcelain --untracked-files=no 2>/dev/null)" ]; then DIRTY=1; fi
 fi
 if [ -n "$SHA" ] || [ "$SRC" != "$APP" ] || [ ! -f "$APP/INSTALLED.json" ]; then
-    SHA="$SHA" DATE="$DATE" DIRTY="$DIRTY" python3 - "$APP/INSTALLED.json" <<'PY'
+    SHA="$SHA" DATE="$DATE" DIRTY="$DIRTY" python3 -I - "$APP/INSTALLED.json" <<'PY'
 import json, os, sys, time
 sha = os.environ["SHA"].strip().lower()
 ok = len(sha) == 40 and all(c in "0123456789abcdef" for c in sha)
@@ -127,7 +127,7 @@ EOF
 # 4. standalone spells: VaultL always (it's the file manager; FileL's and TidyL's old entries become hidden
 #    aliases), the rest when installed or with --all. Their menu entries, the auto-tidy timer and SightsL's
 #    autostart all run the ~/.local/bin commands linked above.
-standalone() { PYTHONPATH="$APP" QT_QPA_PLATFORM=offscreen python3 -m grimoire.standalone "$@"; }
+standalone() { PYTHONPATH="$APP" QT_QPA_PLATFORM=offscreen python3 -P -m grimoire.standalone "$@"; }
 standalone install vaultl >/dev/null
 standalone refresh
 if [ "${1:-}" = "--all" ]; then standalone install all; fi
