@@ -26,7 +26,8 @@ INSTALLED = DATA / "app" / "bin"
 BIN = INSTALLED if (INSTALLED / "grimoire").is_file() else Path(__file__).resolve().parent.parent / "bin"
 # extra desktop-entry lines; VaultL is also the default folder handler
 EXTRA = {"vaultl": {"GenericName": "File Manager", "Categories": "Utility;System;FileTools;FileManager;",
-                    "MimeType": "inode/directory;"}}
+                    "MimeType": "inode/directory;"},
+         "terminall": {"GenericName": "Terminal", "Categories": "System;TerminalEmulator;"}}
 # spells merged into another: their menu entries stay (hidden), since the system's default-app setting may name them
 MERGED = {"filel": "vaultl", "tidyl": "vaultl"}
 

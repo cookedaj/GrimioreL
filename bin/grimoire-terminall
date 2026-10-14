@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# TerminalL, Grimoire's terminal: grimoire-terminall [folder]   (opens a tab in that folder, else the current one)
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m grimoire.spells.terminall "$@"

@@ -191,6 +191,25 @@ def _draw(name: str, p: QPainter):
         path.closeSubpath(); p.drawPath(path)
         path = QPainterPath(QPointF(10, 19.5)); path.quadTo(12, 21.5, 14, 19.5); p.drawPath(path)
         p.drawLine(QPointF(12, 3), QPointF(12, 4.6))
+    elif name == "terminall":                              # a terminal window with a tab strip and a prompt
+        p.drawRoundedRect(r(3, 4.5, 18, 15), 2, 2); p.drawLine(QPointF(3, 8.5), QPointF(21, 8.5))
+        path = QPainterPath(QPointF(7, 11.5)); path.lineTo(9.5, 13.75); path.lineTo(7, 16); p.drawPath(path)
+        p.drawLine(QPointF(11.5, 16), QPointF(16, 16))
+    elif name == "plus":
+        p.drawLine(QPointF(12, 5.5), QPointF(12, 18.5)); p.drawLine(QPointF(5.5, 12), QPointF(18.5, 12))
+    elif name == "down":
+        path = QPainterPath(QPointF(6, 9.5)); path.lineTo(12, 15.5); path.lineTo(18, 9.5); p.drawPath(path)
+    elif name == "close":
+        p.drawLine(QPointF(7, 7), QPointF(17, 17)); p.drawLine(QPointF(17, 7), QPointF(7, 17))
+    elif name in ("splith", "splitv"):                     # a pane split side by side / top and bottom
+        p.drawRoundedRect(r(3.5, 5, 17, 14), 2, 2)
+        if name == "splith":
+            p.drawLine(QPointF(12, 5), QPointF(12, 19))
+        else:
+            p.drawLine(QPointF(3.5, 12), QPointF(20.5, 12))
+    elif name == "palette":                                # a bolt: quick commands
+        path = QPainterPath(QPointF(13.5, 3.5)); path.lineTo(6.5, 13.5); path.lineTo(11.5, 13.5); path.lineTo(10.5, 20.5)
+        path.lineTo(17.5, 10.5); path.lineTo(12.5, 10.5); path.closeSubpath(); p.drawPath(path)
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:

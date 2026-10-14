@@ -82,6 +82,16 @@ def _systeml_status() -> str:
         f"{mem.total / 2**30:.0f} GB · " + ("Alerts on" if alerts.enabled() else "Alerts off")
 
 
+def _terminall():
+    from grimoire.spells.terminall.page import TerminalLPage
+    return TerminalLPage()
+
+
+def _terminall_status() -> str:
+    from grimoire.spells.terminall.page import status
+    return status()
+
+
 SPELLS = [
     Spell("mural", "MuraL", "Every screen and surface: wallpaper, lock, login, boot, taskbar, windows, colors, "
           "icons, fonts, cursor, terminal, plus the community store", _mural, "mural", _mural_status),
@@ -93,4 +103,6 @@ SPELLS = [
           _optimizel, "optimize", _optimizel_status),
     Spell("systeml", "SystemL", "Your system monitor: live graphs, processes, per-app history, services, startup "
           "apps, disks and background alerts", _systeml, "system", _systeml_status),
+    Spell("terminall", "TerminalL", "Your terminal: tabs and splits, full color, scrollback search, profiles and "
+          "saved commands, opening right in VaultL's folder", _terminall, "terminall", _terminall_status),
 ]
