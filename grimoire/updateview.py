@@ -90,7 +90,7 @@ class Updater(QObject):
 
     @property
     def available(self) -> bool:
-        return bool(self.status and self.status.available and not self.updated)
+        return bool(self.status and self.status.available and not self.updated and update.is_installed())
 
 
 def restart():

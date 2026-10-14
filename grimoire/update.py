@@ -86,6 +86,8 @@ def managed() -> bool:
 
 
 PACKAGE_NOTE = "Installed from a distro package: updates come with your system updates (apt, pacman…)."
+NOT_INSTALLED = (f"{NAME} isn't installed (run ./install.sh from a download first); "
+                 "a git checkout updates with git pull.")
 
 
 def _sha_ok(sha: str) -> bool:
@@ -293,6 +295,8 @@ def apply(sha: str, date: str = "", progress=lambda text: None) -> dict:
     Returns the new INSTALLED.json. Only one update runs at a time."""
     if managed():
         raise UpdateError(PACKAGE_NOTE)
+    if not is_installed():                         # a checkout updates with git pull, not by installing a copy
+        raise UpdateError(NOT_INSTALLED)
     if not _sha_ok(sha):
         raise UpdateError("No valid version to update to; check for updates first.")
     STAGING.mkdir(parents=True, exist_ok=True)
@@ -366,8 +370,7 @@ def cli(argv: list[str]) -> int:
         print(PACKAGE_NOTE)
         return 0
     if not is_installed():
-        print(f"{NAME} isn't installed (run ./install.sh from a download first); "
-              "a git checkout updates with git pull.")
+        print(NOT_INSTALLED)
         return 1
     try:
         st = check(force=True)
