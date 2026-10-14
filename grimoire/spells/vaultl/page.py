@@ -7,6 +7,8 @@ watched Downloads folder gets a bar with Tidy now and Undo.
 Shortcuts follow Dolphin: Alt+Left/Right/Up, Backspace, F2, Del, Ctrl+C/X/V, Ctrl+A, Ctrl+H, Ctrl+L, Ctrl+F,
 Ctrl+Shift+N, F5, F4 (terminal here), Enter to open.
 """
+import os
+import stat
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -39,6 +41,7 @@ EDIT_TRIGGERS = QAbstractItemView.EditTrigger.EditKeyPressed | QAbstractItemView
 THUMBS.setMaxThreadCount(3)
 GRID = QSize(128, 132)
 ICON = 72
+THUMB_CACHE = 1500
 
 
 class _Signals(QObject):
@@ -103,6 +106,11 @@ class GridDelegate(QStyledItemDelegate):
             sig = self.page._sig
 
             def work():
+                try:
+                    if not stat.S_ISREG(os.stat(fpath).st_mode):     # a FIFO named .png would block forever
+                        return QImage()
+                except OSError:
+                    return QImage()
                 reader = QImageReader(fpath)
                 reader.setAutoTransform(True)
                 size = reader.size()
@@ -117,6 +125,8 @@ class GridDelegate(QStyledItemDelegate):
         self.pending.discard(fpath)
         if not img.isNull():
             self.cache[fpath] = QPixmap.fromImage(img)
+            while len(self.cache) > THUMB_CACHE:              # ~80 KB each: forget the oldest, not every photo seen
+                del self.cache[next(iter(self.cache))]
             self.page.grid.viewport().update()
 
 
@@ -658,7 +668,7 @@ class VaultLPage(QWidget):
             THUMBS.start(Job(lambda p=p: ops.folder_size(p), lambda r, p=p: sig.sized.emit(str(p), *r)))
         else:
             lines.append(f"{human(st.st_size)} · {self.model.type(self.model.index(str(p)))}")
-            ext = p.suffix.lower()
+            ext = p.suffix.lower() if stat.S_ISREG(st.st_mode) else ""   # reading a FIFO/device would hang the UI
             if ext in IMAGE_EXT:
                 reader = QImageReader(str(p))
                 reader.setAutoTransform(True)
