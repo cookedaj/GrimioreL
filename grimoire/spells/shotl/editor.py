@@ -10,7 +10,7 @@ from PySide6.QtGui import QColor, QFont, QImage, QKeySequence, QPainter, QPainte
 from PySide6.QtWidgets import (QButtonGroup, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QMessageBox,
                                QPushButton, QSizePolicy, QToolButton, QVBoxLayout, QWidget)
 
-from grimoire.fsutil import free_name, tilde
+from grimoire.fsutil import tilde
 from grimoire.spells.shotl import capture, shots
 from grimoire.spells.shotl.icons import icon
 from grimoire.theme import FONT
@@ -436,6 +436,7 @@ class Editor(QWidget):
         dest.parent.mkdir(parents=True, exist_ok=True)
         fmt = "JPG" if dest.suffix.lower() in (".jpg", ".jpeg") else "PNG"
         if not self.image().save(str(dest), fmt):
+            shots.release(dest)
             QMessageBox.warning(self, "ShotL", f"Couldn't write {tilde(dest)}")
             return False
         self.source = dest
@@ -452,13 +453,15 @@ class Editor(QWidget):
         if self.source and not self.unsaved():
             self.toast.emit(f"Already saved as {tilde(self.source)}")
             return True
-        dest = free_name(self.source) if self.source else shots.new_path()
+        if not self.source:
+            return self._write(shots.new_path())
+        dest = self.source
         if dest.suffix.lower() not in (".png", ".jpg", ".jpeg"):
-            dest = free_name(dest.with_suffix(".png"))
-        return self._write(dest)
+            dest = dest.with_suffix(".png")
+        return self._write(shots.claim(dest))
 
     def save_as(self) -> bool:
-        start = str(self.source or shots.new_path())
+        start = str(self.source or shots.new_path(reserve=False))
         name, _ = QFileDialog.getSaveFileName(self, "Save screenshot", start, "PNG image (*.png);;JPEG image (*.jpg)",
                                               options=QFileDialog.Option.DontConfirmOverwrite)
         if not name:
@@ -466,7 +469,7 @@ class Editor(QWidget):
         dest = Path(name)
         if dest.suffix.lower() not in (".png", ".jpg", ".jpeg"):
             dest = dest.with_suffix(".png")
-        return self._write(free_name(dest))          # an existing name becomes "name (2).png"
+        return self._write(shots.claim(dest))        # an existing name becomes "name (2).png"
 
     def _escape(self):
         if self.canvas.entry:

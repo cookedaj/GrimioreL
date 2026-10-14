@@ -75,6 +75,13 @@ class Session(QObject):
         self.writer = QSocketNotifier(master, QSocketNotifier.Type.Write, self)
         self.writer.setEnabled(False)
         self.writer.activated.connect(self._flush)
+        try:                                   # the shell's exit ends the tab even if a background job keeps the PTY
+            self.pidfd = os.pidfd_open(self.proc.pid)
+        except (AttributeError, OSError):
+            self.pidfd = -1
+        else:
+            self.exited = QSocketNotifier(self.pidfd, QSocketNotifier.Type.Read, self)
+            self.exited.activated.connect(self._shell_exited)
         LIVE.add(self)
 
     @staticmethod
@@ -128,6 +135,12 @@ class Session(QObject):
             self.pending.clear()
         self.writer.setEnabled(bool(self.pending))
 
+    def _shell_exited(self):
+        self.exited.setEnabled(False)
+        if self.alive:
+            self._readable()                   # what it printed last
+            self._ended()
+
     def _ended(self):
         if not self.alive:
             return
@@ -168,7 +181,12 @@ class Session(QObject):
             pass
         os.close(self.fd)
         self.fd = -1
+        if self.pidfd >= 0:
+            self.exited.setEnabled(False)
+            os.close(self.pidfd)
+            self.pidfd = -1
         LIVE.discard(self)
+        self.deleteLater()                     # parented to the page: it would keep its scrollback until the page goes
         _reaping.append(self.proc)
         if _reaper is None:
             _reaper = QTimer()

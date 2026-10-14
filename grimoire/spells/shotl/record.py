@@ -114,7 +114,10 @@ def start(sound=False, pointer=True, pick=False) -> str:
 def stop() -> bool:
     st = state()
     if st:
-        os.kill(int(st["pid"]), signal.SIGINT)
+        try:
+            os.kill(int(st["pid"]), signal.SIGINT)
+        except ProcessLookupError:             # it finished in the meantime
+            return False
     return bool(st)
 
 
@@ -148,8 +151,7 @@ def pipeline(src: str, out: Path, enc: str, size, sound: bool, fd_out: int | Non
     video = f"{src} ! videoconvert ! videoscale add-borders=true ! videorate ! {caps}"
     if enc == "vp8":
         desc = (f"{video} ! queue ! vp8enc deadline=1 cpu-used=8 threads={os.cpu_count() or 4} "
-                f"target-bitrate=12000000 keyframe-max-dist=120 ! queue ! webmmux name=mux ! "
-                f"filesink location=\"{out}\"")
+                f"target-bitrate=12000000 keyframe-max-dist=120 ! queue ! webmmux name=mux ! filesink name=out")
         if sound:
             desc += f" pulsesrc device=\"{_monitor_source()}\" ! queue ! audioconvert ! audioresample ! opusenc ! queue ! mux."
         return desc, None
@@ -181,6 +183,9 @@ def encode(src: str, out: Path, size=None, sound=False, on_ready=None, stop_afte
         ff = subprocess.Popen(cmd, stdin=r, stdout=subprocess.DEVNULL)
         os.close(r)
     pipe = Gst.parse_launch(desc)
+    sink = pipe.get_by_name("out")
+    if sink:                                   # set here, not in the text: a folder name with a quote can't break it
+        sink.set_property("location", str(out))
     loop = GLib.MainLoop()
     ok = {"err": ""}
 
@@ -265,6 +270,8 @@ def run(argv: list[str]) -> int:
     finally:
         portal.close(sess)
         STATE.unlink(missing_ok=True)                       # our own marker file
+    if not saved:
+        shots.release(out)
     if saved:
         shots.add(out)
         from grimoire.fsutil import tilde

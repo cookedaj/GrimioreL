@@ -84,6 +84,7 @@ def shoot(mode: str, args: list[str]) -> int:
 
     dest = shots.new_path()
     if not img.save(str(dest), "PNG"):
+        shots.release(dest)
         print(f"couldn't write {dest}")
         return 1
     shots.add(dest)

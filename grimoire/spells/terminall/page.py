@@ -6,6 +6,7 @@ Shortcuts: Ctrl+Shift+T new tab, Ctrl+Shift+W close pane, Ctrl+Shift+E split sid
 and bottom, Ctrl+Shift+F search, Ctrl+Shift+P commands, Ctrl+Shift+C/V copy/paste, Ctrl+= / Ctrl+- / Ctrl+0 zoom,
 Ctrl+PgUp/PgDn or Ctrl+(Shift+)Tab switch tabs, Shift+PgUp/PgDn scroll back.
 """
+import html
 import subprocess
 from pathlib import Path
 
@@ -694,7 +695,8 @@ class TerminalLPage(QWidget):
             short = title if len(title) <= 32 else "…" + title[-31:]
             if self.tabs.tabText(i) != short:
                 self.tabs.setTabText(i, short)
-                self.tabs.setTabToolTip(i, title)
+                # programs set the title; as a plain tooltip Qt would render any markup in it
+                self.tabs.setTabToolTip(i, f"<p style='white-space:pre'>{html.escape(title)}</p>")
         v = self.active_view()
         self.titleChanged.emit(f"{v.title()} — TerminalL" if v else "TerminalL")
 

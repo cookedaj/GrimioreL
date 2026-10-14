@@ -358,9 +358,10 @@ class ShotLPage(QWidget):
         except capture.CaptureError as e:
             raw = None
             self.say(str(e))
-        win.show()
-        win.raise_()
-        win.activateWindow()
+        finally:                               # whatever happened, never leave Grimoire hidden
+            win.show()
+            win.raise_()
+            win.activateWindow()
         if raw is not None and not raw.isNull():
             self.handle(raw)
 
@@ -374,6 +375,7 @@ class ShotLPage(QWidget):
             return
         dest = shots.new_path()
         if not img.save(str(dest), "PNG"):
+            shots.release(dest)
             self.say(f"Couldn't write {tilde(dest)}")
             return
         shots.add(dest)

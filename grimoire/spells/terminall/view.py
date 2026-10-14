@@ -388,7 +388,9 @@ class TerminalView(QWidget):
     def send_text(self, text: str, paste=False):
         text = text.replace("\r\n", "\r").replace("\n", "\r")
         if paste and emulator.BRACKETED_PASTE in self.session.screen.mode:
-            text = "\x1b[200~" + text.replace("\x1b[201~", "") + "\x1b[201~"
+            while "\x1b[201~" in text:           # "\x1b[20\x1b[201~1~" must not leave an end marker behind
+                text = text.replace("\x1b[201~", "")
+            text = "\x1b[200~" + text + "\x1b[201~"
         self.to_bottom()
         self.session.write_text(text)
 
