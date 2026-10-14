@@ -207,6 +207,12 @@ def _draw(name: str, p: QPainter):
             p.drawLine(QPointF(12, 5), QPointF(12, 19))
         else:
             p.drawLine(QPointF(3.5, 12), QPointF(20.5, 12))
+    elif name == "launchl":                                # a menu open above a panel, its button bottom left
+        p.drawRoundedRect(r(3, 17.5, 18, 3.5), 1.2, 1.2)
+        p.drawRoundedRect(r(3, 3.5, 12.5, 11), 2, 2)
+        for y in (7.5, 11):
+            p.drawLine(QPointF(6, y), QPointF(12.5, y))
+        p.drawPoint(QPointF(5.5, 19.25))
     elif name == "palette":                                # a bolt: quick commands
         path = QPainterPath(QPointF(13.5, 3.5)); path.lineTo(6.5, 13.5); path.lineTo(11.5, 13.5); path.lineTo(10.5, 20.5)
         path.lineTo(17.5, 10.5); path.lineTo(12.5, 10.5); path.closeSubpath(); p.drawPath(path)
