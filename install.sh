@@ -10,12 +10,24 @@
 #     place when you ask, on its page)
 #   - adds the Grimoire Tray menu entry (it starts at login only once you turn that on)
 #   - records the commit it came from (app/INSTALLED.json), so Grimoire can tell when there's an update
+#   - installs the root helpers (MuraL, OptimizeL, SystemL, FocusL) root-owned into /usr/local/libexec/grimoire-linux,
+#     plus their polkit actions, asking for your password once, and only when they're missing or changed: pkexec
+#     must never run a copy you (or anything running as you) can edit. --no-system skips this step.
+#   ./install.sh [--all] [--no-system]
 # Settings stay in ~/.config/grimoire and ~/.local/share/grimoire; ./uninstall.sh removes the app again.
 set -euo pipefail
 SRC="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 APP="$DATA/grimoire/app"
 BIN="$HOME/.local/bin"
+ALL="" SYSTEM=1
+for arg in "$@"; do
+    case "$arg" in
+        --all) ALL=1 ;;
+        --no-system) SYSTEM="" ;;
+        *) echo "usage: ./install.sh [--all] [--no-system]" >&2; exit 2 ;;
+    esac
+done
 SKIP=(--exclude .git --exclude .worktrees --exclude __pycache__ --exclude '*.pyc' --exclude .ENV --exclude CLAUDE.local.md --exclude .claude)
 
 python3 -c "import PySide6.QtWidgets, PIL, psutil" 2>/dev/null || {
@@ -130,11 +142,19 @@ EOF
 standalone() { PYTHONPATH="$APP" QT_QPA_PLATFORM=offscreen python3 -P -m grimoire.standalone "$@"; }
 standalone install vaultl >/dev/null
 standalone refresh
-if [ "${1:-}" = "--all" ]; then standalone install all; fi
+if [ -n "$ALL" ]; then standalone install all; fi
 # Grimoire's spells and their icons for LaunchL's search
 PYTHONPATH="$APP" QT_QPA_PLATFORM=offscreen python3 -P -c "from grimoire.spells.launchl import panel; panel.write_spells()" \
     2>/dev/null || true
 update-desktop-database "$DATA/applications" 2>/dev/null || true
+
+# 5. the root helpers, system-wide and root-owned (grimoire/roothelper.py; one pkexec prompt when they changed).
+#    Never fails the install: without them only the features that need root are unavailable.
+if [ -n "$SYSTEM" ]; then
+    python3 -I "$APP/grimoire/roothelper.py" install || true
+else
+    echo "Skipped the system helpers (--no-system): features that need root stay unavailable until ./install.sh runs without it."
+fi
 
 case ":$PATH:" in *":$BIN:"*) ;; *) echo "Note: add $BIN to your PATH to run grimoire from a terminal." ;; esac
 echo "Grimoire Linux installed in $APP. Launch it from the app menu or run: grimoire"

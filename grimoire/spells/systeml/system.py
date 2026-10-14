@@ -13,9 +13,9 @@ from pathlib import Path
 
 import psutil
 
+from grimoire import roothelper
 from grimoire.fsutil import free_name, trash
 
-HELPER = Path(__file__).with_name("root-helper.sh")
 AUTOSTART = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "autostart"
 SYSTEM_AUTOSTART = [Path("/etc/xdg/autostart")]
 APP_DIRS = [Path.home() / ".local/share/applications", Path("/usr/share/applications"),
@@ -37,8 +37,9 @@ SIGNALS = {"TERM": signal.SIGTERM, "KILL": signal.SIGKILL, "STOP": signal.SIGSTO
 
 
 def run_root(*args: str) -> str:
-    """root-helper.sh through pkexec. Raises RuntimeError("cancelled") if the password prompt is dismissed."""
-    r = subprocess.run(["pkexec", "/usr/bin/bash", str(HELPER), *args], capture_output=True, text=True)
+    """SystemL's system root helper through pkexec. Raises RuntimeError("cancelled") if the password prompt is
+    dismissed, roothelper.HelperError if the helper isn't installed safely."""
+    r = roothelper.run("systeml", *args)
     if r.returncode in (126, 127) and not r.stderr.strip():
         raise RuntimeError("cancelled")
     if r.returncode:

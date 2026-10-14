@@ -7,9 +7,9 @@ says what can go wrong; they're never in the Recommended profile.
 """
 import os
 import shutil
-import subprocess
 from pathlib import Path
 
+from grimoire import roothelper
 from grimoire.fsutil import human
 from grimoire.paths import CONFIG
 from grimoire.spells.optimizel.kinds import (  # noqa: F401  (WHEN, has_battery, load_saved: used via tweaks.*)
@@ -432,8 +432,8 @@ def pending_note(t: Tweak, saved: dict) -> str:
 
 
 def run_root(args: list[str]):
-    """root-helper.sh through pkexec: one password prompt for the whole batch."""
-    r = subprocess.run(["pkexec", "/usr/bin/bash", str(HELPER), *args], capture_output=True, text=True)
+    """OptimizeL's system root helper through pkexec: one password prompt for the whole batch."""
+    r = roothelper.run("optimizel", *args)
     if r.returncode == 126:
         raise RuntimeError("cancelled")
     if r.returncode:

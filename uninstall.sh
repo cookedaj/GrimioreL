@@ -6,6 +6,9 @@
 #                             Kickoff back first if LaunchL replaced it), auto-tidy and alert timers and SightsL and
 #                             tray autostart (and stops the tray); keep your settings so a later install picks them up
 #   ./uninstall.sh --purge    also move Grimoire's settings, logs and cache to the Trash
+# The root helpers install.sh put in /usr/local/libexec/grimoire-linux (and their polkit file) are removed with one
+# password prompt; cancel it and the exact command to remove them later is printed. A package's own helpers in
+# /usr/libexec stay (the package manager removes them).
 # Desktops still showing MuraL's wallpaper are switched to Plasma's own image wallpaper first (MuraL's current
 # picture, copied to ~/Pictures/Wallpapers), so no screen goes blank. With --purge, any wallpaper or lock-screen
 # picture that lives in Grimoire's data is copied there too before that data goes to the Trash.
@@ -187,6 +190,11 @@ if [ -d "$LAUNCHL" ]; then
     else
         echo "LaunchL's widget was kept (see above). Remove it later from the panel, then delete $LAUNCHL."
     fi
+fi
+
+# the root helpers in /usr/local/libexec (one pkexec prompt; prints the command for later if cancelled)
+if [ -f "$CODE/grimoire/roothelper.py" ]; then
+    python3 -I "$CODE/grimoire/roothelper.py" uninstall ${DRY:+--dry} || true
 fi
 
 # commands (only links, never a file someone put there), menu entries and icons Grimoire generated

@@ -12,6 +12,9 @@
 #   /usr/share/icons/hicolor/         the clover and every spell's tile icon
 #   /usr/share/plasma/wallpapers/     MuraL's wallpaper plugin
 #   /usr/share/metainfo/              AppStream data, so Discover and other software centers can list it
+#   /usr/libexec/grimoire-linux/      the root helpers (<spell>-root-helper.sh, 0755, root-owned in the package), the
+#                                     only copies pkexec runs (grimoire/roothelper.py); the app tree carries none
+#   /usr/share/polkit-1/actions/      their polkit actions, so the password prompt names Grimoire Linux
 #
 # LaunchL's panel widget isn't installed system-wide: its page installs it for you with kpackagetool6 (from
 # /usr/share/grimoire-linux/plasma) together with the spell list its search reads, and swaps it for Kickoff.
@@ -35,7 +38,8 @@ tar -C "$SRC" --exclude=__pycache__ --exclude='*.pyc' -cf - grimoire bin plasma 
     | tar -C "$APP" --no-same-owner -xf -
 find "$APP" -type d -exec chmod 755 {} +
 find "$APP" -type f -exec chmod 644 {} +
-chmod 755 "$APP"/bin/grimoire* "$APP"/*.sh "$APP"/grimoire/spells/*/root-helper.sh
+chmod 755 "$APP"/bin/grimoire* "$APP"/*.sh
+rm -f "$APP"/grimoire/spells/*/root-helper.sh           # runtime uses /usr/libexec/grimoire-linux only (step 6)
 printf '%s\n' "$KIND" > "$APP/PACKAGED"
 
 # 2. commands
@@ -136,4 +140,13 @@ chmod 644 "$USR"/share/applications/*.desktop
 sed "s/@VERSION@/$VERSION/; s/@DATE@/$(date -u +%Y-%m-%d)/" "$SRC/packaging/io.github.cookedaj.grimoire_linux.metainfo.xml" \
     > "$USR/share/metainfo/io.github.cookedaj.grimoire_linux.metainfo.xml"
 chmod 644 "$USR/share/metainfo/io.github.cookedaj.grimoire_linux.metainfo.xml"
+# 6. root helpers + polkit actions (root ownership comes from dpkg-deb --root-owner-group / makepkg's fakeroot)
+LIBEXEC=/usr/libexec/grimoire-linux
+POLICY="$USR/share/polkit-1/actions/io.github.cookedaj.grimoire-linux.policy"
+python3 -I "$SRC/grimoire/roothelper.py" stage "$DEST$LIBEXEC"
+chmod 755 "$DEST$LIBEXEC" "$DEST$LIBEXEC"/*-root-helper.sh
+install -d -m755 "$USR/share/polkit-1/actions"
+python3 -I "$SRC/grimoire/roothelper.py" policy "$LIBEXEC" > "$POLICY"
+chmod 644 "$POLICY"
+
 echo "Staged Grimoire Linux $VERSION ($KIND) in $DEST"

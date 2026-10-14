@@ -7,7 +7,7 @@ what goes over the network, see [security.md](security.md).
   Plasma wallpaper plugin (`plasma/com.cookedaj.grimoire.mural`) for playlists, crossfades and video wallpapers
   that pause while a window is fullscreen. Previews render on worker threads (splash and login previews are
   rendered from the real QML). System-wide pieces (SDDM login, Plymouth boot) install through `pkexec` via
-  `grimoire/spells/mural/root-helper.sh`, which validates its input and keeps backups so you can restore.
+  its root helper (`mural-root-helper.sh`), which validates its input and keeps backups so you can restore.
 - **Community store**: downloads only happen when you press Install. Archives are extracted defensively
   (no absolute paths, no `..`, regular files only, size-capped) and only theme files are copied into place.
   Community login/boot themes run code at login/boot, so prefer popular, well-rated ones.
@@ -17,7 +17,7 @@ what goes over the network, see [security.md](security.md).
   the systemd user timer `grimoire-tidyl.timer` every 10 minutes; rules live in `~/.config/grimoire/vaultl.json`
   and the undo log in `~/.local/share/grimoire/vaultl/` (copied once from TidyL's files, which stay as a backup).
 - **OptimizeL** stages switch flips and applies them in one go. System tweaks go through `pkexec` to
-  `grimoire/spells/optimizel/root-helper.sh`, which only knows a fixed list of tweaks, writes files whose names
+  its root helper (`optimizel-root-helper.sh`), which only knows a fixed list of tweaks, writes files whose names
   contain `grimoire-optimizel` (sysctl.d, journald.conf.d, apt.conf.d, systemd drop-ins, zram-generator.conf),
   and saves the old values in `/var/lib/grimoire-optimizel` so "off" puts them back. Your own tweaks (power
   profile, KDE settings, autostart overrides, `~/.config/environment.d`) keep their old values in
@@ -31,7 +31,7 @@ what goes over the network, see [security.md](security.md).
 - **SystemL** reads the machine with psutil and `/proc` once a second, only while its window is on screen.
   Per-app history is written once a minute to `~/.local/share/grimoire/systeml-history.json` (a week, busiest
   apps only). Your own processes, user services and startup apps change directly; anything else (another user's
-  process, system services, emptying swap) goes through `pkexec` to `grimoire/spells/systeml/root-helper.sh`,
+  process, system services, emptying swap) goes through `pkexec` to its root helper (`systeml-root-helper.sh`),
   which checks every argument and refuses to stop the processes and services that keep the session alive.
   Alerts run as the systemd user timer `grimoire-systeml-alerts.timer`: once a minute, one short check (psutil and
   a D-Bus call, no window) that notifies once per problem, then again only after it clears or the reminder time

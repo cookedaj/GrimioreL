@@ -22,15 +22,15 @@ import shutil
 import signal
 import subprocess
 import time
-from pathlib import Path
 
 import psutil
 
+from grimoire import roothelper
 from grimoire.paths import ASSETS, CACHE, HOME
 from grimoire.spells.focusl.store import PROTECTED, log
 
 DRY = bool(os.environ.get("FOCUSL_DRY"))
-HELPER = Path(__file__).with_name("root-helper.sh")
+HELPER = roothelper.source("focusl")     # this tree's copy: FOCUSL_DRY runs it on a sandbox, as you
 SOUNDS = ["/usr/share/sounds/ocean/stereo/completion-success.oga", "/usr/share/sounds/freedesktop/stereo/complete.oga",
           "/usr/share/sounds/freedesktop/stereo/bell.oga"]
 
@@ -215,7 +215,8 @@ class AppGuard:
 
 # ---------------------------------------------------------------- sites
 def _helper(args: list[str]) -> str:
-    """Run root-helper.sh through pkexec; '' when it worked, else why not."""
+    """Run FocusL's system root helper through pkexec (this tree's copy on a sandbox with FOCUSL_DRY); '' when it
+    worked, else why not."""
     if DRY:
         root = CACHE / "focusl-dry-root"
         (root / "etc").mkdir(parents=True, exist_ok=True)
@@ -223,7 +224,10 @@ def _helper(args: list[str]) -> str:
             (root / "etc/hosts").write_text("127.0.0.1 localhost\n")
         cmd, env = ["bash", str(HELPER), *args], dict(os.environ, FOCUSL_ROOT=str(root))
     else:
-        cmd, env = ["pkexec", "/usr/bin/bash", str(HELPER), *args], None
+        try:
+            cmd, env = roothelper.command("focusl", *args), None
+        except roothelper.HelperError as e:
+            return str(e)
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=180)
     except (OSError, subprocess.TimeoutExpired) as e:

@@ -37,8 +37,13 @@ status)`). Folder names stay as-is when display names change (e.g. SightsL lives
 ## Safety rules
 - Never permanently delete user files: use the Trash (`gio trash`, or the freedesktop spec as in `vaultl/ops.py`);
   never overwrite on name clashes (`free_name()` → "name (2).ext").
-- Anything needing root goes through a spell's `root-helper.sh` via `pkexec` (MuraL's, OptimizeL's or SystemL's: whitelisted
-  actions, validated input, old values backed up).
+- Anything needing root goes through a spell's `root-helper.sh` via `pkexec` (MuraL's, OptimizeL's, SystemL's or FocusL's:
+  whitelisted actions, validated input, old values backed up), always through `grimoire/roothelper.py`
+  (`roothelper.run(spell, …)`/`command()`): pkexec runs only the root-owned system copy
+  (`/usr/libexec/grimoire-linux/<spell>-root-helper.sh` from packages, `/usr/local/libexec/grimoire-linux/` from
+  install.sh, one prompt when they change, `--no-system` skips), checked before every run (root-owned up to `/`, no
+  group/world write, no symlinks), never the user-writable copy in the tree. A new helper goes in `roothelper.SPELLS`
+  (its polkit message). Helpers must not read code or data from their own folder (they run from /usr/…/libexec).
 - Simulate package removals (`apt-get -s`) before suggesting them; never let `kubuntu-desktop` or IBM Plex fonts go.
 - Community store downloads happen only on the user's Install click; keep the defensive extraction in `store.py`.
 - Never commit personal info: author `cookedaj` with the GitHub noreply email; no `/home/<user>` paths or real names.
@@ -50,6 +55,12 @@ status)`). Folder names stay as-is when display names change (e.g. SightsL lives
   `journalctl --user` for plasmashell/QML errors. plasmashell caches QML: restart it after plugin edits.
 - Don't `pkill -f <pattern>` with a pattern that also matches your own shell command; anchor it (`^python3 -m …`).
 - Qt signals carrying sizes/large numbers: use `object`, not `int` (32-bit overflow).
+- Root helpers: never run them with sudo/pkexec here. Test them as you on a sandbox (`OPTIMIZEL_ROOT`/`OPTIMIZEL_DRY`,
+  `FOCUSL_ROOT`/`FOCUSL_DRY`; `roothelper.source(spell)` is the tree's copy) and the callers with a stub `pkexec` on
+  PATH plus `roothelper.LOCAL_DIR`/`PACKAGE_DIR` pointed at a sandbox and `roothelper.unsafe` stubbed (or
+  `TRUSTED_UIDS.add(os.getuid())` on a folder chain nobody else can write).
+  Test install.sh/uninstall.sh's system step with a stub pkexec and `GRIMOIRE_SYSTEM_TEST=1
+  GRIMOIRE_SYSTEM_PREFIX=<sandbox>` (ignored without the TEST var), in a sandbox HOME.
 
 ## Install / run
 `./install.sh` copies the app (rsync, no `.git`) into `~/.local/share/grimoire/app`, links its `bin/*` into
@@ -74,7 +85,8 @@ PySide6 QtDBus can't marshal a{ss}/(oayays)). Test hotkey writes with a stub `BU
 the keyring only with throwaway attributes you delete. Threat model: docs/security.md.
 Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); `uv` is available for side tools.
 Packages: `packaging/stage.sh DESTDIR KIND` lays out the system-wide tree (`/usr/share/grimoire-linux` + `PACKAGED`
-marker, `/usr/bin` links, menu entries, icons, MuraL plugin, AppStream) for both `packaging/debian` (hand-written
+marker, `/usr/bin` links, menu entries, icons, MuraL plugin, AppStream, root helpers in
+`/usr/libexec/grimoire-linux` + polkit actions; the app tree carries no helper copies) for both `packaging/debian` (hand-written
 rules, no debhelper; `packaging/build-deb.sh` builds under ~/.cache, never install it here) and `packaging/aur`.
 `paths.packaged()`/`command()`/`unit_command()` make timers/autostart/hotkeys run `/usr/bin` commands there and
 `update.managed()` turns the self-updater off. Releases: `scripts/release.sh X.Y.Z` (bump, changelog, PKGBUILD,

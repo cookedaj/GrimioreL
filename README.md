@@ -127,7 +127,7 @@ Meta opens it. **Replace launcher** records your Kickoff first, so **Restore Kic
 
 ## Install
 
-### From source (recommended, no sudo)
+### From source (recommended)
 
 ```bash
 git clone https://github.com/cookedaj/grimoire-linux.git
@@ -141,6 +141,11 @@ menu entries and copies the MuraL wallpaper plugin and LaunchL widget into Plasm
 so you can move or delete the download afterwards. If `grimoire` isn't found in a terminal, add `~/.local/bin` to
 your `PATH` (or log out and back in). A ZIP download from GitHub works the same way.
 
+The four small root helpers (login/boot themes, system tweaks, root actions in SystemL, FocusL's site blocking) are
+the one exception to "everything per user": the installer asks for your password once to put them, root-owned, in
+`/usr/local/libexec/grimoire-linux`, so nothing running as you can change what runs as root. It asks again only when
+a newer version changes them; `./install.sh --no-system` skips this (those features then stay unavailable).
+
 ### Packages
 
 - **Debian / Ubuntu / Kubuntu (.deb)**: coming soon on the
@@ -148,8 +153,8 @@ your `PATH` (or log out and back in). A ZIP download from GitHub works the same 
   `sudo apt install ./grimoire-linux_*_all.deb`.
 - **Arch / Manjaro / EndeavourOS (AUR)**: coming soon as `grimoire-linux-git` (`yay -S grimoire-linux-git`).
 
-Packages install system-wide into `/usr/share/grimoire-linux` and update with your system; the in-app updater is
-off there.
+Packages install system-wide into `/usr/share/grimoire-linux` (root helpers in `/usr/libexec/grimoire-linux`) and
+update with your system; the in-app updater is off there.
 
 ### Requirements
 
@@ -187,7 +192,8 @@ System Settings → Default Applications).
 ```
 
 It removes the app, commands, menu entries, the wallpaper plugin (switching your desktop to MuraL's current picture first),
-LaunchL (putting Kickoff back first), the timers, and the autostart entries. Looks and tweaks you applied stay as
+LaunchL (putting Kickoff back first), the timers, the autostart entries and the root helpers in
+`/usr/local/libexec/grimoire-linux` (one password prompt). Looks and tweaks you applied stay as
 they are, so turn off MuraL themes and OptimizeL switches first if you want them undone. With a package, run
 `/usr/share/grimoire-linux/uninstall.sh` as yourself, then remove the package.
 
@@ -239,7 +245,8 @@ See [Uninstall](#uninstall): one command, and `--purge` if you want your setting
 Issues and pull requests are welcome at [github.com/cookedaj/grimoire-linux](https://github.com/cookedaj/grimoire-linux).
 Keep the look strictly black & white (no accent colors; new icons are line glyphs drawn in `grimoire/glyphs.py`),
 keep modules small, never delete user files (Trash only), and send anything that needs root through a spell's
-whitelisted `root-helper.sh`. Test UI offscreen (`QT_QPA_PLATFORM=offscreen`) and file operations in a sandbox
+whitelisted `root-helper.sh` (run only from its root-owned system copy, see
+`grimoire/roothelper.py`). Test UI offscreen (`QT_QPA_PLATFORM=offscreen`) and file operations in a sandbox
 folder. `python3 scripts/screenshots.py` regenerates the screenshots; `scripts/release.sh X.Y.Z` prepares a
 release; `packaging/build-deb.sh` builds the .deb.
 

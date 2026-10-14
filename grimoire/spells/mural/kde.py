@@ -4,7 +4,7 @@ which a tab's Apply shows as "Couldn't apply: …"."""
 import subprocess
 from pathlib import Path
 
-ROOT_HELPER = Path(__file__).with_name("root-helper.sh")
+from grimoire import roothelper
 
 
 def kwrite(file: str, groups: str | list[str], key: str, value, type_: str | None = None, notify=False):
@@ -46,9 +46,10 @@ def run_tool(args: list[str], ok_if_already=False):
 
 
 def run_root(*args: str):
-    """Run root-helper.sh through pkexec (asks for the password). Raises RuntimeError("cancelled") if the
-    prompt is dismissed, or the helper's last message on failure."""
-    r = subprocess.run(["pkexec", "/usr/bin/bash", str(ROOT_HELPER), *args], capture_output=True, text=True)
+    """Run MuraL's system root helper through pkexec (asks for the password). Raises RuntimeError("cancelled") if
+    the prompt is dismissed, roothelper.HelperError if the helper isn't installed safely, or the helper's last message
+    on failure."""
+    r = roothelper.run("mural", *args)
     if r.returncode == 126:
         raise RuntimeError("cancelled")
     if r.returncode:

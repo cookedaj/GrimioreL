@@ -17,10 +17,11 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from grimoire import roothelper
 from grimoire.fsutil import human
 from grimoire.paths import CONFIG, DATA
 
-HELPER = Path(__file__).with_name("root-helper.sh")
+HELPER = roothelper.source("optimizel")      # this tree's copy: sandbox tests only; pkexec runs the system one
 ROOT = os.environ.get("OPTIMIZEL_ROOT", "")
 ETC = Path(ROOT + "/etc")
 STATE = Path(ROOT + "/var/lib/grimoire-optimizel")   # root helper's saved originals
