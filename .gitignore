@@ -7,3 +7,6 @@ CLAUDE.local.md
 
 # Secrets (never commit)
 .ENV/
+
+# Parallel work (git worktrees) lives inside the repo, never as sibling folders
+.worktrees/

@@ -11,7 +11,7 @@ SRC="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 APP="$DATA/grimoire/app"
 BIN="$HOME/.local/bin"
-SKIP=(--exclude .git --exclude __pycache__ --exclude '*.pyc' --exclude .ENV --exclude CLAUDE.local.md --exclude .claude)
+SKIP=(--exclude .git --exclude .worktrees --exclude __pycache__ --exclude '*.pyc' --exclude .ENV --exclude CLAUDE.local.md --exclude .claude)
 
 python3 -c "import PySide6.QtWidgets, PIL" 2>/dev/null || {
     echo "PySide6 or Pillow is missing; see \"Requirements\" in README.md for your distro's packages."

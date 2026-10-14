@@ -51,3 +51,5 @@ Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); 
 
 ## Git
 Branch `main`, push to `origin` (github.com/cookedaj/Grimoire). Commit messages: a short title + bullet body.
+Parallel work goes in git worktrees under `.worktrees/<name>` (gitignored, skipped by `install.sh`), never as sibling
+folders next to the repo; remove them with `git worktree remove` once merged, keep the branch.
