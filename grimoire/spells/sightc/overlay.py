@@ -6,6 +6,7 @@ run     start the overlay in this process (used by `on`)
 on/off  start / stop the background overlay
 next    switch to the next saved crosshair (also Ctrl+Alt+Shift+X)
 """
+import fcntl
 import os
 import signal
 import subprocess
@@ -28,14 +29,27 @@ def running_pid() -> int | None:
     return pid if b"grimoire.spells.sightc.overlay" in cmd else None
 
 
+def _write_pid(pid: int):
+    tmp = PID.with_suffix(".tmp")
+    tmp.write_text(str(pid))
+    tmp.replace(PID)                                       # atomic: running_pid() never reads half a number
+
+
 def start():
-    if running_pid():
-        return
-    repo = Path(__file__).resolve().parents[3]
-    env = dict(os.environ, PYTHONPATH=f"{repo}:{os.environ.get('PYTHONPATH', '')}".rstrip(":"))
-    with open(CACHE / "sightc.log", "w") as log:          # the child keeps its own copy of the handle
-        subprocess.Popen([sys.executable, "-m", "grimoire.spells.sightc.overlay", "run"], env=env,
-                         stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
+    """Start the background overlay unless one is running. The pid is written here, straight from Popen, not
+    once the overlay has loaded: a quick second click (or the tray, or `on`) then sees it and doesn't start a
+    second overlay that `off` couldn't reach. The lock makes check-and-start atomic across processes."""
+    with open(CACHE / "sightc.lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if running_pid():
+            return
+        repo = Path(__file__).resolve().parents[3]
+        env = dict(os.environ, PYTHONPATH=f"{repo}:{os.environ.get('PYTHONPATH', '')}".rstrip(":"))
+        with open(CACHE / "sightc.log", "w") as log:      # the child keeps its own copy of the handle
+            proc = subprocess.Popen([sys.executable, "-m", "grimoire.spells.sightc.overlay", "run"], env=env,
+                                    stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                    start_new_session=True)
+        _write_pid(proc.pid)
 
 
 def stop():
@@ -121,6 +135,11 @@ def next_crosshair():
 
 # ---------------------------------------------------------------- the overlay itself
 def run():
+    other = running_pid()
+    if other and other != os.getpid():
+        sys.exit(f"SightsL: an overlay is already running (pid {other})")
+    _write_pid(os.getpid())         # start() wrote it already; this covers `run` by hand (or any re-exec)
+
     from PySide6.QtCore import QFileSystemWatcher, QTimer, QUrl
     from PySide6.QtGui import QGuiApplication
     from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
@@ -181,7 +200,6 @@ def run():
         NEXT_ACTION: next_crosshair,
     })
 
-    PID.write_text(str(os.getpid()))
     signal.signal(signal.SIGTERM, lambda *_: app.quit())
     signal.signal(signal.SIGINT, lambda *_: app.quit())
     keepalive = QTimer()            # lets Python handle signals while Qt's loop runs
