@@ -5,7 +5,8 @@ from datetime import datetime
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QFont, QIcon, QPalette
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QFrame, QGridLayout, QHBoxLayout, QLabel,
-                               QMainWindow, QMessageBox, QPushButton, QStackedWidget, QVBoxLayout, QWidget)
+                               QMainWindow, QMessageBox, QPushButton, QScrollArea, QStackedWidget, QVBoxLayout,
+                               QWidget)
 
 from grimoire import standalone
 from grimoire.glyphs import clover, glyph
@@ -207,7 +208,10 @@ class Window(QMainWindow):
         self.stack = QStackedWidget()
         self.nav = QButtonGroup(self)
         self.pages: dict[str, tuple] = {}
-        self._add_page("home", "Home", "home", Home(self.open, Banner(self.updater, self.whats_new)), rl)
+        home = QScrollArea()                     # scrolls once there are more spell cards than fit
+        home.setWidgetResizable(True)
+        home.setWidget(Home(self.open, Banner(self.updater, self.whats_new)))
+        self._add_page("home", "Home", "home", home, rl)
         for spell in SPELLS:
             self._add_page(spell.id, spell.name, spell.icon, None, rl, spell)
         rl.addStretch(1)
