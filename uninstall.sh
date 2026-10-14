@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Remove Grimoire for the current user (no sudo).
-#   ./uninstall.sh            remove the app, its commands, menu entries, wallpaper plugin, TidyL timer and
+#   ./uninstall.sh            remove the app, its commands, menu entries, wallpaper plugin, auto-tidy timer and
 #                             SightsL autostart; keep your settings so a later install picks them up
 #   ./uninstall.sh --purge    also move Grimoire's settings, logs and cache to the Trash
 # Looks and tweaks you applied (MuraL themes, OptimizeL switches) stay as they are: turn them off in Grimoire first
@@ -40,4 +40,4 @@ if [ "${1:-}" = "--purge" ]; then
 else
     echo "Grimoire removed. Settings kept in $CONFIG/grimoire and $DATA/grimoire (./uninstall.sh --purge clears them)."
 fi
-echo "If FileL opened your folders, pick another file manager in System Settings > Default Applications."
+echo "If VaultL opened your folders, pick another file manager in System Settings > Default Applications."

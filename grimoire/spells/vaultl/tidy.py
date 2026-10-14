@@ -1,5 +1,5 @@
-"""TidyL engine: sort ~/Downloads by file type, send stale installers/archives to the Trash, undo moves,
-and find big files and duplicates.
+"""VaultL's tidy engine (TidyL before the merge): sort ~/Downloads by file type, send stale installers and
+archives to the Trash, undo moves, and find big files and duplicates.
 
 Safety rules: only loose files directly in the watched folder are touched (never folders, hidden files,
 in-progress downloads or anything changed in the last 2 minutes); nothing is ever deleted: cleanup goes
@@ -16,8 +16,9 @@ from pathlib import Path
 from grimoire.fsutil import free_name, trash
 from grimoire.paths import CONFIG, DATA, HOME
 
-SETTINGS = CONFIG / "tidyl.json"
-LOG = DATA / "tidyl" / "log.jsonl"
+SETTINGS = CONFIG / "vaultl.json"
+LOG = DATA / "vaultl" / "log.jsonl"
+LEGACY = {SETTINGS: CONFIG / "tidyl.json", LOG: DATA / "tidyl" / "log.jsonl"}    # TidyL's files, before VaultL
 SETTLE_SECONDS = 120
 PARTIAL = (".part", ".crdownload", ".download", ".tmp", ".partial", ".!qB", ".opdownload")
 
@@ -70,6 +71,17 @@ class Settings:
         SETTINGS.write_text(json.dumps(asdict(self), indent=2))
 
 
+def migrate():
+    """Carry TidyL's rules and undo log over to VaultL once. Copies, so the old files stay as a backup."""
+    for new, old in LEGACY.items():
+        if not new.exists() and old.is_file():
+            new.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(old, new)
+
+
+migrate()
+
+
 def expand(p: str) -> Path:
     return Path(os.path.expanduser(p))
 
@@ -104,7 +116,7 @@ def history(limit=200) -> list[dict]:
 
 
 def trash_by_hand(path: Path, rule: str, reason: str):
-    """Trash a file the user picked in TidyL (big files, duplicates) and log it. Raises OSError."""
+    """Trash a file the user picked in VaultL (big files, duplicates) and log it. Raises OSError."""
     trash(path)
     _log({"action": "trash", "batch": "manual", "rule": rule, "from": str(path), "reason": reason})
 

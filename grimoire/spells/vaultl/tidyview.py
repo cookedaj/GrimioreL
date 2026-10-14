@@ -1,4 +1,5 @@
-"""TidyL page: auto-tidy switch, sorting rules, activity log with undo, big files and duplicates."""
+"""VaultL's tidy panels (TidyL before the merge): sorting rules, activity log with undo, big files and
+duplicates. The sidebar's Tidy section picks the panel; the header carries Tidy now, Undo and the auto-tidy switch."""
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -11,42 +12,50 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QFileDialog, QHBoxL
 from grimoire.fsutil import human, tilde
 from grimoire.jobs import POOL, Job
 from grimoire.paths import HOME
-from grimoire.spells import filel
-from grimoire.spells.tidyl import cli, engine
+from grimoire.spells.vaultl import cli, tidy
+
+# (sidebar label, glyph, panel title, what the panel is for)
+PANELS = [("Rules", "tidy", "Auto-sort rules", "Where each kind of download goes, and when stale ones go to the Trash."),
+          ("Activity", "clock", "Activity", "Everything VaultL sorted or trashed. Undo puts the last tidy back."),
+          ("Big files", "bigfile", "Big files", "The largest files in your home folder."),
+          ("Duplicates", "copies", "Duplicates", "Identical copies taking up space twice.")]
 
 
 class _Signals(QObject):
     done = Signal(str, object)        # kind, result
 
 
-class TidyLPage(QWidget):
+class TidyPanel(QWidget):
+    """changed fires after anything that moves files, so the browser's Downloads bar can refresh.
+    reveal(path) asks the browser to show a file (double-click in Big files)."""
+    changed = Signal()
+    reveal = Signal(str)
+
     def __init__(self):
         super().__init__()
-        self.setObjectName("Page")
-        self.settings = engine.Settings.load()
+        self.settings = tidy.Settings.load()
         self._sig = _Signals()
         self._sig.done.connect(self._on_done)
 
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(40, 30, 40, 28)
-        lay.setSpacing(14)
+        lay.setContentsMargins(22, 18, 22, 12)
+        lay.setSpacing(12)
 
         head = QHBoxLayout()
         titles = QVBoxLayout()
         titles.setSpacing(2)
-        t = QLabel("TidyL")
-        t.setObjectName("Title")
-        sub = QLabel(f"Keeps {tilde(engine.expand(self.settings.watch))} sorted and clears stale installers. "
-                     "Nothing is ever deleted: cleanup goes to the Trash, and every move can be undone.")
-        sub.setObjectName("Subtitle")
-        sub.setWordWrap(True)
-        titles.addWidget(t)
-        titles.addWidget(sub)
+        self.title = QLabel()
+        self.title.setObjectName("Title")
+        self.subtitle = QLabel()
+        self.subtitle.setObjectName("Subtitle")
+        self.subtitle.setWordWrap(True)
+        titles.addWidget(self.title)
+        titles.addWidget(self.subtitle)
         head.addLayout(titles, 1)
         self.undo_btn = QPushButton("Undo last tidy")
-        self.undo_btn.clicked.connect(self._undo)
+        self.undo_btn.clicked.connect(self.undo)
         self.now_btn = QPushButton("Tidy now")
-        self.now_btn.clicked.connect(self._tidy_now)
+        self.now_btn.clicked.connect(self.tidy_now)
         self.auto_btn = QPushButton()
         self.auto_btn.setObjectName("Primary")
         self.auto_btn.setMinimumSize(170, 40)
@@ -59,64 +68,65 @@ class TidyLPage(QWidget):
         self.status.setObjectName("Muted")
         lay.addWidget(self.status)
 
-        switch = QHBoxLayout()
-        switch.setSpacing(0)
         self.views = QStackedWidget()
-        self._switch = []
-        for i, name in enumerate(("Rules", "Activity", "Big files", "Duplicates")):
-            b = QPushButton(name)
-            b.setObjectName("Segment")
-            b.setProperty("pos", "first" if i == 0 else "last" if i == 3 else "mid")
-            b.setCheckable(True)
-            b.setChecked(i == 0)
-            b.clicked.connect(lambda _=False, i=i: self._show(i))
-            self._switch.append(b)
-            switch.addWidget(b)
-        switch.addStretch(1)
-        lay.addLayout(switch)
         self.views.addWidget(self._rules_view())
         self.views.addWidget(self._activity_view())
         self.views.addWidget(self._big_view())
         self.views.addWidget(self._dupes_view())
         lay.addWidget(self.views, 1)
-        self._refresh_auto()
-        self._refresh_activity()
+        self.show_panel(0)
+        self.refresh_auto()
 
     # ------------------------------------------------------------------ header
-    def _show(self, i):
+    def show_panel(self, i):
         self.views.setCurrentIndex(i)
-        for k, b in enumerate(self._switch):
-            b.setChecked(k == i)
+        _, _, title, sub = PANELS[i]
+        self.title.setText(title)
+        self.subtitle.setText(sub)
         if i == 1:
             self._refresh_activity()
 
-    def _refresh_auto(self):
+    def watch_dir(self) -> Path:
+        return tidy.expand(self.settings.watch)
+
+    def summary(self) -> str:
+        """One line on auto-tidy, for the header and the Downloads bar."""
+        last = next((e for e in tidy.history(50) if e["action"] in ("move", "trash")), None)
+        when = datetime.fromtimestamp(last["time"]).strftime("%b %-d, %-I:%M %p") if last else "never"
+        on = cli.timer_active()
+        return (f"Auto-tidy sorts {tilde(self.watch_dir())} every 10 minutes. " if on else "Auto-tidy is paused. ") \
+            + f"Last change: {when}. Nothing is ever deleted: cleanup goes to the Trash and moves can be undone."
+
+    def refresh_auto(self):
         on = cli.timer_active()
         self.auto_btn.setText("Auto-tidy: ON" if on else "Auto-tidy: OFF")
-        last = next((e for e in engine.history(50) if e["action"] in ("move", "trash")), None)
-        when = datetime.fromtimestamp(last["time"]).strftime("%b %-d, %-I:%M %p") if last else "never"
-        self.status.setText(("Runs every 10 minutes in the background. " if on else "Paused. ")
-                            + f"Last change: {when}.")
+        self.status.setText(self.summary())
 
     def _toggle_auto(self):
         try:
             cli.set_auto(not cli.timer_active())
         except subprocess.CalledProcessError as e:
-            QMessageBox.warning(self, "TidyL", f"Couldn't change the background timer: {e}")
-        self._refresh_auto()
+            QMessageBox.warning(self, "VaultL", f"Couldn't change the background timer: {e}")
+        self.refresh_auto()
+        self.changed.emit()
 
-    def _tidy_now(self):
-        r = engine.run(self.settings)
+    def tidy_now(self) -> str:
+        r = tidy.run(self.settings)
         msg = f"Sorted {r['moved']} file(s), cleaned {r['cleaned']} stale file(s)."
         if r["errors"]:
             msg += "  Problems: " + "; ".join(r["errors"][:3])
         self.status.setText(msg)
         self._refresh_activity()
+        self.changed.emit()
+        return msg
 
-    def _undo(self):
-        n = engine.undo_last()
-        self.status.setText(f"Moved {n} file(s) back." if n else "Nothing to undo.")
+    def undo(self) -> str:
+        n = tidy.undo_last()
+        msg = f"Moved {n} file(s) back." if n else "Nothing to undo."
+        self.status.setText(msg)
         self._refresh_activity()
+        self.changed.emit()
+        return msg
 
     # ------------------------------------------------------------------ rules
     def _rules_view(self) -> QWidget:
@@ -171,7 +181,7 @@ class TidyLPage(QWidget):
         self.settings.save()
 
     def _pick_dest(self, rule, btn):
-        start = str(engine.expand(rule.dest)) if engine.expand(rule.dest).exists() else str(HOME)
+        start = str(tidy.expand(rule.dest)) if tidy.expand(rule.dest).exists() else str(HOME)
         d = QFileDialog.getExistingDirectory(self, f"Where should {rule.name.lower()} go?", start)
         if d:
             rule.dest = tilde(d)
@@ -186,8 +196,8 @@ class TidyLPage(QWidget):
 
     def _refresh_activity(self):
         self.activity.clear()
-        undone = engine.undone_batches()
-        for e in engine.history(300):
+        undone = tidy.undone_batches()
+        for e in tidy.history(300):
             when = datetime.fromtimestamp(e["time"]).strftime("%b %-d  %-I:%M %p")
             if e["action"] == "move":
                 tail = "   (undone)" if e["batch"] in undone else ""
@@ -198,7 +208,7 @@ class TidyLPage(QWidget):
                 text = f"{when}    Undo          moved {e['count']} file(s) back"
             self.activity.addItem(QListWidgetItem(text))
         if not self.activity.count():
-            self.activity.addItem("Nothing yet. Files you download will show up here as TidyL sorts them.")
+            self.activity.addItem("Nothing yet. Files you download will show up here as VaultL sorts them.")
 
     # ------------------------------------------------------------------ big files
     def _big_view(self) -> QWidget:
@@ -224,7 +234,7 @@ class TidyLPage(QWidget):
         self.big.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.big.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.big.setColumnWidth(0, 110)
-        self.big.cellDoubleClicked.connect(lambda r, _: filel.show(self.big.item(r, 1).data(Qt.ItemDataRole.UserRole)))
+        self.big.cellDoubleClicked.connect(lambda r, _: self.reveal.emit(self.big.item(r, 1).data(Qt.ItemDataRole.UserRole)))
         v.addWidget(self.big, 1)
         return w
 
@@ -236,14 +246,14 @@ class TidyLPage(QWidget):
         listing = "\n".join(tilde(p) for p in paths[:12]) + ("\n…" if len(paths) > 12 else "")
         if QMessageBox.question(self, "Move to Trash?",
                                 f"Move {len(paths)} file(s) to the Trash?\n\n{listing}\n\n"
-                                "You can restore them from the Trash in FileL.") != QMessageBox.StandardButton.Yes:
+                                "You can restore them from the Trash in the sidebar.") != QMessageBox.StandardButton.Yes:
             return
         for r, p in sorted(zip(rows, paths), reverse=True):
             try:
-                engine.trash_by_hand(p, "Big files", "you chose it")
+                tidy.trash_by_hand(p, "Big files", "you chose it")
                 self.big.removeRow(r)
             except OSError as e:
-                QMessageBox.warning(self, "TidyL", str(e))
+                QMessageBox.warning(self, "VaultL", str(e))
 
     # ------------------------------------------------------------------ duplicates
     def _dupes_view(self) -> QWidget:
@@ -282,18 +292,18 @@ class TidyLPage(QWidget):
         failed = []
         for p in extras:
             try:
-                engine.trash_by_hand(Path(p), "Duplicates", "duplicate copy")
+                tidy.trash_by_hand(Path(p), "Duplicates", "duplicate copy")
             except OSError as e:
                 failed.append(f"{Path(p).name}: {e}")
         if failed:
-            QMessageBox.warning(self, "TidyL", f"Couldn't trash {len(failed)} file(s):\n\n" + "\n".join(failed[:8]))
+            QMessageBox.warning(self, "VaultL", f"Couldn't trash {len(failed)} file(s):\n\n" + "\n".join(failed[:8]))
         self._scan("dupes")
 
     # ------------------------------------------------------------------ background scans
     def _scan(self, kind):
         note = self.big_note if kind == "big" else self.dupe_note
         note.setText("Scanning…")
-        fn = engine.biggest if kind == "big" else engine.duplicates
+        fn = tidy.biggest if kind == "big" else tidy.duplicates
         sig = self._sig
         POOL.start(Job(fn, lambda result: sig.done.emit(kind, result)))
 
@@ -307,7 +317,7 @@ class TidyLPage(QWidget):
                 item = QTableWidgetItem(tilde(p))
                 item.setData(Qt.ItemDataRole.UserRole, str(p))
                 self.big.setItem(r, 1, item)
-            self.big_note.setText(f"{len(result)} files over 50 MB. Double-click to show one in FileL.")
+            self.big_note.setText(f"{len(result)} files over 50 MB. Double-click one to show it in its folder.")
         else:
             self.dupes.clear()
             wasted = 0

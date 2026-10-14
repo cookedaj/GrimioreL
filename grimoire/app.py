@@ -54,9 +54,9 @@ class InstallButton(QPushButton):
         try:
             if not standalone.installed(sid):
                 standalone.install(sid)
-            elif sid != "filel" or QMessageBox.question(
-                    self, "Uninstall FileL", "Remove FileL from the app menu? Folders will open in "
-                    "your other file manager until you install it again.") == QMessageBox.StandardButton.Yes:
+            elif sid != "vaultl" or QMessageBox.question(
+                    self, "Uninstall VaultL", "Remove VaultL from the app menu? If it's your default file manager, "
+                    "folders will open in another one until you install it again.") == QMessageBox.StandardButton.Yes:
                 standalone.uninstall(sid)
         except (OSError, ValueError) as err:
             QMessageBox.warning(self, self.spell.name, f"Couldn't change the launcher: {err}")
@@ -219,7 +219,7 @@ class Window(QMainWindow):
 
 
 def style_app(app: QApplication):
-    """Grimoire's black & white look (also used by standalone spells like FileL)."""
+    """Grimoire's black & white look (also used by standalone spells like VaultL)."""
     app.setWindowIcon(QIcon(str(ASSETS / "clover5.svg")))
     app.setStyle("Fusion")
     app.setFont(QFont(FONT, 10))
@@ -240,6 +240,7 @@ def main():
     style_app(app)
     win = Window()
     start = sys.argv[1] if len(sys.argv) > 1 else "home"
+    start = {"filel": "vaultl", "tidyl": "vaultl"}.get(start, start)     # old menu actions from before the merge
     win.open(start if start in win.pages else "home")
     win.show()
     sys.exit(app.exec())

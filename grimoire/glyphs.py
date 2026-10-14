@@ -88,6 +88,26 @@ def _draw(name: str, p: QPainter):
     elif name == "folder":
         path = QPainterPath(QPointF(3.5, 7)); path.lineTo(3.5, 18.5); path.lineTo(20.5, 18.5); path.lineTo(20.5, 8.5)
         path.lineTo(11.5, 8.5); path.lineTo(9.5, 5.5); path.lineTo(3.5, 5.5); path.closeSubpath(); p.drawPath(path)
+    elif name == "vault":                                  # a safe: door, dial and feet
+        p.drawRoundedRect(r(3.5, 4, 17, 15.5), 2, 2)
+        p.drawEllipse(QPointF(12.5, 11.75), 3.6, 3.6)
+        p.drawEllipse(QPointF(12.5, 11.75), 1, 1)
+        for a, b in (((12.5, 8.15), (12.5, 9.4)), ((12.5, 14.1), (12.5, 15.35)), ((8.9, 11.75), (10.15, 11.75)),
+                     ((14.85, 11.75), (16.1, 11.75))):
+            p.drawLine(QPointF(*a), QPointF(*b))
+        p.drawLine(QPointF(6.2, 8), QPointF(6.2, 9.5)); p.drawLine(QPointF(6.2, 14), QPointF(6.2, 15.5))
+        p.drawLine(QPointF(6.5, 19.5), QPointF(6.5, 21)); p.drawLine(QPointF(17.5, 19.5), QPointF(17.5, 21))
+    elif name == "clock":
+        p.drawEllipse(QPointF(12, 12), 8, 8)
+        path = QPainterPath(QPointF(12, 7.5)); path.lineTo(12, 12); path.lineTo(15.5, 14); p.drawPath(path)
+    elif name == "bigfile":                                # a document with a filled-in block
+        path = QPainterPath(QPointF(6, 3.5)); path.lineTo(14, 3.5); path.lineTo(18.5, 8); path.lineTo(18.5, 20.5)
+        path.lineTo(6, 20.5); path.closeSubpath(); p.drawPath(path)
+        p.drawRect(r(9, 12.5, 6.5, 5))
+    elif name == "copies":                                 # two overlapping documents
+        p.drawRoundedRect(r(8, 3.5, 11.5, 14), 1.5, 1.5)
+        path = QPainterPath(QPointF(8, 7)); path.lineTo(4.5, 7); path.lineTo(4.5, 20.5); path.lineTo(16, 20.5)
+        path.lineTo(16, 17.5); p.drawPath(path)
     elif name == "files":                                  # two stacked folders
         path = QPainterPath(QPointF(5.5, 9)); path.lineTo(5.5, 19.5); path.lineTo(20.5, 19.5); path.lineTo(20.5, 10.5)
         path.lineTo(12.5, 10.5); path.lineTo(11, 8); path.lineTo(5.5, 8); path.closeSubpath(); p.drawPath(path)

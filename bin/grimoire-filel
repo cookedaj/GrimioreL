@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# FileL, Grimoire's file manager: grimoire-filel [folder]
+# FileL is now VaultL; kept so the default-folder handler, scripts and habits keep working: grimoire-filel [folder]
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m grimoire.spells.filel "$@"
+[ "${1:-}" = "tidy" ] && set -- ./tidy                   # a folder named tidy, not the tidy command
+exec python3 -m grimoire.spells.vaultl "$@"

@@ -2,7 +2,7 @@
 # Install Grimoire for the current user (no sudo). Run it from wherever you downloaded Grimoire; run it again from a
 # newer download to upgrade. Afterwards the download can be moved or deleted.
 #   - copies the app into ~/.local/share/grimoire/app (everything runs from there)
-#   - links the commands into ~/.local/bin and adds the app-menu entry, plus FileL's (each spell's Install button
+#   - links the commands into ~/.local/bin and adds the app-menu entry, plus VaultL's (each spell's Install button
 #     on the home page adds its own; ./install.sh --all adds every spell's launcher)
 #   - copies the MuraL wallpaper plugin into Plasma
 # Settings stay in ~/.config/grimoire and ~/.local/share/grimoire; ./uninstall.sh removes the app again.
@@ -53,7 +53,7 @@ Exec=$BIN/grimoire %u
 Icon=grimoire
 Categories=Utility;Settings;
 StartupWMClass=grimoire
-Actions=mural;sightc;tidyl;optimizel;
+Actions=mural;sightc;vaultl;optimizel;
 
 [Desktop Action mural]
 Name=MuraL
@@ -63,19 +63,20 @@ Exec=$BIN/grimoire mural
 Name=SightsL (crosshair)
 Exec=$BIN/grimoire sightc
 
-[Desktop Action tidyl]
-Name=TidyL
-Exec=$BIN/grimoire tidyl
+[Desktop Action vaultl]
+Name=VaultL (files)
+Exec=$BIN/grimoire vaultl
 
 [Desktop Action optimizel]
 Name=OptimizeL
 Exec=$BIN/grimoire optimizel
 EOF
 
-# 4. standalone spells: FileL always (it's the folder handler), the rest when installed or with --all.
-#    Their menu entries, TidyL's timer and SightsL's autostart all run the ~/.local/bin commands linked above.
+# 4. standalone spells: VaultL always (it's the file manager; FileL's and TidyL's old entries become hidden
+#    aliases), the rest when installed or with --all. Their menu entries, the auto-tidy timer and SightsL's
+#    autostart all run the ~/.local/bin commands linked above.
 standalone() { PYTHONPATH="$APP" QT_QPA_PLATFORM=offscreen python3 -m grimoire.standalone "$@"; }
-standalone install filel >/dev/null
+standalone install vaultl >/dev/null
 standalone refresh
 if [ "${1:-}" = "--all" ]; then standalone install all; fi
 update-desktop-database "$DATA/applications" 2>/dev/null || true

@@ -8,8 +8,7 @@ Public repo: github.com/cookedaj/Grimoire. Runs on the owner's own Kubuntu 26.04
 |---|---|---|
 | MuraL | `grimoire/spells/mural/` | customizes every screen/surface; tabs built on `screens.py:ScreenTab`; community store in `store.py` + `storeview.py` |
 | SightsL | `grimoire/spells/sightc/` | layer-shell crosshair overlay (`overlay.py`/`overlay.qml`), drawing in `draw.py`, settings/presets/profiles in `config.py`, hotkeys via KGlobalAccel |
-| FileL | `grimoire/spells/filel/` | file manager; `page.py` UI, `ops.py` operations, `__main__.py` standalone window (default for inode/directory) |
-| TidyL | `grimoire/spells/tidyl/` | Downloads sorter; `engine.py`, `cli.py` (systemd user timer `grimoire-tidyl.timer`) |
+| VaultL | `grimoire/spells/vaultl/` | file manager with tidying built in (FileL + TidyL merged); `page.py` window (Tidy section in the sidebar), `ops.py` file operations, `tidyview.py` tidy panels, `tidy.py` sorting engine (migrates TidyL's json/log once by copying), `cli.py` (timer keeps the name `grimoire-tidyl.timer`), `__main__.py` standalone window (default for inode/directory). `grimoire-filel`/`grimoire-tidyl` stay as aliases; `standalone.MERGED` keeps their old desktop entries as hidden aliases |
 | OptimizeL | `grimoire/spells/optimizel/` | speed tweaks as persistent on/off switches; catalog + detection in `tweaks.py`, system ones in its own whitelisted `root-helper.sh` (test with `OPTIMIZEL_ROOT=<sandbox> OPTIMIZEL_DRY=1`) |
 
 Shell: `grimoire/app.py` (icon rail, home, `style_app()`), icons drawn in code in `grimoire/glyphs.py`, styles in
@@ -19,11 +18,11 @@ status)`). Folder names stay as-is when display names change (e.g. SightsL lives
 ## Style rules (the owner cares about these)
 - Strictly black & white: no accent colors, Fusion style + the monochrome palette in `style_app()`.
 - Sleek and simple; new icons are line glyphs in `glyphs.py`, never colored theme icons in Grimoire's own chrome.
-- New spells are named `<Word>L` (MuraL, SightsL, FileL, TidyL). Spells get a page, a rail icon and a status line.
+- New spells are named `<Word>L` (MuraL, SightsL, VaultL). Spells get a page, a rail icon and a status line.
 - Match surrounding code: small focused modules, short docstrings on the "why".
 
 ## Safety rules
-- Never permanently delete user files: use the Trash (`gio trash`, or the freedesktop spec as in `filel/ops.py`);
+- Never permanently delete user files: use the Trash (`gio trash`, or the freedesktop spec as in `vaultl/ops.py`);
   never overwrite on name clashes (`free_name()` → "name (2).ext").
 - Anything needing root goes through a spell's `root-helper.sh` via `pkexec` (MuraL's or OptimizeL's: whitelisted
   actions, validated input, old values backed up).
@@ -44,7 +43,7 @@ status)`). Folder names stay as-is when display names change (e.g. SightsL lives
 `~/.local/bin`, writes desktop entries and copies the MuraL wallpaper plugin; re-running it from a newer checkout
 upgrades. Nothing installed may point into the clone (public repo: it must work from any download location), so
 after editing code, re-run `./install.sh` to see it in the menu apps. `uninstall.sh [--purge]` undoes it.
-Run `grimoire [spell-id]`, `grimoire-filel [folder]`, `grimoire-sightc on|off|next`, `grimoire-tidyl run`.
+Run `grimoire [spell-id]`, `grimoire-vaultl [folder]`, `grimoire-sightc on|off|next`, `grimoire-vaultl tidy run`.
 Standalone spells: `grimoire/standalone.py` opens any spell in its own window and writes its launcher (command link,
 glyph icon, menu entry; links target the installed copy when there is one); a spell gets an Install button on its home card once `bin/grimoire-<id>` exists (no args
 opens the window). `./install.sh --all` installs every launcher; plain `./install.sh` refreshes installed ones.

@@ -7,8 +7,7 @@ One app, one look: a slim icon rail, monochrome line icons, and every spell buil
 |---|---|
 | **MuraL** | Customize everything you look at: desktop wallpaper & crossfading playlists (images and video), lock screen, splash, login (SDDM), boot (Plymouth), taskbar, Plasma style, window title bars, motion/effects, colors, icons, fonts, cursor and terminal. Every tab has live previews, and a **Community** view with the top 100 from the KDE Store and Wallhaven, installable in one click. |
 | **SightsL** | A crosshair overlay drawn above every window and fullscreen game (KDE layer-shell), fully click-through. Pixel-sharp styles, presets, saved crosshairs and share codes, rotation, outline, offsets, screen choice, live updates, and global hotkeys: Ctrl+Alt+X hides it, Ctrl+Alt+Shift+X flips to the next crosshair. |
-| **FileL** | A file manager that can replace Dolphin: places & drives sidebar, breadcrumbs, grid with image thumbnails or a details list, preview panel, Trash with restore, KDE-compatible copy/cut/paste, Dolphin's keyboard shortcuts. Runs inside Grimoire or as its own window, and can be set as the default for opening folders. |
-| **TidyL** | Keeps `~/Downloads` sorted by file type in the background, sends stale installers/archives to the Trash, finds big files and duplicates. Never deletes: everything goes to the Trash, and every move can be undone. |
+| **VaultL** | A file manager with tidying built in (FileL and TidyL, merged). Places & drives sidebar, breadcrumbs, grid with image thumbnails or a details list, preview panel, Trash with restore, KDE-compatible copy/cut/paste, Dolphin's keyboard shortcuts. Its **Tidy** section keeps `~/Downloads` sorted by file type in the background, sends stale installers/archives to the Trash, and finds big files and duplicates; Downloads gets a bar with Tidy now and Undo. Never deletes: everything goes to the Trash, and every move can be undone. Runs inside Grimoire or as its own window, and can be the default for opening folders. |
 | **OptimizeL** | Scans the PC and lays out ~24 speed tweaks as on/off switches, grouped by power, memory (zram, earlyoom), storage & boot, network (BBR), services, startup apps, desktop and gaming. Every switch is written to persistent config, so it survives restarts, and turning it off restores exactly what was there. Also lists what's already set the fast way. |
 
 ## Requirements
@@ -44,12 +43,13 @@ from that copy, so you can move or delete the download afterwards. If `grimoire`
 add `~/.local/bin` to your `PATH` (or log out and back in).
 
 Every spell also runs as its own app: press **Install** on its card on the home page (or use `./install.sh --all`),
-or run `grimoire-mural`, `grimoire-sightc`, `grimoire-tidyl`, `grimoire-filel`, `grimoire-optimizel` directly.
+or run `grimoire-mural`, `grimoire-sightc`, `grimoire-vaultl`, `grimoire-optimizel` directly.
 
-Command-line helpers: `grimoire-sightc on|off|toggle|next`, `grimoire-tidyl run|undo|enable|disable|status`,
-`grimoire-filel [folder]`.
+Command-line helpers: `grimoire-sightc on|off|toggle|next`, `grimoire-vaultl [folder]`,
+`grimoire-vaultl tidy run|undo|enable|disable|status`. The old `grimoire-filel` and `grimoire-tidyl` commands
+still work and open VaultL.
 
-To make FileL the default file manager: `xdg-mime default grimoire-filel.desktop inode/directory`
+To make VaultL the default file manager: `xdg-mime default grimoire-vaultl.desktop inode/directory`
 (switch back any time in System Settings → Default Applications → File manager).
 
 ## Upgrade
@@ -64,7 +64,7 @@ It replaces the installed copy and keeps your settings, timer and autostart.
 ~/.local/share/grimoire/app/uninstall.sh --purge    # also moves settings, logs and cache to the Trash
 ```
 
-This removes the app, its commands and menu entries, the wallpaper plugin, TidyL's timer and SightsL's autostart.
+This removes the app, its commands and menu entries, the wallpaper plugin, the auto-tidy timer and SightsL's autostart.
 Looks and tweaks you applied stay as they are, so turn off MuraL themes and OptimizeL switches in Grimoire first
 if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/share/grimoire`.
 
@@ -79,9 +79,10 @@ if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/sha
   (no absolute paths, no `..`, regular files only, size-capped) and only theme files are copied into place.
   Community login/boot themes run code at login/boot, so prefer popular, well-rated ones.
 - **SightsL** runs a small layer-shell overlay process and registers its hotkey with KGlobalAccel.
-- **FileL** uses the same system underneath (Qt's `QFileSystemModel`, the freedesktop Trash that Dolphin uses,
-  KDE's clipboard format), so files, Trash and clipboard are shared with every other KDE app.
-- **TidyL** runs as a systemd user timer every 10 minutes; rules live in `~/.config/grimoire/tidyl.json`.
+- **VaultL** uses the same system underneath (Qt's `QFileSystemModel`, the freedesktop Trash that Dolphin uses,
+  KDE's clipboard format), so files, Trash and clipboard are shared with every other KDE app. Auto-tidy runs as
+  the systemd user timer `grimoire-tidyl.timer` every 10 minutes; rules live in `~/.config/grimoire/vaultl.json`
+  and the undo log in `~/.local/share/grimoire/vaultl/` (copied once from TidyL's files, which stay as a backup).
 - **OptimizeL** stages switch flips and applies them in one go. System tweaks go through `pkexec` to
   `grimoire/spells/optimizel/root-helper.sh`, which only knows a fixed list of tweaks, writes files whose names
   contain `grimoire-optimizel` (sysctl.d, journald.conf.d, apt.conf.d, systemd drop-ins, zram-generator.conf),
@@ -98,8 +99,7 @@ grimoire/            the app (PySide6)
   glyphs.py          monochrome line icons drawn in code
   spells/mural/      MuraL tabs, store, previews, root helper, SDDM theme, splash templates
   spells/sightc/     SightsL overlay + page
-  spells/filel/      FileL page, file operations, standalone window
-  spells/tidyl/      TidyL engine, CLI/timer, page
+  spells/vaultl/     VaultL window, file operations, tidy engine, tidy panels, CLI/timer
   spells/optimizel/  OptimizeL tweak catalog, root helper, page
 plasma/              the MuraL wallpaper plugin
 bin/                 launchers

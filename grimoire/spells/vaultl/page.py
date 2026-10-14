@@ -1,5 +1,7 @@
-"""FileL: Grimoire's file manager. Same system underneath (the local filesystem via QFileSystemModel,
-the freedesktop Trash via gio, KDE-compatible clipboard), new black & white interface.
+"""VaultL: Grimoire's file manager with tidying built in (FileL and TidyL merged). Same system underneath
+(the local filesystem via QFileSystemModel, the freedesktop Trash via gio, KDE-compatible clipboard), new black &
+white interface. The sidebar's Tidy section swaps the file views for the tidy panels (tidyview.py), and the
+watched Downloads folder gets a bar with Tidy now and Undo.
 
 Shortcuts follow Dolphin: Alt+Left/Right/Up, Backspace, F2, Del, Ctrl+C/X/V, Ctrl+A, Ctrl+H, Ctrl+L, Ctrl+F,
 Ctrl+Shift+N, F5, F4 (terminal here), Enter to open.
@@ -21,7 +23,8 @@ from grimoire.fsutil import human, tilde
 from grimoire.glyphs import glyph
 from grimoire.jobs import Job
 from grimoire.paths import HOME
-from grimoire.spells.filel import ops
+from grimoire.spells.vaultl import ops
+from grimoire.spells.vaultl.tidyview import PANELS, TidyPanel
 
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".avif", ".tif", ".tiff", ".svg"}
 TEXT_EXT = {".txt", ".md", ".py", ".lua", ".luau", ".json", ".toml", ".yaml", ".yml", ".sh", ".ini", ".cfg",
@@ -114,7 +117,7 @@ class GridDelegate(QStyledItemDelegate):
             self.page.grid.viewport().update()
 
 
-class FileLPage(QWidget):
+class VaultLPage(QWidget):
     def __init__(self, start: str | Path | None = None, standalone: bool = False):
         super().__init__()
         self.setObjectName("Page")
@@ -134,6 +137,9 @@ class FileLPage(QWidget):
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
+        self.tidy = TidyPanel()                           # before the sidebar: the Downloads bar reads its settings
+        self.tidy.changed.connect(self._refresh_tidy_bar)
+        self.tidy.reveal.connect(lambda p: self.reveal(Path(p)))
         root.addWidget(self._sidebar())
 
         main = QWidget()
@@ -143,6 +149,8 @@ class FileLPage(QWidget):
         ml.addLayout(self._toolbar())
         self.trash_bar = self._trash_bar()
         ml.addWidget(self.trash_bar)
+        self.tidy_bar = self._tidy_bar()
+        ml.addWidget(self.tidy_bar)
 
         split = QSplitter(Qt.Orientation.Horizontal)
         split.setHandleWidth(1)
@@ -160,7 +168,10 @@ class FileLPage(QWidget):
         self.status = QLabel()
         self.status.setObjectName("Muted")
         ml.addWidget(self.status)
-        root.addWidget(main, 1)
+        self.body = QStackedWidget()                      # 0: files, 1: tidy panels
+        self.body.addWidget(main)
+        self.body.addWidget(self.tidy)
+        root.addWidget(self.body, 1)
 
         self._sig.thumb.connect(self.grid_delegate.ready)
         self._sig.transferred.connect(self._transfer_done)
@@ -177,7 +188,7 @@ class FileLPage(QWidget):
         v = QVBoxLayout(side)
         v.setContentsMargins(12, 18, 12, 14)
         v.setSpacing(4)
-        title = QLabel("FileL")
+        title = QLabel("VaultL")
         title.setObjectName("Title")
         v.addWidget(title)
         v.addSpacing(10)
@@ -195,6 +206,19 @@ class FileLPage(QWidget):
                 self.places.addItem(it)
         self.places.itemClicked.connect(lambda it: self.navigate(Path(it.data(Qt.ItemDataRole.UserRole))))
         v.addWidget(self.places, 3)
+        tl = QLabel("TIDY")
+        tl.setObjectName("NavSection")
+        v.addWidget(tl)
+        self.tools = QListWidget()
+        self.tools.setObjectName("Places")
+        self.tools.setIconSize(QSize(18, 18))
+        for i, (name, icon, _, _) in enumerate(PANELS):
+            it = QListWidgetItem(glyph(icon, 18), name)
+            it.setData(Qt.ItemDataRole.UserRole, i)
+            self.tools.addItem(it)
+        self.tools.setFixedHeight(len(PANELS) * 36 + 4)
+        self.tools.itemClicked.connect(lambda it: self.show_tidy(it.data(Qt.ItemDataRole.UserRole)))
+        v.addWidget(self.tools)
         dl = QLabel("DRIVES")
         dl.setObjectName("NavSection")
         v.addWidget(dl)
@@ -295,6 +319,38 @@ class FileLPage(QWidget):
         w.hide()
         return w
 
+    def _tidy_bar(self) -> QWidget:
+        """Shown while browsing the folder auto-tidy watches (Downloads)."""
+        w = QFrame()
+        w.setObjectName("Card")
+        h = QHBoxLayout(w)
+        h.setContentsMargins(14, 8, 8, 8)
+        icon = QLabel()
+        icon.setPixmap(glyph("tidy", 18).pixmap(18, 18))
+        h.addWidget(icon)
+        self.tidy_note = QLabel()
+        self.tidy_note.setObjectName("Muted")
+        h.addWidget(self.tidy_note, 1)
+        for text, slot in (("Undo last tidy", self.tidy.undo), ("Tidy now", self.tidy.tidy_now),
+                           ("Rules", lambda: self.show_tidy(0))):
+            b = QPushButton(text)
+            b.clicked.connect(lambda _=False, slot=slot: self._tidy_action(slot))
+            h.addWidget(b)
+        w.hide()
+        return w
+
+    def _tidy_action(self, slot):
+        msg = slot()
+        if isinstance(msg, str):
+            self.status.setText(msg)
+
+    def _refresh_tidy_bar(self):
+        watched = self.body.currentIndex() == 0 and self.cwd == self.tidy.watch_dir()
+        self.tidy_bar.setVisible(watched)
+        if watched:
+            on = "on" if self.tidy.auto_btn.text().endswith("ON") else "paused"
+            self.tidy_note.setText(f"Auto-tidy is {on} for this folder · new downloads get sorted by type")
+
     def _common_view(self, view: QAbstractItemView):
         view.setModel(self.model)
         view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -385,6 +441,8 @@ class FileLPage(QWidget):
             self.status.setText(f"Can't open {tilde(path)}")
             return
         self.cwd = path
+        self.body.setCurrentIndex(0)
+        self.tools.clearSelection()
         if record:
             del self.history[self.hist_i + 1:]
             self.history.append(path)
@@ -403,6 +461,7 @@ class FileLPage(QWidget):
         self.fwd_btn.setEnabled(self.hist_i < len(self.history) - 1)
         self.up_btn.setEnabled(path != path.parent)
         self.trash_bar.setVisible(ops.in_trash(path))
+        self._refresh_tidy_bar()
         for i in range(self.places.count()):
             it = self.places.item(i)
             it.setSelected(Path(it.data(Qt.ItemDataRole.UserRole)) == path)
@@ -412,7 +471,21 @@ class FileLPage(QWidget):
 
     def _update_title(self):
         if self.standalone and self.window() is not self:
-            self.window().setWindowTitle(f"{self.cwd.name or self.cwd} — FileL")
+            where = self.tidy.title.text() if self.body.currentIndex() == 1 else (self.cwd.name or str(self.cwd))
+            self.window().setWindowTitle(f"{where} — VaultL")
+
+    def show_tidy(self, i: int):
+        self.body.setCurrentIndex(1)
+        self.tidy.show_panel(i)
+        self.tidy.refresh_auto()
+        self.places.clearSelection()
+        self.tools.setCurrentRow(i)
+        self._update_title()
+
+    def reveal(self, path: Path):
+        """Open path's folder in the file views with path selected."""
+        self.navigate(path.parent)
+        QTimer.singleShot(200, lambda: self.view().setCurrentIndex(self.model.index(str(path))))
 
     def back(self):
         if self.hist_i > 0:
@@ -776,7 +849,7 @@ class FileLPage(QWidget):
         def sc(keys, fn):
             s = QShortcut(QKeySequence(keys), self)
             s.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-            s.activated.connect(fn)
+            s.activated.connect(lambda: fn() if self.body.currentIndex() == 0 else None)   # never behind a tidy panel
 
         sc("Alt+Left", self.back)
         sc("Alt+Right", self.forward)
@@ -793,7 +866,7 @@ class FileLPage(QWidget):
         sc("Ctrl+F", lambda: (self.search.setFocus(), self.search.selectAll()))
         sc("Ctrl+Shift+N", self.new_folder)
         sc("F4", self.terminal_here)
-        sc("F5", lambda: (self._fill_drives(), self.navigate(self.cwd, record=False)))
+        sc("F5", lambda: (self._fill_drives(), self.tidy.refresh_auto(), self.navigate(self.cwd, record=False)))
         sc("F11", self.toggle_preview)
         sc("Alt+Return", self.properties)
         sc("Escape", lambda: (self.path_stack.setCurrentIndex(0), self.view().clearSelection()))

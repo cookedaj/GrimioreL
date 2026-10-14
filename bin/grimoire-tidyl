@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# TidyL: grimoire-tidyl opens its window; grimoire-tidyl run|undo|enable|disable|status works from the terminal
+# TidyL is now part of VaultL; kept because the auto-tidy timer calls it:
+#   grimoire-tidyl                                  open VaultL
+#   grimoire-tidyl run|undo|enable|disable|status   same as grimoire-vaultl tidy <cmd>
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
-[ $# -eq 0 ] && exec python3 -m grimoire.standalone tidyl
-exec python3 -m grimoire.spells.tidyl.cli "$1"
+[ $# -eq 0 ] && exec python3 -m grimoire.spells.vaultl
+exec python3 -m grimoire.spells.vaultl tidy "$1"

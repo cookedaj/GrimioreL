@@ -40,20 +40,16 @@ def _sightc_status() -> str:
     return "Crosshair on · Ctrl+Alt+X hides it" if overlay.running_pid() else "Crosshair off"
 
 
-def _tidyl():
-    from grimoire.spells.tidyl.page import TidyLPage
-    return TidyLPage()
+def _vaultl():
+    from grimoire.spells.vaultl.page import VaultLPage
+    return VaultLPage()
 
 
-def _tidyl_status() -> str:
-    from grimoire.spells.tidyl import cli, engine
-    moved = sum(1 for e in engine.history(2000) if e["action"] == "move")
-    return ("Auto-tidy on" if cli.timer_active() else "Auto-tidy off") + f" · {moved} file(s) sorted so far"
-
-
-def _filel():
-    from grimoire.spells.filel.page import FileLPage
-    return FileLPage()
+def _vaultl_status() -> str:
+    from grimoire.spells.vaultl import cli, tidy
+    moved = sum(1 for e in tidy.history(2000) if e["action"] == "move")
+    return "Default file manager · " + ("Auto-tidy on" if cli.timer_active() else "Auto-tidy off") \
+        + f" · {moved} file(s) sorted so far"
 
 
 def _optimizel():
@@ -73,10 +69,8 @@ SPELLS = [
     Spell("mural", "MuraL", "Every screen and surface: wallpaper, lock, login, boot, taskbar, windows, colors, "
           "icons, fonts, cursor, terminal, plus the community store", _mural, "mural", _mural_status),
     Spell("sightc", "SightsL", "Crosshair overlay above every game, click-through", _sightc, "sight", _sightc_status),
-    Spell("filel", "FileL", "Your file manager: places, drives, thumbnails, previews, trash with restore; "
-          "opens whenever you open a folder", _filel, "files", lambda: "Default file manager"),
-    Spell("tidyl", "TidyL", "Keeps Downloads sorted, clears stale installers, finds big files and duplicates",
-          _tidyl, "tidy", _tidyl_status),
+    Spell("vaultl", "VaultL", "Your file manager with tidying built in: places, drives, previews, trash with "
+          "restore, plus auto-sorted Downloads, undo, big files and duplicates", _vaultl, "vault", _vaultl_status),
     Spell("optimizel", "OptimizeL", "Tunes the PC for speed: CPU, memory, boot, network, startup apps and "
           "games. Every tweak is a switch that survives restarts and turns back off cleanly",
           _optimizel, "optimize", _optimizel_status),

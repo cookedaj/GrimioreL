@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# VaultL, Grimoire's file manager with tidying built in:
+#   grimoire-vaultl [folder]                                  open a window
+#   grimoire-vaultl tidy run|undo|enable|disable|status        auto-tidy from the terminal (and the timer)
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m grimoire.spells.vaultl "$@"

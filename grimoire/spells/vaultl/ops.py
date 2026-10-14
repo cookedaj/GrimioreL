@@ -1,4 +1,4 @@
-"""FileL file operations. Everything goes through the normal Linux/KDE system: plain filesystem calls for
+"""VaultL file operations. Everything goes through the normal Linux/KDE system: plain filesystem calls for
 copy/move/rename, and `gio` for the Trash (the same freedesktop Trash Dolphin uses)."""
 import shutil
 from pathlib import Path
@@ -92,7 +92,7 @@ def original_location(path: Path) -> str:
 
 def empty_trash() -> str:
     """Permanently delete everything in the Trash (freedesktop spec: files/ + their info/ records).
-    Only ever called after the user confirms in FileL."""
+    Only ever called after the user confirms in VaultL."""
     problems = []
     trash_root = TRASH_FILES.parent
     for sub in ("files", "info"):
