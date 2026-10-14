@@ -36,6 +36,7 @@ class LooksTab(QWidget):
         super().__init__()
         self.setObjectName("Page")
         self._sig = _Signals()
+        self._working = False         # a save/restore is running: the buttons stay off until it's done
         self._sig.saved.connect(self._on_saved)
         self._sig.progress.connect(lambda key: self.status.setText(f"Applying {looks.LABELS[key].lower()}…"))
         self._sig.restored.connect(self._on_restored)
@@ -152,7 +153,7 @@ class LooksTab(QWidget):
     def _show_details(self):
         look = looks.get(self.current_id()) if self.current_id() else None
         for w in (self.rename_btn, self.delete_btn, self.restore_btn):
-            w.setEnabled(look is not None)
+            w.setEnabled(look is not None and not self._working)
         if look is None:
             self.name.setText("NO LOOK SELECTED")
             self.contents.setText("")
@@ -173,6 +174,7 @@ class LooksTab(QWidget):
 
     # ---- actions
     def _busy(self, busy: bool, text: str = ""):
+        self._working = busy
         for w in (self.save_btn, self.rename_btn, self.delete_btn, self.restore_btn):
             w.setEnabled(not busy)
         if not busy:
