@@ -265,6 +265,8 @@ def run(argv: list[str]) -> int:
     finally:
         portal.close(sess)
         STATE.unlink(missing_ok=True)                       # our own marker file
+    if not saved:
+        shots.release(out)
     if saved:
         shots.add(out)
         from grimoire.fsutil import tilde

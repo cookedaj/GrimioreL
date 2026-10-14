@@ -56,12 +56,34 @@ def folder(settings: dict | None = None) -> Path:
     return Path(chosen).expanduser() if chosen else pictures() / "Screenshots"
 
 
-def new_path(video=False, ext="") -> Path:
-    """A fresh dated name in the shots folder, e.g. Screenshot_2026-10-13_21-04-55.png; never an existing one."""
+def new_path(video=False, ext="", reserve=True) -> Path:
+    """A fresh dated name in the shots folder, e.g. Screenshot_2026-10-13_21-04-55.png; never an existing one.
+    Reserved as an empty file unless reserve=False, so two captures in the same second can't pick the same name."""
     d = folder()
     d.mkdir(parents=True, exist_ok=True)
     stem = ("Recording_" if video else "Screenshot_") + time.strftime("%Y-%m-%d_%H-%M-%S")
-    return free_name(d / (stem + (ext or (".mp4" if video else ".png"))))
+    dest = d / (stem + (ext or (".mp4" if video else ".png")))
+    return claim(dest) if reserve else free_name(dest)
+
+
+def claim(dest: Path) -> Path:
+    """free_name(dest), created empty in one step (O_EXCL) so no other writer can take it in the meantime."""
+    while True:
+        dest = free_name(dest)
+        try:
+            os.close(os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644))
+            return dest
+        except FileExistsError:
+            continue
+
+
+def release(path: Path):
+    """Undo claim() when nothing got written: removes the file only while it's still our empty placeholder."""
+    try:
+        if path.is_file() and not path.is_symlink() and path.stat().st_size == 0:
+            path.unlink()
+    except OSError:
+        pass
 
 
 # ---------------------------------------------------------------- history

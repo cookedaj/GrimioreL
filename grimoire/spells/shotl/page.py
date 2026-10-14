@@ -374,6 +374,7 @@ class ShotLPage(QWidget):
             return
         dest = shots.new_path()
         if not img.save(str(dest), "PNG"):
+            shots.release(dest)
             self.say(f"Couldn't write {tilde(dest)}")
             return
         shots.add(dest)
