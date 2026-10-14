@@ -118,6 +118,11 @@ QComboBox QAbstractItemView { background: #121212; border: 1px solid #262626; se
 QCheckBox { spacing: 10px; }
 QCheckBox::indicator { width: 16px; height: 16px; border: 1px solid #4a4a4a; border-radius: 4px; background: #0b0b0b; }
 QCheckBox::indicator:checked { background: #f2f2f2; border-color: #f2f2f2; image: url(@ASSETS@/check.svg); }
+QTreeView::indicator, QListView::indicator { width: 14px; height: 14px; border: 1px solid #4a4a4a; border-radius: 4px;
+                                            background: #0b0b0b; }
+QTreeView::indicator:checked, QListView::indicator:checked { background: #f2f2f2; border-color: #f2f2f2;
+                                                             image: url(@ASSETS@/check.svg); }
+QTreeView::indicator:indeterminate { background: #6f6f6f; border-color: #6f6f6f; }
 
 QSlider::groove:horizontal { height: 2px; background: #2a2a2a; }
 QSlider::sub-page:horizontal { background: #d0d0d0; }

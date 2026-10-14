@@ -1,7 +1,7 @@
 """VaultL as its own window (this is what opens when you open a folder anywhere).
 
     python3 -m grimoire.spells.vaultl [folder or file or file:// URL]
-    python3 -m grimoire.spells.vaultl tidy [run|undo|enable|disable|status]
+    python3 -m grimoire.spells.vaultl tidy [run|preview|undo|enable|disable|status]
 """
 import sys
 from pathlib import Path

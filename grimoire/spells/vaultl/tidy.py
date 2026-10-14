@@ -3,7 +3,8 @@ archives to the Trash, undo moves, and find big files and duplicates.
 
 Safety rules: only loose files directly in the watched folder are touched (never folders, hidden files,
 in-progress downloads or anything changed in the last 2 minutes); nothing is ever deleted: cleanup goes
-to the Trash via `gio trash`, and every move is logged so it can be undone.
+to the Trash via `gio trash`, and every move is logged so it can be undone. Files on the settings' ignore
+list are never touched. preview() is the dry run; run() uses the same plan()/cleanup_plan(), so they can't disagree.
 """
 import hashlib
 import json
@@ -57,14 +58,18 @@ class Settings:
     watch: str = "~/Downloads"
     auto: bool = True
     rules: list[Rule] = field(default_factory=default_rules)
+    ignore: list[str] = field(default_factory=list)   # full paths the user said to always leave alone
     broken: bool = False          # the file exists but can't be read: run() does nothing rather than use defaults
 
     @classmethod
     def load(cls) -> "Settings":
         try:
             d = json.loads(SETTINGS.read_text())
+            ignore = d.get("ignore", [])
+            if not isinstance(ignore, list) or not all(isinstance(p, str) for p in ignore):
+                raise TypeError("ignore must be a list of paths")
             return cls(watch=d.get("watch", "~/Downloads"), auto=d.get("auto", True),
-                       rules=[Rule(**r) for r in d["rules"]])
+                       rules=[Rule(**r) for r in d["rules"]], ignore=ignore)
         except FileNotFoundError:
             return cls()
         except (OSError, ValueError, KeyError, TypeError, AttributeError):
@@ -77,6 +82,12 @@ class Settings:
         tmp = SETTINGS.with_suffix(".tmp")
         tmp.write_text(json.dumps(d, indent=2))
         tmp.replace(SETTINGS)     # atomic, so the timer never reads a half-written file
+
+    def skip_always(self, paths):
+        """Add files to the ignore list (and forget entries whose file is gone, so the list stays short)."""
+        keep = [p for p in self.ignore if Path(p).exists() or Path(p).is_symlink()]
+        self.ignore = keep + [str(p) for p in paths if str(p) not in keep]
+        self.save()
 
 
 def migrate():
@@ -149,13 +160,14 @@ def plan(s: Settings) -> list[tuple[Path, Path, str]]:
     """[(file, destination, rule name)] for loose files that a rule matches."""
     watch = expand(s.watch)
     by_ext = {e: r for r in s.rules if r.enabled for e in r.extensions}
+    ignore = set(s.ignore)
     now = time.time()
     moves = []
     if not watch.is_dir():
         return moves
     undone = undone_files()
     for f in sorted(watch.iterdir()):
-        if not f.is_file() or f.is_symlink() or f.name.startswith("."):
+        if not f.is_file() or f.is_symlink() or f.name.startswith(".") or str(f) in ignore:
             continue
         try:
             st = f.stat()
@@ -176,14 +188,61 @@ def plan(s: Settings) -> list[tuple[Path, Path, str]]:
     return moves
 
 
-def run(s: Settings | None = None) -> dict:
-    """One tidy pass: sort the watched folder, then clean stale files. Returns counts."""
+def cleanup_plan(s: Settings) -> list[tuple[Path, str, str]]:
+    """[(file, rule name, reason)] for stale files a rule's "Trash after" would send to the Trash.
+    The one place that decides this, so the preview and run() can never disagree."""
+    now = time.time()
+    watch = expand(s.watch).resolve()
+    ignore = set(s.ignore)
+    out = []
+    for rule in s.rules:
+        if not rule.enabled or rule.clean_days <= 0:
+            continue
+        d = expand(rule.dest)
+        if not d.is_dir() or d.resolve() in (watch, HOME.resolve(), *watch.parents):
+            continue                          # cleanup only ever runs in a dedicated sorting folder
+        exts = set(rule.extensions)
+        for f in sorted(d.iterdir()):
+            try:
+                stale = f.is_file() and not f.is_symlink() and not f.name.startswith(".") \
+                    and str(f) not in ignore and _ext(f) in exts and _age(f.stat(), now) > rule.clean_days * 86400
+            except OSError:
+                continue
+            if stale:
+                out.append((f, rule.name, f"older than {rule.clean_days} days"))
+    return out
+
+
+@dataclass
+class Preview:
+    """What a tidy pass would do right now. Nothing has moved yet."""
+    moves: list[tuple[Path, Path, str]] = field(default_factory=list)     # (file, destination, rule)
+    cleanups: list[tuple[Path, str, str]] = field(default_factory=list)   # (file, rule, reason)
+    error: str = ""
+
+
+def preview(s: Settings | None = None) -> Preview:
+    """Dry run: the planned moves and cleanups, touching nothing."""
+    s = s or Settings.load()
+    if s.broken:
+        return Preview(error=f"{SETTINGS} can't be read; nothing would be done")
+    return Preview(plan(s), cleanup_plan(s))
+
+
+def run(s: Settings | None = None, approved: Preview | None = None) -> dict:
+    """One tidy pass: sort the watched folder, then clean stale files. Returns counts.
+    With approved (a preview the user ticked through), only files in it are touched, and only if they are
+    still planned now: nothing the user didn't see moves, and nothing that stopped qualifying does."""
     s = s or Settings.load()
     if s.broken:
         return {"moved": 0, "cleaned": 0, "errors": [f"{SETTINGS} can't be read; nothing done"]}
+    ok_moves = None if approved is None else {str(f) for f, _, _ in approved.moves}
+    ok_clean = None if approved is None else {str(f) for f, _, _ in approved.cleanups}
     batch = f"{time.time():.0f}"
     moved, cleaned, errors = 0, 0, []
     for src, dest, rule in plan(s):
+        if ok_moves is not None and str(src) not in ok_moves:
+            continue
         try:
             dest.parent.mkdir(parents=True, exist_ok=True)
             final = free_name(dest)
@@ -192,29 +251,15 @@ def run(s: Settings | None = None) -> dict:
             moved += 1
         except OSError as e:
             errors.append(f"{src.name}: {e}")
-    now = time.time()
-    watch = expand(s.watch).resolve()
-    for rule in s.rules:
-        if not rule.enabled or rule.clean_days <= 0:
+    for f, rule, reason in cleanup_plan(s):
+        if ok_clean is not None and str(f) not in ok_clean:
             continue
-        d = expand(rule.dest)
-        if not d.is_dir() or d.resolve() in (watch, HOME.resolve(), *watch.parents):
-            continue                          # cleanup only ever runs in a dedicated sorting folder
-        exts = set(rule.extensions)
-        for f in d.iterdir():
-            try:
-                stale = f.is_file() and not f.is_symlink() and not f.name.startswith(".") \
-                    and _ext(f) in exts and _age(f.stat(), now) > rule.clean_days * 86400
-            except OSError:
-                continue
-            if stale:
-                try:
-                    trash(f)
-                    _log({"action": "trash", "batch": batch, "rule": rule.name, "from": str(f),
-                          "reason": f"older than {rule.clean_days} days"})
-                    cleaned += 1
-                except OSError as e:
-                    errors.append(f"{f.name}: {e}")
+        try:
+            trash(f)
+            _log({"action": "trash", "batch": batch, "rule": rule, "from": str(f), "reason": reason})
+            cleaned += 1
+        except OSError as e:
+            errors.append(f"{f.name}: {e}")
     return {"moved": moved, "cleaned": cleaned, "errors": errors}
 
 
