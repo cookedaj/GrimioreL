@@ -22,6 +22,14 @@ valid_name() {
 
 need_dir() {
     [[ -d "$1" && -f "$1/$2" ]] || { echo "not a staged theme: $1" >&2; exit 2; }
+    no_links "$1"
+}
+
+# no_links DIR: staged themes hold only plain files and folders (Grimoire stages them that way); a symlink would
+# have root copy, chown or sed whatever it points at, so refuse it
+no_links() {
+    [[ ! -L "$1" && -z "$(find "$1" ! -type f ! -type d -print -quit)" ]] \
+        || { echo "$1 contains links or special files; not installing it" >&2; exit 2; }
 }
 
 # put_theme SRC DST: replace DST with a root-owned copy of SRC, but only if DST is free or ours
@@ -96,6 +104,7 @@ case "${1:-}" in
     plymouth-install)
         valid_name "${2:-}"
         [[ -d "${3:-}" ]] || { echo "not a directory: ${3:-}" >&2; exit 2; }
+        no_links "$3"
         file=$(find "$3" -maxdepth 1 -name '*.plymouth' | head -1)
         [[ -n "$file" ]] || { echo "no .plymouth file in $3" >&2; exit 2; }
         [[ -f /var/lib/grimoire-plymouth-previous ]] || readlink -f "$PLY_LINK" > /var/lib/grimoire-plymouth-previous
