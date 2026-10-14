@@ -29,7 +29,7 @@ def load() -> dict:
 
 def save(settings: dict):
     SETTINGS.parent.mkdir(parents=True, exist_ok=True)
-    tmp = SETTINGS.with_suffix(".tmp")
+    tmp = SETTINGS.with_suffix(f".{os.getpid()}.tmp")
     tmp.write_text(json.dumps(settings, indent=1))
     tmp.replace(SETTINGS)
 
@@ -99,7 +99,7 @@ def add(path: Path):
     entries = [e for e in _read() if e["path"] != str(path)]
     entries.append({"path": str(path), "time": time.time(), "video": path.suffix.lower() in VIDEO})
     HISTORY.parent.mkdir(parents=True, exist_ok=True)
-    tmp = HISTORY.with_suffix(".tmp")
+    tmp = HISTORY.with_suffix(f".{os.getpid()}.tmp")
     tmp.write_text(json.dumps(entries[-KEEP:], indent=0))
     tmp.replace(HISTORY)
 
