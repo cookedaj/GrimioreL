@@ -633,10 +633,13 @@ class Autostart(Tweak):
         self.mine.write_text(f"# {MARK}: turn this off in OptimizeL to start {self.title.lower()} again\n"
                              "[Desktop Entry]\nType=Application\nHidden=true\n")
         if self.user_unit:
+            saved["orig"].setdefault(self.id, unit_state(self.user_unit, user=True))
             sh("systemctl", "--user", "disable", "--now", self.user_unit)
 
     def disable(self, saved):
         if has_mark(self.mine):
             self.mine.unlink()
-        if self.user_unit and unit_state(self.user_unit, user=True) == "disabled":
+        # only re-enable a unit that was enabled before (turned on before this was saved: assume it was)
+        was = saved["orig"].pop(self.id, "enabled")
+        if self.user_unit and was == "enabled" and unit_state(self.user_unit, user=True) == "disabled":
             sh("systemctl", "--user", "enable", self.user_unit)

@@ -272,12 +272,20 @@ def disk(size=512 << 20) -> dict:
     return r
 
 
+def _die_with_parent():
+    """In each `yes` hog: the kernel kills it if this test process dies first (killed, crashed), so a hog never
+    keeps every core busy on its own. The finally below covers the normal way out."""
+    import ctypes
+    import signal
+    ctypes.CDLL(None, use_errno=True).prctl(1, signal.SIGKILL)       # PR_SET_PDEATHSIG
+
+
 def latency() -> dict:
     """1 ms sleeps while `yes` keeps every core busy: how late does the scheduler wake us?"""
     hogs = []
     try:
         for _ in range(os.cpu_count() or 1):
-            hogs.append(subprocess.Popen(["yes"], stdout=subprocess.DEVNULL))
+            hogs.append(subprocess.Popen(["yes"], stdout=subprocess.DEVNULL, preexec_fn=_die_with_parent))
         time.sleep(0.3)
         rounds = []                              # 3 rounds; the middle one's numbers (one stray spike can't win)
         for _ in range(3):

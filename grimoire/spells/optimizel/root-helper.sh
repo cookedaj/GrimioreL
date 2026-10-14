@@ -38,6 +38,8 @@ sysctl_off() {
     rm -f "$R/etc/sysctl.d/99-grimoire-optimizel-$id.conf"
     [[ -f "$STATE/$id.sysctl" ]] || return 0
     while IFS= read -r kv; do
+        # of each dirty ratio/bytes pair only the nonzero one is live; writing it clears the other (a 0 would stall)
+        [[ "$kv" =~ ^vm\.dirty_[a-z_]+=0$ ]] && continue
         [[ -n "$kv" ]] && { run sysctl -q -w "$kv" || warn "couldn't restore $kv now; it returns after a restart"; }
     done < "$STATE/$id.sysctl"
     rm -f "$STATE/$id.sysctl"
@@ -224,7 +226,7 @@ tweak() {
         "on vfscache")   sysctl_on vfscache vm.vfs_cache_pressure=50 ;;
         "off vfscache")  sysctl_off vfscache ;;
         "on dirty")      # bytes and ratios exclude each other: restoring the ratios clears the byte limits
-                         SAVE="vm.dirty_ratio vm.dirty_background_ratio" \
+                         SAVE="vm.dirty_ratio vm.dirty_background_ratio vm.dirty_bytes vm.dirty_background_bytes" \
                          sysctl_on dirty vm.dirty_bytes=268435456 vm.dirty_background_bytes=134217728 ;;
         "off dirty")     sysctl_off dirty ;;
         "on compaction") sysctl_on compaction vm.compaction_proactiveness=0 vm.watermark_boost_factor=0 ;;
@@ -285,7 +287,7 @@ tweak() {
             run usermod -aG gamemode "$user" ;;
         "off gamemode")
             local user st grp
-            [[ -f "$STATE/gamemode.group" ]] || exit 0
+            [[ -f "$STATE/gamemode.group" ]] || return 0      # not exit: the rest of the batch still runs
             read -r user st grp < "$STATE/gamemode.group"
             [[ "$user" =~ ^[a-z_][a-z0-9_-]*$ ]] || { echo "odd saved user" >&2; exit 5; }
             if [[ "$grp" == created ]]; then
