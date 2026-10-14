@@ -1,5 +1,5 @@
 """SystemL page: Grimoire's system monitor (in place of KDE System Monitor). Overview graphs, processes, per-app
-history, services, startup apps and disks, each a panel picked from the list on the left.
+history, services, startup apps, disks and background alerts, each a panel picked from the list on the left.
 
 One Sampler reads the machine on a worker thread once a second while the page is on screen; nothing is sampled
 while it's hidden. Actions that can take a moment (or ask for the password) run on the pool too.
@@ -22,6 +22,7 @@ from grimoire.fsutil import human
 from grimoire.glyphs import glyph
 from grimoire.jobs import POOL, Job
 from grimoire.spells.systeml import probe, system
+from grimoire.spells.systeml.alertview import AlertsPanel
 from grimoire.spells.systeml.graph import Bar, CoreGrid, Graph, Spark
 from grimoire.spells.systeml.history import History, per_app
 from grimoire.widgets import Switch
@@ -29,7 +30,8 @@ from grimoire.widgets import Switch
 REPO = Path(__file__).resolve().parents[3]
 ME = getpass.getuser()
 PANELS = [("overview", "Overview", "system"), ("procs", "Processes", "list"), ("apps", "Apps && history", "clock"),
-          ("services", "Services", "boot"), ("startup", "Startup apps", "splash"), ("disks", "Disks", "drive")]
+          ("services", "Services", "boot"), ("startup", "Startup apps", "splash"), ("disks", "Disks", "drive"),
+          ("alerts", "Alerts", "bell")]
 PRIORITIES = [("Very high", -10), ("High", -5), ("Normal", 0), ("Low", 10), ("Very low", 19)]
 
 
@@ -1022,7 +1024,8 @@ class SystemLPage(QWidget):
         right.addWidget(self.heading)
         self.stack = QStackedWidget()
         self.panels = {"overview": OverviewPanel(self), "procs": ProcPanel(self), "apps": AppsPanel(self),
-                       "services": ServicesPanel(self), "startup": StartupPanel(self), "disks": DisksPanel(self)}
+                       "services": ServicesPanel(self), "startup": StartupPanel(self), "disks": DisksPanel(self),
+                       "alerts": AlertsPanel(self)}
         for p in self.panels.values():
             self.stack.addWidget(p)
         right.addWidget(self.stack, 1)
@@ -1104,7 +1107,7 @@ class SystemLPage(QWidget):
             panel.refresh()
         elif pid == "apps":
             panel.fill()
-        elif pid in ("services", "startup", "disks"):
+        elif pid in ("services", "startup", "disks", "alerts"):
             panel.load()
 
     def find_app(self, app: str):
