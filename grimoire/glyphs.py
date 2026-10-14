@@ -208,6 +208,28 @@ def glyph(name: str, size: int = 20) -> QIcon:
     return icon
 
 
+def meter(cpu: float, ram: float, size: int = 64, color: str = "#ffffff") -> QPixmap:
+    """The tray icon: two gauges, CPU on the left and RAM on the right, filled solid from the bottom (0..100)."""
+    pm = QPixmap(size, size)
+    pm.fill(Qt.GlobalColor.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    p.scale(size / S, size / S)
+    pen = QPen(QColor(color), 1.6, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
+    for x, value in ((3.5, cpu), (13.5, ram)):
+        box = QRectF(x, 2.5, 7, 19)
+        path = QPainterPath()
+        path.addRoundedRect(box, 1.8, 1.8)
+        h = box.height() * max(0.0, min(100.0, value)) / 100
+        p.save()
+        p.setClipRect(QRectF(x - 1, box.bottom() - h, 9, h + 1))
+        p.fillPath(path, QColor(color))                    # solid, so it still reads at 22 px
+        p.restore()
+        p.strokePath(path, pen)
+    p.end()
+    return pm
+
+
 def clover(size: int) -> QPixmap:
     pm = QPixmap(size, size)
     pm.fill(Qt.GlobalColor.transparent)

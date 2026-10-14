@@ -5,6 +5,7 @@
 #   - links the commands into ~/.local/bin and adds the app-menu entry, plus VaultL's (each spell's Install button
 #     on the home page adds its own; ./install.sh --all adds every spell's launcher)
 #   - copies the MuraL wallpaper plugin into Plasma
+#   - adds the Grimoire Tray menu entry (it starts at login only once you turn that on)
 # Settings stay in ~/.config/grimoire and ~/.local/share/grimoire; ./uninstall.sh removes the app again.
 set -euo pipefail
 SRC="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -74,6 +75,18 @@ Exec=$BIN/grimoire optimizel
 [Desktop Action systeml]
 Name=SystemL (system monitor)
 Exec=$BIN/grimoire systeml
+EOF
+
+# the tray icon's menu entry; it starts at login only once you turn that on (its autostart runs $BIN/grimoire-tray)
+cat > "$DATA/applications/grimoire-tray.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Grimoire Tray
+GenericName=Tray icon
+Comment=Live CPU/RAM in the system tray, plus crosshair, tidy and performance mode
+Exec=$BIN/grimoire-tray
+Icon=grimoire
+Categories=Utility;System;
 EOF
 
 # 4. standalone spells: VaultL always (it's the file manager; FileL's and TidyL's old entries become hidden

@@ -12,6 +12,11 @@ Public repo: github.com/cookedaj/Grimoire. Runs on the owner's own Kubuntu 26.04
 | OptimizeL | `grimoire/spells/optimizel/` | speed tweaks as persistent on/off switches; catalog + detection in `tweaks.py`, system ones in its own whitelisted `root-helper.sh` (test with `OPTIMIZEL_ROOT=<sandbox> OPTIMIZEL_DRY=1`) |
 | SystemL | `grimoire/spells/systeml/` | system monitor; `probe.py` readings (psutil, one `Sampler` per page, rates from the previous sample), `graph.py` B&W graphs, `history.py` per-app minutes, `system.py` signals/priority/services/startup/disks, `root-helper.sh` for root actions, `page.py` panels (samples only while visible) |
 
+Tray: `grimoire/tray.py` (`grimoire-tray`, QSystemTrayIcon → StatusNotifierItem): live CPU/RAM bars drawn by
+`glyphs.meter()`, menu for crosshair/tidy/performance mode/spells, single instance via a QLocalServer socket in
+`$XDG_RUNTIME_DIR`, opt-in autostart `~/.config/autostart/grimoire-tray.desktop` (home page checkbox or its menu).
+Performance mode lives in `optimizel/perfmode.py` (flips `IDS` through `tweaks.apply`, records what it changed).
+
 Shell: `grimoire/app.py` (icon rail, home, `style_app()`), icons drawn in code in `grimoire/glyphs.py`, styles in
 `grimoire/theme.py` (QSS). New spells register in `grimoire/spells/__init__.py` (`Spell(id, name, tagline, page, icon,
 status)`). Folder names stay as-is when display names change (e.g. SightsL lives in `sightc/`).

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Grimoire's tray icon (live CPU/RAM, crosshair, tidy, performance mode, open spells):
+#   grimoire-tray                     start it (one per session)
+#   grimoire-tray autostart on|off    start it at login or not
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m grimoire.tray "$@"
