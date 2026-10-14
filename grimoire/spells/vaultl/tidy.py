@@ -6,6 +6,7 @@ in-progress downloads or anything changed in the last 2 minutes); nothing is eve
 to the Trash via `gio trash`, and every move is logged so it can be undone. Files on the settings' ignore
 list are never touched. preview() is the dry run; run() uses the same plan()/cleanup_plan(), so they can't disagree.
 """
+import fcntl
 import hashlib
 import json
 import os
@@ -84,10 +85,28 @@ class Settings:
         tmp.replace(SETTINGS)     # atomic, so the timer never reads a half-written file
 
     def skip_always(self, paths):
-        """Add files to the ignore list (and forget entries whose file is gone, so the list stays short)."""
+        """Add files to the ignore list (and forget entries whose file is gone, so the list stays short).
+        Doesn't save: run it inside edit()."""
         keep = [p for p in self.ignore if Path(p).exists() or Path(p).is_symlink()]
         self.ignore = keep + [str(p) for p in paths if str(p) not in keep]
-        self.save()
+
+    def rule(self, name: str) -> Rule | None:
+        return next((r for r in self.rules if r.name == name), None)
+
+
+def edit(change) -> Settings:
+    """Apply one change to the settings on disk and return them. Reloads first (under a lock), so two VaultL
+    windows (the Grimoire shell and a standalone one) each write only what the user touched there, never an
+    old copy over the other's edits. Raises ValueError if the file can't be read (it is left alone)."""
+    SETTINGS.parent.mkdir(parents=True, exist_ok=True)
+    with open(SETTINGS.with_suffix(".lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        s = Settings.load()
+        if s.broken:
+            raise ValueError(f"{SETTINGS} can't be read; fix or remove it first")
+        change(s)
+        s.save()
+        return s
 
 
 def migrate():

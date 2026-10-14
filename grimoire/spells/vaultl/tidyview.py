@@ -3,10 +3,11 @@ duplicates. The sidebar's Tidy section picks the panel; the header carries Tidy 
 Tidy now always shows its preview first: nothing moves until the user has seen (and can untick) every file."""
 import copy
 import subprocess
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtCore import QFileSystemWatcher, QObject, Qt, QTimer, Signal
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel,
                                QListWidget, QListWidgetItem, QMessageBox, QPushButton, QSpinBox, QStackedWidget,
                                QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
@@ -25,6 +26,10 @@ PANELS = [("Rules", "tidy", "Auto-sort rules", "Where each kind of download goes
 
 class _Signals(QObject):
     done = Signal(str, object)        # kind, result
+
+
+def _rules(s: tidy.Settings) -> list[dict]:
+    return [asdict(r) for r in s.rules]
 
 
 class PreviewDialog(QDialog):
@@ -139,7 +144,9 @@ class PreviewDialog(QDialog):
 
 class TidyPanel(QWidget):
     """changed fires after anything that moves files, so the browser's Downloads bar can refresh.
-    reveal(path) asks the browser to show a file (double-click in Big files)."""
+    reveal(path) asks the browser to show a file (double-click in Big files).
+    Settings are shared with other VaultL windows: every edit goes through tidy.edit() (reload, change one
+    thing, save) and a watcher picks up edits made elsewhere, so no window writes back a stale copy."""
     changed = Signal()
     reveal = Signal(str)
 
@@ -192,6 +199,38 @@ class TidyPanel(QWidget):
         lay.addWidget(self.views, 1)
         self.show_panel(0)
         self.refresh_auto()
+
+        self._watcher = QFileSystemWatcher([str(tidy.SETTINGS.parent)], self)   # the save is an atomic rename,
+        self._reload_timer = QTimer(self, singleShot=True, interval=150, timeout=self.reload)   # so watch the folder
+        self._watcher.directoryChanged.connect(self._reload_timer.start)
+
+    def reload(self):
+        """Pick up settings another VaultL window (or the CLI) saved."""
+        fresh = tidy.Settings.load()
+        if asdict(fresh) != asdict(self.settings):
+            old, self.settings = self.settings, fresh
+            self._settings_changed(_rules(old) != _rules(fresh))
+
+    def _settings_changed(self, rules_differ=True):
+        if rules_differ:
+            self._fill_rules()
+        self._refresh_skipped()
+        self.refresh_next()
+
+    def _edit(self, change, rebuild=False) -> bool:
+        """Save one change. The rule rows are rebuilt only when they no longer match what's shown (another
+        window changed something too), so the control being used keeps its focus."""
+        shown = copy.deepcopy(self.settings)
+        change(shown)
+        try:
+            self.settings = tidy.edit(change)
+        except (OSError, ValueError) as e:
+            self.status.setText(f"Couldn't save the tidy settings: {e}")
+            self.settings = tidy.Settings.load()
+            self._settings_changed()
+            return False
+        self._settings_changed(rebuild or _rules(shown) != _rules(self.settings))
+        return True
 
     # ------------------------------------------------------------------ header
     def show_panel(self, i):
@@ -261,6 +300,7 @@ class TidyPanel(QWidget):
 
     def tidy_now(self) -> str:
         """Show the preview; run only what the user leaves ticked, and only on Run."""
+        self.reload()
         p = tidy.preview(self.settings)
         if p.error or not (p.moves or p.cleanups):
             msg = p.error or "Nothing to tidy right now."
@@ -276,8 +316,9 @@ class TidyPanel(QWidget):
 
     def _run(self, approved: tidy.Preview, skip) -> str:
         if skip:
-            self.settings.skip_always(skip)
-            self._refresh_skipped()
+            self._edit(lambda s: s.skip_always(skip))
+        else:
+            self.reload()                             # run with the ignore list as it is on disk now
         r = tidy.run(self.settings, approved)
         msg = f"Sorted {r['moved']} file(s), cleaned {r['cleaned']} stale file(s)."
         if r["errors"]:
@@ -302,7 +343,7 @@ class TidyPanel(QWidget):
         w = QWidget()
         v = QVBoxLayout(w)
         v.setContentsMargins(0, 0, 0, 0)
-        self.table = QTableWidget(len(self.settings.rules), 5)
+        self.table = QTableWidget(0, 5)
         self.table.setHorizontalHeaderLabels(["On", "Type", "Extensions", "Goes to", "Trash after"])
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
@@ -312,31 +353,7 @@ class TidyPanel(QWidget):
         hh.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         for c, width in ((0, 50), (1, 120), (3, 280), (4, 120)):
             self.table.setColumnWidth(c, width)
-        for r, rule in enumerate(self.settings.rules):
-            box = QCheckBox()
-            box.setChecked(rule.enabled)
-            box.toggled.connect(lambda on, rule=rule: self._set(rule, "enabled", on))
-            cell = QWidget()
-            cl = QHBoxLayout(cell)
-            cl.setContentsMargins(14, 0, 0, 0)
-            cl.addWidget(box)
-            self.table.setCellWidget(r, 0, cell)
-            self.table.setItem(r, 1, QTableWidgetItem(rule.name))
-            ext = QTableWidgetItem("  ".join("." + e for e in rule.extensions))
-            ext.setForeground(Qt.GlobalColor.gray)
-            self.table.setItem(r, 2, ext)
-            dest = QPushButton(rule.dest)
-            dest.setObjectName("Link")
-            dest.clicked.connect(lambda _=False, rule=rule, btn=dest: self._pick_dest(rule, btn))
-            self.table.setCellWidget(r, 3, dest)
-            days = QSpinBox()
-            days.setRange(0, 365)
-            days.setSpecialValueText("never")
-            days.setSuffix(" days")
-            days.setValue(rule.clean_days)
-            days.valueChanged.connect(lambda d, rule=rule: self._set(rule, "clean_days", d))
-            self.table.setCellWidget(r, 4, days)
-            self.table.setRowHeight(r, 44)
+        self._fill_rules()
         v.addWidget(self.table)
         note = QLabel("Only loose files directly in Downloads are sorted; folders, hidden files and downloads still "
                       "in progress are never touched. \"Trash after\" applies to files sitting in that rule's folder.")
@@ -354,6 +371,35 @@ class TidyPanel(QWidget):
         self._refresh_skipped()
         return w
 
+    def _fill_rules(self):
+        """(Re)build the rule rows from self.settings. Each control edits its rule by name."""
+        self.table.setRowCount(len(self.settings.rules))
+        for r, rule in enumerate(self.settings.rules):
+            box = QCheckBox()
+            box.setChecked(rule.enabled)
+            box.toggled.connect(lambda on, name=rule.name: self._set(name, "enabled", on))
+            cell = QWidget()
+            cl = QHBoxLayout(cell)
+            cl.setContentsMargins(14, 0, 0, 0)
+            cl.addWidget(box)
+            self.table.setCellWidget(r, 0, cell)
+            self.table.setItem(r, 1, QTableWidgetItem(rule.name))
+            ext = QTableWidgetItem("  ".join("." + e for e in rule.extensions))
+            ext.setForeground(Qt.GlobalColor.gray)
+            self.table.setItem(r, 2, ext)
+            dest = QPushButton(rule.dest)
+            dest.setObjectName("Link")
+            dest.clicked.connect(lambda _=False, name=rule.name: self._pick_dest(name))
+            self.table.setCellWidget(r, 3, dest)
+            days = QSpinBox()
+            days.setRange(0, 365)
+            days.setSpecialValueText("never")
+            days.setSuffix(" days")
+            days.setValue(rule.clean_days)
+            days.valueChanged.connect(lambda d, name=rule.name: self._set(name, "clean_days", d))
+            self.table.setCellWidget(r, 4, days)
+            self.table.setRowHeight(r, 44)
+
     def _refresh_skipped(self):
         n = len(self.settings.ignore)
         self.skipped.setText(f"{cli.plural(n, 'file')} you chose to always skip: "
@@ -363,24 +409,22 @@ class TidyPanel(QWidget):
             w.setVisible(bool(n))
 
     def _forget_skipped(self):
-        self.settings.ignore = []
-        self.settings.save()
-        self._refresh_skipped()
-        self.refresh_next()
+        self._edit(lambda s: setattr(s, "ignore", []))
 
-    def _set(self, rule, key, value):
-        setattr(rule, key, value)
-        self.settings.save()
-        self.refresh_next()
+    def _set(self, name, key, value, rebuild=False):
+        def change(s):
+            if rule := s.rule(name):
+                setattr(rule, key, value)
+        self._edit(change, rebuild)
 
-    def _pick_dest(self, rule, btn):
+    def _pick_dest(self, name):
+        rule = self.settings.rule(name)
+        if not rule:
+            return
         start = str(tidy.expand(rule.dest)) if tidy.expand(rule.dest).exists() else str(HOME)
-        d = QFileDialog.getExistingDirectory(self, f"Where should {rule.name.lower()} go?", start)
+        d = QFileDialog.getExistingDirectory(self, f"Where should {name.lower()} go?", start)
         if d:
-            rule.dest = tilde(d)
-            btn.setText(rule.dest)
-            self.settings.save()
-            self.refresh_next()
+            self._set(name, "dest", tilde(d), rebuild=True)          # the button shows the new folder
 
     # ------------------------------------------------------------------ activity
     def _activity_view(self) -> QWidget:

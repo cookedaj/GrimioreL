@@ -34,6 +34,7 @@ PLACES = [("Home", "home", "~"), ("Desktop", "desktop", "~/Desktop"), ("Repos", 
           ("Pictures", "mural", "~/Pictures"), ("Videos", "video", "~/Videos"), ("Music", "music", "~/Music"),
           ("Trash", "trash", str(ops.TRASH_FILES))]
 THUMBS = QThreadPool()
+EDIT_TRIGGERS = QAbstractItemView.EditTrigger.EditKeyPressed | QAbstractItemView.EditTrigger.SelectedClicked
 THUMBS.setMaxThreadCount(3)
 GRID = QSize(128, 132)
 ICON = 72
@@ -42,7 +43,8 @@ ICON = 72
 class _Signals(QObject):
     thumb = Signal(str, QImage)
     transferred = Signal(int, list, str)
-    sized = Signal(str, object, object)     # sizes can exceed 32-bit ints
+    trashed = Signal(int, list)
+    sized = Signal(str, object, object, bool)     # sizes can exceed 32-bit ints; bool: counted to the end
 
 
 class GridDelegate(QStyledItemDelegate):
@@ -117,6 +119,29 @@ class GridDelegate(QStyledItemDelegate):
             self.page.grid.viewport().update()
 
 
+class FileModel(QFileSystemModel):
+    """QFileSystemModel whose drag & drop respects the Trash: a drop into it goes through gio trash (so the item
+    gets its .trashinfo and Restore can put it back), and nothing is moved out of or around inside it (that
+    would orphan the records; Restore and Delete forever are the ways out)."""
+    trash_drop = Signal(list)
+    refused = Signal(str)
+
+    def dropMimeData(self, data, action, row, column, parent):
+        dest = Path(self.filePath(parent)) if parent.isValid() else None
+        sources = [Path(u.toLocalFile()) for u in data.urls() if u.isLocalFile()]
+        loose = [p for p in sources if not ops.in_trash(p)]
+        if dest is not None and ops.in_trash(dest):
+            if loose:
+                self.trash_drop.emit(loose)
+            else:
+                self.refused.emit("Items in the Trash stay where they are. Use Restore to put them back.")
+            return False                              # gio trash did the move; the view has nothing to do
+        if len(loose) != len(sources):
+            self.refused.emit("Items in the Trash can't be dragged out. Use Restore to put them back.")
+            return False
+        return super().dropMimeData(data, action, row, column, parent)
+
+
 class VaultLPage(QWidget):
     def __init__(self, start: str | Path | None = None, standalone: bool = False):
         super().__init__()
@@ -128,7 +153,9 @@ class VaultLPage(QWidget):
         self.standalone = standalone                      # own window: the title follows the folder
         self.cwd = HOME
 
-        self.model = QFileSystemModel(self)
+        self.model = FileModel(self)
+        self.model.trash_drop.connect(self._trash_paths)
+        self.model.refused.connect(lambda msg: self.status.setText(msg))
         self.model.setRootPath("/")
         self.model.setReadOnly(False)                     # rename + drag & drop moves
         self.model.setNameFilterDisables(False)
@@ -176,6 +203,7 @@ class VaultLPage(QWidget):
         self._sig.thumb.connect(self.grid_delegate.ready)
         self._sig.transferred.connect(self._transfer_done)
         self._sig.sized.connect(self._folder_sized)
+        self._sig.trashed.connect(self._trash_done)
         self.model.directoryLoaded.connect(lambda _: self._update_status())
         self._shortcuts()
         self.navigate(Path(start).expanduser() if start else HOME)
@@ -359,7 +387,7 @@ class VaultLPage(QWidget):
         view.setDropIndicatorShown(True)
         view.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
         view.setDefaultDropAction(Qt.DropAction.MoveAction)
-        view.setEditTriggers(QAbstractItemView.EditTrigger.EditKeyPressed | QAbstractItemView.EditTrigger.SelectedClicked)
+        view.setEditTriggers(EDIT_TRIGGERS)
         view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         view.customContextMenuRequested.connect(lambda pos, v=view: self._menu(v, pos))
         view.activated.connect(self.open_index)
@@ -456,6 +484,7 @@ class VaultLPage(QWidget):
             self.search.clear()
             self.search.blockSignals(False)
             self.model.setNameFilters([])
+        self._apply_filter()
         idx = self.model.index(str(path))
         for v in (self.grid, self.details):
             v.setRootIndex(idx)
@@ -464,7 +493,11 @@ class VaultLPage(QWidget):
         self.back_btn.setEnabled(self.hist_i > 0)
         self.fwd_btn.setEnabled(self.hist_i < len(self.history) - 1)
         self.up_btn.setEnabled(path != path.parent)
-        self.trash_bar.setVisible(ops.in_trash(path))
+        trash = ops.in_trash(path)
+        self.trash_bar.setVisible(trash)
+        for v in (self.grid, self.details):           # in the Trash: no dragging out, no renaming (Restore instead)
+            v.setDragEnabled(not trash)
+            v.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers if trash else EDIT_TRIGGERS)
         self._refresh_tidy_bar()
         for i in range(self.places.count()):
             it = self.places.item(i)
@@ -557,10 +590,16 @@ class VaultLPage(QWidget):
         self.view().setRootIndex(self.model.index(str(self.cwd)))
 
     def _apply_filter(self):
+        """Hidden files show when asked, and always inside a hidden folder (the Trash is under ~/.local): once
+        ~ is listed without them, QFileSystemModel can't reach a path below a hidden folder at all."""
         f = QDir.Filter.AllEntries | QDir.Filter.NoDotAndDotDot | QDir.Filter.AllDirs
-        if self.show_hidden:
+        if self.show_hidden or any(part.startswith(".") for part in self.cwd.parts):
             f |= QDir.Filter.Hidden
-        self.model.setFilter(f)
+        if f != self.model.filter():
+            self.model.setFilter(f)
+            if hasattr(self, "details"):                  # re-filter now, not on the next event loop pass
+                hh = self.details.header()
+                self.model.sort(hh.sortIndicatorSection(), hh.sortIndicatorOrder())
 
     def toggle_hidden(self):
         self.show_hidden = not self.show_hidden
@@ -648,11 +687,12 @@ class VaultLPage(QWidget):
         self.pv_info.setText("\n".join(lines))
         self._pv_path = str(p)
 
-    def _folder_sized(self, path: str, size: int, files: int):
-        """Folder sizes are counted off the UI thread; fill them into the preview when ready."""
-        if getattr(self, "_pv_path", None) == path and self._pv_lines:
+    def _folder_sized(self, path: str, size: int, files: int, complete: bool):
+        """Folder sizes are counted off the UI thread; fill them into the preview when ready. A count cut short
+        (huge folder, or "/") shows as "about N+"; a folder that can't be sized (/proc…) shows none."""
+        if getattr(self, "_pv_path", None) == path and self._pv_lines and (complete or files):
             lines = list(self._pv_lines)
-            lines[0] += f" · {human(size)}"
+            lines[0] += f" · {human(size)}" if complete else f" · about {human(size)}+"
             self.pv_info.setText("\n".join(lines))
 
     def _update_status(self):
@@ -697,6 +737,9 @@ class VaultLPage(QWidget):
             self.view().edit(idx)
 
     def rename(self):
+        if ops.in_trash(self.cwd):
+            self.status.setText("Items in the Trash can't be renamed. Restore them first.")
+            return
         sel = self.selected()
         if len(sel) == 1:
             self.view().edit(self.model.index(str(sel[0])))
@@ -706,6 +749,9 @@ class VaultLPage(QWidget):
     def copy(self, cut=False):
         sel = self.selected()
         if not sel:
+            return
+        if cut and any(ops.in_trash(p) for p in sel):     # a cut-paste would leave the .trashinfo behind
+            self.status.setText("Items in the Trash can only be restored or deleted forever.")
             return
         data = QMimeData()
         data.setUrls([QUrl.fromLocalFile(str(p)) for p in sel])
@@ -740,11 +786,35 @@ class VaultLPage(QWidget):
         if not sel:
             return
         if ops.in_trash(self.cwd):
-            self.status.setText("These are already in the Trash. Use Restore, or Empty Trash.")
+            self.delete_forever()
             return
         errors = ops.trash(sel)
-        self.status.setText(f"Moved {len(sel) - len(errors)} item(s) to the Trash."
+        self._trash_done(len(sel) - len(errors), errors)
+
+    def _trash_paths(self, paths: list):
+        """A drop onto the Trash: gio trash in the background, like Move to Trash."""
+        sig = self._sig
+        self.status.setText(f"Moving {len(paths)} item(s) to the Trash…")
+        THUMBS.start(Job(lambda: ops.trash(paths), lambda errors: sig.trashed.emit(len(paths) - len(errors), errors)))
+
+    def _trash_done(self, done: int, errors: list):
+        self.status.setText(f"Moved {done} item(s) to the Trash."
                             + (f"  Problems: {'; '.join(errors[:2])}" if errors else ""))
+
+    def delete_forever(self):
+        sel = [p for p in self.selected() if p.parent.resolve() == ops.TRASH_FILES.resolve()]
+        if not sel:
+            self.status.setText("Pick items at the top of the Trash to delete forever.")
+            return
+        if QMessageBox.warning(self, "Delete forever?",
+                               f"Permanently delete {len(sel)} item{'s' if len(sel) != 1 else ''}?\n\n"
+                               "This can't be undone.",
+                               QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Yes,
+                               QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
+            return
+        errors = ops.delete_forever(sel)
+        self.status.setText(f"Deleted {len(sel) - len(errors)} item(s) forever."
+                            + (f"  Couldn't delete: {'; '.join(errors[:2])}" if errors else ""))
 
     def restore_selected(self):
         sel = self.selected()
@@ -765,8 +835,9 @@ class VaultLPage(QWidget):
                                QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Yes,
                                QMessageBox.StandardButton.Cancel) != QMessageBox.StandardButton.Yes:
             return
-        err = ops.empty_trash()
-        self.status.setText(err or "Trash emptied.")
+        errors = ops.empty_trash()
+        self.status.setText(f"Couldn't delete {len(errors)} item(s), kept in the Trash: {'; '.join(errors[:3])}"
+                            if errors else "Trash emptied.")
 
     def terminal_here(self):
         subprocess.Popen(["konsole", "--workdir", str(self.cwd)], start_new_session=True)
@@ -791,6 +862,9 @@ class VaultLPage(QWidget):
             m.addSeparator()
             if trash_mode:
                 m.addAction("Restore", self.restore_selected)
+                m.addAction("Copy\tCtrl+C", self.copy)
+                m.addSeparator()
+                m.addAction(glyph("trash", 16), "Delete forever…\tDel", self.delete_forever)
             else:
                 m.addAction("Cut\tCtrl+X", lambda: self.copy(cut=True))
                 m.addAction("Copy\tCtrl+C", self.copy)

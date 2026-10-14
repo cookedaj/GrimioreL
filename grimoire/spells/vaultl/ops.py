@@ -1,6 +1,8 @@
 """VaultL file operations. Everything goes through the normal Linux/KDE system: plain filesystem calls for
 copy/move/rename, and `gio` for the Trash (the same freedesktop Trash Dolphin uses)."""
+import os
 import shutil
+import time
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -90,25 +92,42 @@ def original_location(path: Path) -> str:
     return ""
 
 
-def empty_trash() -> str:
-    """Permanently delete everything in the Trash (freedesktop spec: files/ + their info/ records).
+def delete_forever(paths: list[Path]) -> list[str]:
+    """Permanently delete top-level Trash items and their .trashinfo records. A record goes only once its item
+    is really gone, so a failure never leaves a file Restore can't place. Returns one message per failure.
     Only ever called after the user confirms in VaultL."""
-    problems = []
-    trash_root = TRASH_FILES.parent
-    for sub in ("files", "info"):
-        d = trash_root / sub
-        if not d.is_dir():
+    errors = []
+    for p in paths:
+        if p.parent.resolve() != TRASH_FILES.resolve():
+            errors.append(f"{p.name}: not a Trash item")
             continue
-        for p in d.iterdir():
-            try:
-                if p.is_dir() and not p.is_symlink():
-                    shutil.rmtree(p)
-                else:
-                    p.unlink()
-            except OSError as e:
-                problems.append(f"{p.name}: {e.strerror or e}")
+        try:
+            if p.is_dir() and not p.is_symlink():
+                shutil.rmtree(p)
+            else:
+                p.unlink()
+        except OSError as e:
+            errors.append(f"{p.name}: {e.strerror or e}")
+            if p.exists() or p.is_symlink():          # rmtree may have got part-way: keep the record
+                continue
+        _info_path(p).unlink(missing_ok=True)
+    return errors
+
+
+def empty_trash() -> list[str]:
+    """Permanently delete everything in the Trash (freedesktop spec: files/ + their info/ records).
+    Records of items that couldn't be deleted stay; records with no item left (orphans) go.
+    Returns one message per item that couldn't be deleted. Only ever called after the user confirms in VaultL."""
+    trash_root = TRASH_FILES.parent
+    errors = delete_forever(list(TRASH_FILES.iterdir())) if TRASH_FILES.is_dir() else []
+    info = trash_root / "info"
+    if info.is_dir():
+        for rec in info.glob("*.trashinfo"):
+            item = TRASH_FILES / rec.name[:-len(".trashinfo")]
+            if not item.exists() and not item.is_symlink():
+                rec.unlink(missing_ok=True)
     (trash_root / "directorysizes").unlink(missing_ok=True)
-    return "; ".join(problems[:3])
+    return errors
 
 
 def new_folder(parent: Path, name="New Folder") -> Path:
@@ -117,16 +136,43 @@ def new_folder(parent: Path, name="New Folder") -> Path:
     return target
 
 
-def folder_size(path: Path, limit=200_000) -> tuple[int, int]:
-    """(bytes, files) under path; stops counting after `limit` files."""
+PSEUDO = tuple(Path(p) for p in ("/proc", "/sys", "/dev", "/run"))   # kernel views, not files on a disk
+
+
+def folder_size(path: Path, limit=200_000, seconds=3.0) -> tuple[int, int, bool]:
+    """(bytes, files, complete) under path. Stays on path's own filesystem (so "/" doesn't count other drives,
+    or /proc's fake 128 TB kcore), skips pseudo filesystems, and stops after `limit` files or `seconds`:
+    complete is False then, and the numbers are a lower bound."""
+    try:
+        real = path.resolve()
+        if any(real == p or real.is_relative_to(p) for p in PSEUDO):
+            return 0, 0, False
+        dev = real.stat().st_dev
+    except OSError:
+        return 0, 0, False
     total = files = 0
-    for p in path.rglob("*"):
+    deadline = time.monotonic() + seconds
+    stack = [str(real)]
+    while stack:
         try:
-            if p.is_file() and not p.is_symlink():
-                total += p.stat().st_size
-                files += 1
-        except OSError:
+            with os.scandir(stack.pop()) as it:
+                for e in it:
+                    try:
+                        if e.is_symlink():
+                            continue
+                        st = e.stat(follow_symlinks=False)
+                        if st.st_dev != dev:
+                            continue                       # another mount: a drive, tmpfs, /proc…
+                        if e.is_dir(follow_symlinks=False):
+                            if Path(e.path) not in PSEUDO:
+                                stack.append(e.path)
+                        elif e.is_file(follow_symlinks=False):
+                            total += st.st_size
+                            files += 1
+                    except OSError:
+                        continue
+                    if files >= limit or time.monotonic() > deadline:
+                        return total, files, False
+        except OSError:                                    # a folder we can't read
             continue
-        if files >= limit:
-            break
-    return total, files
+    return total, files, True
