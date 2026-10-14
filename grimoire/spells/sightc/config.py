@@ -4,6 +4,7 @@ Saved profiles live next to it in sightc-profiles.json; built-in presets are in 
 """
 import base64
 import json
+import re
 from dataclasses import asdict, dataclass, fields
 
 from grimoire.paths import CONFIG
@@ -61,7 +62,7 @@ class Crosshair:
         if c.style not in STYLES:
             c.style = cls.style
         for k in ("color", "outline_color"):
-            if not (getattr(c, k).startswith("#") and len(getattr(c, k)) in (4, 7, 9)):
+            if not re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", getattr(c, k)):
                 setattr(c, k, getattr(cls, k))
         return c
 

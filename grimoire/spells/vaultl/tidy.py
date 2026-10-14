@@ -21,6 +21,7 @@ LOG = DATA / "vaultl" / "log.jsonl"
 LEGACY = {SETTINGS: CONFIG / "tidyl.json", LOG: DATA / "tidyl" / "log.jsonl"}    # TidyL's files, before VaultL
 SETTLE_SECONDS = 120
 PARTIAL = (".part", ".crdownload", ".download", ".tmp", ".partial", ".!qB", ".opdownload")
+SIDECARS = PARTIAL + (".aria2",)   # Firefox/aria2 keep an empty "name.ext" next to "name.ext.part" while downloading
 
 
 @dataclass
@@ -56,6 +57,7 @@ class Settings:
     watch: str = "~/Downloads"
     auto: bool = True
     rules: list[Rule] = field(default_factory=default_rules)
+    broken: bool = False          # the file exists but can't be read: run() does nothing rather than use defaults
 
     @classmethod
     def load(cls) -> "Settings":
@@ -63,12 +65,18 @@ class Settings:
             d = json.loads(SETTINGS.read_text())
             return cls(watch=d.get("watch", "~/Downloads"), auto=d.get("auto", True),
                        rules=[Rule(**r) for r in d["rules"]])
-        except (OSError, ValueError, KeyError, TypeError):
+        except FileNotFoundError:
             return cls()
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            return cls(broken=True)
 
     def save(self):
         SETTINGS.parent.mkdir(parents=True, exist_ok=True)
-        SETTINGS.write_text(json.dumps(asdict(self), indent=2))
+        d = asdict(self)
+        d.pop("broken")
+        tmp = SETTINGS.with_suffix(".tmp")
+        tmp.write_text(json.dumps(d, indent=2))
+        tmp.replace(SETTINGS)     # atomic, so the timer never reads a half-written file
 
 
 def migrate():
@@ -122,6 +130,21 @@ def trash_by_hand(path: Path, rule: str, reason: str):
 
 
 # ---------------------------------------------------------------- sorting
+def _age(st: os.stat_result, now: float) -> float:
+    """Seconds since the file landed where it is. A move keeps mtime but updates ctime, so use the newer one."""
+    return now - max(st.st_mtime, st.st_ctime)
+
+
+def undone_files() -> dict[str, float]:
+    """{path: when} for files an undo put back, so the next run doesn't sort them again."""
+    out: dict[str, float] = {}
+    for e in history(5000):
+        if e["action"] == "undo":
+            for f in e.get("files", []):
+                out.setdefault(f, e["time"])
+    return out
+
+
 def plan(s: Settings) -> list[tuple[Path, Path, str]]:
     """[(file, destination, rule name)] for loose files that a rule matches."""
     watch = expand(s.watch)
@@ -130,15 +153,19 @@ def plan(s: Settings) -> list[tuple[Path, Path, str]]:
     moves = []
     if not watch.is_dir():
         return moves
+    undone = undone_files()
     for f in sorted(watch.iterdir()):
         if not f.is_file() or f.is_symlink() or f.name.startswith("."):
             continue
         try:
-            fresh = now - f.stat().st_mtime < SETTLE_SECONDS
+            st = f.stat()
         except OSError:                       # vanished (a browser renaming its download)
             continue
-        if fresh or f.name.lower().endswith(PARTIAL):
+        if now - st.st_mtime < SETTLE_SECONDS or f.name.lower().endswith(PARTIAL) \
+                or any(f.with_name(f.name + x).exists() for x in SIDECARS):
             continue                          # still downloading / just landed
+        if str(f) in undone and st.st_ctime <= undone[str(f)] + 5:
+            continue                          # the user undid this move and hasn't touched the file since
         rule = by_ext.get(_ext(f))
         if not rule:
             continue
@@ -152,6 +179,8 @@ def plan(s: Settings) -> list[tuple[Path, Path, str]]:
 def run(s: Settings | None = None) -> dict:
     """One tidy pass: sort the watched folder, then clean stale files. Returns counts."""
     s = s or Settings.load()
+    if s.broken:
+        return {"moved": 0, "cleaned": 0, "errors": [f"{SETTINGS} can't be read; nothing done"]}
     batch = f"{time.time():.0f}"
     moved, cleaned, errors = 0, 0, []
     for src, dest, rule in plan(s):
@@ -164,15 +193,18 @@ def run(s: Settings | None = None) -> dict:
         except OSError as e:
             errors.append(f"{src.name}: {e}")
     now = time.time()
+    watch = expand(s.watch).resolve()
     for rule in s.rules:
         if not rule.enabled or rule.clean_days <= 0:
             continue
         d = expand(rule.dest)
-        if not d.is_dir():
-            continue
+        if not d.is_dir() or d.resolve() in (watch, HOME.resolve(), *watch.parents):
+            continue                          # cleanup only ever runs in a dedicated sorting folder
+        exts = set(rule.extensions)
         for f in d.iterdir():
             try:
-                stale = f.is_file() and not f.name.startswith(".") and now - f.stat().st_mtime > rule.clean_days * 86400
+                stale = f.is_file() and not f.is_symlink() and not f.name.startswith(".") \
+                    and _ext(f) in exts and _age(f.stat(), now) > rule.clean_days * 86400
             except OSError:
                 continue
             if stale:
@@ -193,18 +225,18 @@ def undo_last() -> int:
     batch = next((e["batch"] for e in entries if e["action"] == "move" and e["batch"] not in done), None)
     if batch is None:
         return 0
-    n = 0
+    back = []
     for e in entries:
         if e.get("batch") == batch and e["action"] == "move":
             src, dst = Path(e["to"]), Path(e["from"])
             if src.exists() and not dst.exists():
                 try:
                     shutil.move(str(src), str(dst))
-                    n += 1
+                    back.append(str(dst))
                 except OSError:               # e.g. the watched folder is gone; leave the file where it is
                     continue
-    _log({"action": "undo", "batch": batch, "count": n})
-    return n
+    _log({"action": "undo", "batch": batch, "count": len(back), "files": back})
+    return len(back)
 
 
 def undone_batches() -> set[str]:
@@ -250,15 +282,20 @@ def duplicates(roots=("~/Downloads", "~/Documents", "~/Pictures", "~/Videos", "~
                min_kb=64) -> list[list[Path]]:
     """Groups of identical files (same size, then same SHA-1). Repo folders are left out on purpose."""
     by_size: dict[int, list[Path]] = {}
+    seen: set[tuple[int, int]] = set()          # one file reached twice (symlinked root, hardlink) isn't a copy
     for r in roots:
         root = expand(r)
         if not root.is_dir():
             continue
         for p in _walk(root, skip_repos=True):   # code repos legitimately repeat files (worktrees etc.)
             try:
-                size = p.stat().st_size
+                st = p.stat()
             except OSError:
                 continue
+            size = st.st_size
+            if (st.st_dev, st.st_ino) in seen:
+                continue
+            seen.add((st.st_dev, st.st_ino))
             if size >= min_kb * 1024:
                 by_size.setdefault(size, []).append(p)
     groups: dict[tuple[int, str], list[Path]] = {}

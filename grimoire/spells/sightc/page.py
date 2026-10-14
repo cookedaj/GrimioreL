@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QAbstractButton, QButtonGroup, QCheckBox, QColorD
 from grimoire.paths import CONFIG, HOME
 from grimoire.spells.mural import library as mural_library
 from grimoire.spells.sightc import draw, overlay
-from grimoire.spells.sightc.config import (COLORS, PRESETS, STYLES, Crosshair, load_profiles, save_profiles)
+from grimoire.spells.sightc.config import (COLORS, LIMITS, PRESETS, STYLES, Crosshair, load_profiles, save_profiles)
 from grimoire.widgets import Slider
 
 AUTOSTART = HOME / ".config/autostart/grimoire-sightc.desktop"
@@ -386,8 +386,8 @@ class SightCPage(QWidget):
         self._section(lay, "POSITION", self._small("Center", self._center))
         pos = QGridLayout()
         pos.setHorizontalSpacing(12)
-        self.off_x = Slider(-200, 200, " px", ch)
-        self.off_y = Slider(-200, 200, " px", ch)
+        self.off_x = Slider(*LIMITS["offset_x"], " px", ch)
+        self.off_y = Slider(*LIMITS["offset_y"], " px", ch)
         for s in (self.off_x, self.off_y):
             s.v.setFixedWidth(58)
         pos.addWidget(QLabel("Offset X"), 0, 0)
