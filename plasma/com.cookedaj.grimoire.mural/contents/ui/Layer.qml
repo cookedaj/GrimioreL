@@ -13,6 +13,8 @@ Item {
     readonly property bool isVideo: /\.(mp4|webm|mkv|mov|m4v|avi|gif)$/i.test(source.toString())
     // true once the content can be shown (so the fade never reveals a blank frame)
     readonly property bool ready: loader.item !== null && loader.item.ready === true
+    // true when the file can't be shown (moved, deleted, broken), so main.qml doesn't wait on it forever
+    readonly property bool failed: loader.item !== null && loader.item.failed === true
 
     opacity: 0
 
@@ -27,6 +29,7 @@ Item {
         id: imageComponent
         Image {
             readonly property bool ready: status === Image.Ready
+            readonly property bool failed: status === Image.Error
             source: slot.source
             fillMode: slot.fillMode
             asynchronous: true
@@ -41,6 +44,7 @@ Item {
         Video {
             id: video
             readonly property bool ready: playbackState === MediaPlayer.PlayingState || position > 0
+            readonly property bool failed: error !== MediaPlayer.NoError
             source: slot.source
             fillMode: slot.fillMode
             loops: MediaPlayer.Infinite
