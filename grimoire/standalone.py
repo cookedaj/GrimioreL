@@ -8,6 +8,7 @@
 Each spell's command is bin/grimoire-<id>. Uninstalling keeps the command in ~/.local/bin, because SightsL's autostart
 and VaultL's auto-tidy timer call it.
 """
+import os
 import sys
 from pathlib import Path
 
@@ -36,9 +37,9 @@ def _spell(sid: str):
 
 def _paths(sid: str) -> tuple[Path, Path, Path]:
     """(command link, menu entry, icon) for a spell; read $HOME late so a sandbox HOME works in tests."""
-    local = Path.home() / ".local"
-    return (local / "bin" / f"grimoire-{sid}", local / "share/applications" / f"grimoire-{sid}.desktop",
-            local / "share/icons/hicolor/256x256/apps" / f"grimoire-{sid}.png")
+    share = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share")    # as install.sh does
+    return (Path.home() / ".local/bin" / f"grimoire-{sid}", share / "applications" / f"grimoire-{sid}.desktop",
+            share / "icons/hicolor/256x256/apps" / f"grimoire-{sid}.png")
 
 
 def available(sid: str) -> bool:

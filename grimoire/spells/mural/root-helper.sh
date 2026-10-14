@@ -48,17 +48,26 @@ set_sddm_theme() {
     fi
 }
 
+backup_sddm_conf() {    # once; a missing sddm.conf (theme set only in sddm.conf.d) backs up as empty
+    [[ -f "$SDDM_CONF.grimoire-backup" ]] && return
+    if [[ -f "$SDDM_CONF" ]]; then cp "$SDDM_CONF" "$SDDM_CONF.grimoire-backup"; else touch "$SDDM_CONF.grimoire-backup"; fi
+}
+
 case "${1:-}" in
     sddm)
         need_dir "${2:-}" Main.qml
-        [[ -f "$SDDM_CONF.grimoire-backup" ]] || cp "$SDDM_CONF" "$SDDM_CONF.grimoire-backup"
+        backup_sddm_conf
         [[ -d "$SDDM_DIR" ]] && touch "$SDDM_DIR/.grimoire-installed"    # always ours (older installs lack the marker)
         put_theme "$2" "$SDDM_DIR"
         set_sddm_theme grimoire
         ;;
     sddm-restore)
         prev=$(sed -n '/^\[Theme\]/,/^\[/{s/^Current=//p}' "$SDDM_CONF.grimoire-backup" 2>/dev/null | head -1)
-        set_sddm_theme "${prev:-breeze}"
+        if [[ -n "$prev" ]]; then
+            set_sddm_theme "$prev"
+        else                    # the theme came from sddm.conf.d (e.g. Kubuntu's): let it apply again
+            sed -i '/^\[Theme\]/,/^\[/{/^Current=/d}' "$SDDM_CONF"
+        fi
         ;;
     plymouth)
         need_dir "${2:-}" grimoire.plymouth
@@ -78,7 +87,7 @@ case "${1:-}" in
     sddm-install)
         valid_name "${2:-}"
         need_dir "${3:-}" Main.qml
-        [[ -f "$SDDM_CONF.grimoire-backup" ]] || cp "$SDDM_CONF" "$SDDM_CONF.grimoire-backup"
+        backup_sddm_conf
         dst="/usr/share/sddm/themes/$2"
         put_theme "$3" "$dst"
         set_sddm_theme "$2"

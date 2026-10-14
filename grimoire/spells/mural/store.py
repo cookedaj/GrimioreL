@@ -228,6 +228,8 @@ def _extract(archive: Path, dest: Path) -> Path:
                     shutil.copyfileobj(src, out)
     elif tarfile.is_tarfile(archive):
         with tarfile.open(archive) as t:
+            if sum(m.size for m in t.getmembers()) > MAX_ARCHIVE * 3:
+                raise RuntimeError("archive expands too large")
             t.extractall(dest, filter="data")      # Python's safe filter: no links out, no abs paths, no devices
     else:                                          # a plain file (.colors, .colorscheme, an image…)
         shutil.copy(archive, dest / archive.name)
@@ -262,20 +264,29 @@ def _ini(path: Path) -> ConfigParser:
     return c
 
 
-def _claim(dst: Path):
-    """Refuse to replace something Grimoire didn't install (e.g. your own theme with the same folder name)."""
-    if (dst.exists() or dst.is_symlink()) and str(dst) not in {e["path"] for e in registry().values()}:
-        raise RuntimeError(f"you already have “{dst.name}” in {dst.parent}; Grimoire won't replace it")
+def _claim(dst: Path, item: str):
+    """Refuse to replace something Grimoire didn't install for this item (your own theme with the same folder
+    name, or another store item's)."""
+    if dst.exists() or dst.is_symlink():
+        owners = {e.get("item") for e in registry().values() if e["path"] == str(dst)}
+        if item not in owners:
+            raise RuntimeError(f"you already have “{dst.name}” in {dst.parent}; Grimoire won't replace it")
 
 
-def _copyfile(src: Path, dst: Path):
-    _claim(dst)
+def _slug(text: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]", "_", str(text)).strip("._")[:80]
+
+
+def _copyfile(src: Path, dst: Path, item: str):
+    _claim(dst, item)
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(src, dst)
 
 
-def _copytree(src: Path, dst: Path):
-    _claim(dst)
+def _copytree(src: Path, dst: Path, item: str):
+    if dst.resolve().parent != dst.parent.resolve():
+        raise RuntimeError(f"unsafe theme name: {dst.name}")
+    _claim(dst, item)
     if dst.exists():
         shutil.rmtree(dst)
     shutil.copytree(src, dst, symlinks=False, ignore=shutil.ignore_patterns("*.sh", "*.py", "install*"))
@@ -302,61 +313,64 @@ def install(cat: Category, item: Item, to_bw: bool = False) -> list[dict]:
         entries.append(e)
 
     k = cat.kind
+
+    def folder(d: Path) -> str:               # a flat archive's root is the work folder, not a theme name
+        return d.name if d != root else (_slug(item.name) or item.id)
     if k == "colors":
         for f in root.rglob("*.colors"):
             dst = HOME / ".local/share/color-schemes" / f.name
-            _copyfile(f, dst)
+            _copyfile(f, dst, item.id)
             add(_ini(f).get("General", "Name", fallback=f.stem), f.stem, dst)
     elif k == "konsole":
         for f in root.rglob("*.colorscheme"):
             dst = HOME / ".local/share/konsole" / f.name
-            _copyfile(f, dst)
+            _copyfile(f, dst, item.id)
             add(_ini(f).get("General", "Description", fallback=f.stem), f.stem, dst)
     elif k == "cursor":
         for d in _dirs_with(root, lambda d: (d / "cursors").is_dir()):
-            dst = HOME / ".local/share/icons" / d.name
-            _copytree(d, dst)
-            add(_ini(d / "index.theme").get("Icon Theme", "Name", fallback=d.name), d.name, dst)
+            dst = HOME / ".local/share/icons" / folder(d)
+            _copytree(d, dst, item.id)
+            add(_ini(d / "index.theme").get("Icon Theme", "Name", fallback=folder(d)), folder(d), dst)
     elif k == "icons":
         for d in _dirs_with(root, lambda d: (d / "index.theme").is_file()
                             and _ini(d / "index.theme").has_option("Icon Theme", "Directories")):
-            dst = HOME / ".local/share/icons" / d.name
-            _copytree(d, dst)
-            add(_ini(d / "index.theme").get("Icon Theme", "Name", fallback=d.name), d.name, dst)
+            dst = HOME / ".local/share/icons" / folder(d)
+            _copytree(d, dst, item.id)
+            add(_ini(d / "index.theme").get("Icon Theme", "Name", fallback=folder(d)), folder(d), dst)
     elif k == "plasma":
         for d in _dirs_with(root, lambda d: ((d / "metadata.json").is_file() or (d / "metadata.desktop").is_file())
                             and ((d / "widgets").is_dir() or (d / "colors").is_file() or (d / "dialogs").is_dir())):
-            dst = HOME / ".local/share/plasma/desktoptheme" / d.name
-            _copytree(d, dst)
-            add(item.name if d.name == root.name else d.name, d.name, dst)
+            dst = HOME / ".local/share/plasma/desktoptheme" / folder(d)
+            _copytree(d, dst, item.id)
+            add(item.name if d == root else d.name, folder(d), dst)
     elif k == "aurorae":
         for d in _dirs_with(root, lambda d: any(d.glob("decoration.svg*"))):
-            dst = HOME / ".local/share/aurorae/themes" / d.name
-            _copytree(d, dst)
-            add(d.name, d.name, dst)
+            dst = HOME / ".local/share/aurorae/themes" / folder(d)
+            _copytree(d, dst, item.id)
+            add(folder(d), folder(d), dst)
     elif k == "splash":
         for d in _dirs_with(root, lambda d: (d / "contents/splash").is_dir()):
             meta = d / "metadata.json"
-            ident = d.name
+            ident = folder(d)
             if meta.is_file():
                 try:
-                    ident = json.loads(meta.read_text())["KPlugin"]["Id"] or d.name
-                except (ValueError, KeyError):
+                    ident = _slug(json.loads(meta.read_text())["KPlugin"]["Id"]) or ident   # never a path
+                except (ValueError, KeyError, TypeError):
                     pass
             dst = HOME / ".local/share/plasma/look-and-feel" / ident
-            _copytree(d, dst)
+            _copytree(d, dst, item.id)
             add(item.name, ident, dst)
     elif k == "sddm":
         for d in _dirs_with(root, lambda d: (d / "metadata.desktop").is_file() and (d / "Main.qml").is_file()):
-            ident = re.sub(r"[^A-Za-z0-9._-]", "_", d.name)
+            ident = _slug(folder(d)) or item.id
             dst = STAGED / "sddm" / ident
-            _copytree(d, dst)
+            _copytree(d, dst, item.id)
             add(_ini(d / "metadata.desktop").get("SddmGreeterTheme", "Name", fallback=d.name), ident, dst)
     elif k == "plymouth":
         for d in _dirs_with(root, lambda d: any(d.glob("*.plymouth"))):
             ident = re.sub(r"[^A-Za-z0-9._-]", "_", next(d.glob("*.plymouth")).stem)
             dst = STAGED / "plymouth" / ident
-            _copytree(d, dst)
+            _copytree(d, dst, item.id)
             add(_ini(next(d.glob("*.plymouth"))).get("Plymouth Theme", "Name", fallback=ident), ident, dst)
     elif k == "wallpaper":
         from grimoire.spells.mural import library

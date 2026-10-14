@@ -222,7 +222,8 @@ class TaskbarTab(ScreenTab):
             ORIGINAL.parent.mkdir(parents=True, exist_ok=True)
             original = read_panel()
             original["opacity"] = OPACITY_NAMES.get(str(original.get("opacity")), 0)
-            original["style"] = plasmastyle.current()
+            style = plasmastyle.current()
+            original["style"] = style if not style.startswith("grimoire") else "default"   # ours gets rebuilt
             ORIGINAL.write_text(json.dumps(original, indent=2))
         set_opacity(OPACITY[o["opacity"]])     # may restart plasmashell, so it goes first
         loc, length, align = LAYOUTS[design.id]
@@ -244,7 +245,7 @@ class TaskbarTab(ScreenTab):
             opacity = original.pop("opacity", 0)
             set_opacity(opacity if isinstance(opacity, int) else OPACITY_NAMES.get(opacity, 0))
             write_panel(original)
-            if style:
-                subprocess.run(["plasma-apply-desktoptheme", style], capture_output=True)
+            if style and subprocess.run(["plasma-apply-desktoptheme", style], capture_output=True).returncode:
+                return f"Taskbar restored, but the “{style}” Plasma style is gone; pick one in Style."
             return "Original taskbar restored."
         self.background(work, "Restoring…")

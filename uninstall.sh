@@ -14,7 +14,7 @@ BIN="$HOME/.local/bin"
 UNITS="$CONFIG/systemd/user"
 
 # background pieces first
-pkill -f '^python3 -m grimoire.spells.sightc.overlay' 2>/dev/null || true
+pkill -f '^(/usr/bin/)?python3 -m grimoire\.spells\.sightc\.overlay' 2>/dev/null || true   # it relaunches via sys.executable
 if [ -f "$UNITS/grimoire-tidyl.timer" ]; then
     systemctl --user disable --now grimoire-tidyl.timer 2>/dev/null || true
     rm -f "$UNITS/grimoire-tidyl.timer" "$UNITS/grimoire-tidyl.service"

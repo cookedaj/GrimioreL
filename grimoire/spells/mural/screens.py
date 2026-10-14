@@ -268,8 +268,10 @@ class ScreenTab(QWidget):
         if not self._loading:
             self._render_timer.start()
 
-    def current(self) -> Design:
-        return self._designs[max(0, self.gallery.currentRow())]
+    def current(self) -> Design | None:
+        if not self._designs:                  # e.g. no cursor themes installed at all
+            return None
+        return self._designs[max(0, min(self.gallery.currentRow(), len(self._designs) - 1))]
 
     def _submit(self, slot: str, fn):
         gen, sig = self._gen, self._sig
@@ -288,7 +290,8 @@ class ScreenTab(QWidget):
         self._gen += 1
         opts = self.options()
         design = self.current()
-        self._submit("big", lambda: self._preview(design, opts))
+        if design is not None:
+            self._submit("big", lambda: self._preview(design, opts))
         for i, d in enumerate(self._designs):
             self._submit(str(i), lambda d=d: self._thumb(d, opts))
 
@@ -347,6 +350,9 @@ class ScreenTab(QWidget):
     # ---- apply (worker thread)
     def _apply(self):
         d, opts, sig = self.current(), self.options(), self._sig
+        if d is None:
+            self.status.setText("Nothing to apply yet: get one from the store below.")
+            return
         self._pending = (d, opts)
         self.apply_btn.setEnabled(False)
         self.status.setText(self.apply_busy)

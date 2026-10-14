@@ -13,7 +13,7 @@ Column {
     Text {
         width: parent.width
         horizontalAlignment: clock.align
-        text: Qt.formatTime(clock.now, clock.use24 ? "HH:mm" : "h:mm")
+        text: Qt.formatTime(clock.now, clock.use24 ? "HH:mm" : "h:mm AP")
         color: "white"
         font.family: "IBM Plex Sans"; font.weight: Font.Light; font.pixelSize: clock.size
     }

@@ -7,6 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QImage, QImageReader
 
+from grimoire.fsutil import trash
 from grimoire.paths import CACHE, DATA
 
 LIBRARY = DATA / "mural" / "library"
@@ -46,8 +47,11 @@ def add(paths) -> list[Path]:
 
 
 def remove(path: Path):
-    path.unlink(missing_ok=True)
-    _thumb_path(path).unlink(missing_ok=True)
+    """Take a picture out of the library. It goes to the Trash (store downloads exist only here)."""
+    thumb = _thumb_path(path)                  # keyed on mtime, so work it out before the file goes
+    if path.exists():
+        trash(path)
+    thumb.unlink(missing_ok=True)
 
 
 def _head(p: Path, n=65536) -> bytes:
