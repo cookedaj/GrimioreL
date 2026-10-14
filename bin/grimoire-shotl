@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# ShotL: grimoire-shotl opens its window; for hotkeys:
+#   grimoire-shotl region|window|full|screen [--delay N] [--edit|--copy|--save]
+#   grimoire-shotl record [toggle|start|stop|status] [--sound] [--pick]
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m grimoire.spells.shotl "$@"

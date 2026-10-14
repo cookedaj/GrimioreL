@@ -191,6 +191,11 @@ def _draw(name: str, p: QPainter):
         path.closeSubpath(); p.drawPath(path)
         path = QPainterPath(QPointF(10, 19.5)); path.quadTo(12, 21.5, 14, 19.5); p.drawPath(path)
         p.drawLine(QPointF(12, 3), QPointF(12, 4.6))
+    elif name == "shot":                                   # a viewfinder: four corners round a lens
+        for (x, y), (dx, dy) in (((3.5, 3.5), (1, 1)), ((20.5, 3.5), (-1, 1)), ((3.5, 20.5), (1, -1)),
+                                 ((20.5, 20.5), (-1, -1))):
+            path = QPainterPath(QPointF(x, y + 5 * dy)); path.lineTo(x, y); path.lineTo(x + 5 * dx, y); p.drawPath(path)
+        p.drawEllipse(QPointF(12, 12), 4.2, 4.2)
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:

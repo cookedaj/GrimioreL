@@ -117,6 +117,14 @@ if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/sha
   passes. Stuck apps are windows KWin marks "Not Responding" and your processes frozen on a disk or device with no
   progress. Thresholds live in `~/.config/grimoire/systeml-alerts.json`, the alert history in
   `~/.local/share/grimoire/systeml-alerts-history.json`.
+- **ShotL** takes stills with Spectacle's background mode (`spectacle -b -n -f|-m|-a -o …`; KWin lets it grab
+  without asking); regions and single monitors are cut from a full grab in ShotL's own picker. Recordings go
+  through the xdg-desktop-portal ScreenCast (KDE asks once which screen or window; tick "allow restoring" and later
+  recordings start straight away) into GStreamer (`python3-gi`, `gstreamer1.0-pipewire`) and ffmpeg: H.264 MP4 on
+  the NVIDIA encoder, else libx264, else VP8 WebM without ffmpeg. Shots go to `~/Pictures/Screenshots` with dated
+  names that never replace a file; the gallery list is `~/.local/share/grimoire/shotl-history.json` and settings
+  `~/.config/grimoire/shotl.json`. For hotkeys bind `grimoire-shotl region|window|full|screen` or
+  `grimoire-shotl record` (press again to stop) in System Settings → Keyboard → Shortcuts → Add New → Command.
 
 ## Layout
 
@@ -130,6 +138,7 @@ grimoire/            the app (PySide6)
   spells/vaultl/     VaultL window, file operations, tidy engine, tidy panels, CLI/timer
   spells/optimizel/  OptimizeL tweak catalog, root helper, page
   spells/systeml/    SystemL readings, graphs, per-app history, actions, alerts, root helper, page
+  spells/shotl/      ShotL capture, region picker, editor, recorder, gallery page, CLI
 plasma/              the MuraL wallpaper plugin
 bin/                 launchers
 install.sh           copies the app into ~/.local/share/grimoire/app and links it in
