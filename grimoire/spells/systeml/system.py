@@ -25,9 +25,13 @@ MARK = "X-Grimoire-SystemL"
 ESSENTIAL = {"org.kde.plasmashell", "kglobalacceld", "polkit-kde-authentication-agent-1", "powerdevil",
              "pam_kwallet_init", "at-spi-dbus-bus", "xembedsniproxy", "gmenudbusmenuproxy", "im-launch",
              "org.kde.plasma-fallback-session-restore", "xdg-user-dirs", "xdg-user-dirs-kde"}
-# services the root helper also refuses to stop; the page greys out Stop/Disable for them
+# services the root helper also refuses to stop or restart; the page greys out Stop/Disable/Restart for them
 CORE_UNITS = ("dbus", "systemd-", "sddm.service", "display-manager.service", "polkit.service", "user@",
-              "getty@", "udisks2.service")
+              "getty@", "udisks2.service", "plasma-kwin_wayland", "plasma-workspace", "plasma-plasmashell")
+# processes the session dies (or freezes) without, even though they're yours; the root helper refuses them too
+PROTECTED = {"kwin_wayland", "kwin_wayland_wrapper", "Xwayland", "plasmashell", "ksmserver", "startplasma-wayland",
+             "dbus-daemon", "dbus-broker", "pipewire", "wireplumber", "systemd", "systemd-journal",
+             "systemd-logind", "sddm"}
 SIGNALS = {"TERM": signal.SIGTERM, "KILL": signal.SIGKILL, "STOP": signal.SIGSTOP, "CONT": signal.SIGCONT}
 
 
@@ -43,10 +47,36 @@ def run_root(*args: str) -> str:
 
 
 # ---------------------------------------------------------------- processes
-def send(pid: int, sig: str) -> str:
+def is_protected(name: str) -> bool:
+    return name in PROTECTED
+
+
+def _same(pid: int, started: float | None) -> psutil.Process | None:
+    """The process, if it's still the one the user picked (a PID can be reused once a process exits)."""
+    try:
+        p = psutil.Process(pid)
+        if started is not None and abs(p.create_time() - started) > 1:
+            return None
+        return p
+    except psutil.NoSuchProcess:
+        return None
+
+
+def send(pid: int, sig: str, started: float | None = None) -> str:
     """TERM ends politely, KILL forces, STOP pauses, CONT resumes. Asks for the password for others' processes."""
     if pid <= 2 or pid == os.getpid():
         raise RuntimeError("that process can't be stopped from here")
+    p = _same(pid, started)
+    if p is None:
+        return "already gone"
+    try:
+        name = p.name()
+    except psutil.NoSuchProcess:
+        return "already gone"
+    except psutil.AccessDenied:
+        name = ""
+    if sig != "CONT" and is_protected(name):
+        raise RuntimeError(f"{name} keeps your session running; not stopping it")
     try:
         os.kill(pid, SIGNALS[sig])
     except ProcessLookupError:
@@ -56,13 +86,25 @@ def send(pid: int, sig: str) -> str:
     return "done"
 
 
-def renice(pid: int, nice: int) -> str:
-    """Lower priority works on your own processes; raising it (negative nice) needs the password."""
+def _tids(pid: int) -> list[int]:
+    """Every thread of pid: nice is per thread on Linux, so setting only the main one misses the busy workers."""
     try:
-        psutil.Process(pid).nice(nice)
-    except psutil.NoSuchProcess:
+        return sorted(int(t) for t in os.listdir(f"/proc/{pid}/task") if t.isdigit()) or [pid]
+    except OSError:
+        return [pid]
+
+
+def renice(pid: int, nice: int, started: float | None = None) -> str:
+    """Lower priority works on your own processes; raising it (negative nice) needs the password."""
+    if _same(pid, started) is None:
         return "already gone"
-    except psutil.AccessDenied:
+    try:
+        for tid in _tids(pid):
+            try:
+                os.setpriority(os.PRIO_PROCESS, tid, nice)
+            except ProcessLookupError:       # that thread just ended
+                pass
+    except PermissionError:
         run_root("renice", str(pid), str(nice))
     return "done"
 
@@ -215,7 +257,11 @@ def set_startup(file: str, on: bool):
     mine = AUTOSTART / file
     system = next((d / file for d in SYSTEM_AUTOSTART if (d / file).is_file()), None)
     if mine.is_file():
-        if on and _read(mine).get(MARK) and system:
+        e = _read(mine)
+        # SystemL's own override, or OptimizeL's bare "Hidden=true" stub: trashing it brings back the system entry
+        theirs = e.get(MARK) or "Grimoire OptimizeL" in mine.read_text(encoding="utf-8", errors="replace") \
+            or "Exec" not in e
+        if on and theirs and system:
             trash(mine)                          # back to the untouched system entry
             return
         _set_key(mine, "Hidden", "false" if on else "true")

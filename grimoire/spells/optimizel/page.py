@@ -397,7 +397,7 @@ class OptimizeLPage(QWidget):
             row.switch.setEnabled(False)
         self._refresh_bar()
         sig = self._sig
-        POOL.start(Job(lambda: (changes, tweaks.apply(changes)), sig.applied.emit))
+        POOL.start(Job(lambda: (changes, _apply_safely(changes)), sig.applied.emit))
 
     def _on_applied(self, result):
         changes, problems = result
@@ -421,6 +421,14 @@ class OptimizeLPage(QWidget):
         self.toast.show()
         self._toast_timer.start()
         self.scan()
+
+
+def _apply_safely(changes: dict) -> list[str]:
+    """tweaks.apply(), but any error comes back as a problem so _on_applied always runs (no stuck "Applying…")."""
+    try:
+        return tweaks.apply(changes)
+    except Exception as e:
+        return [f"Couldn't apply: {e}"]
 
 
 def _good_line(text: str) -> QWidget:

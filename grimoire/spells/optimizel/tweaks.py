@@ -537,13 +537,13 @@ def apply(changes: dict[str, bool], root_runner=run_root) -> list[str]:
             continue
         try:
             (t.enable if on else t.disable)(saved)
-        except (RuntimeError, OSError) as e:
+        except Exception as e:                       # reported as a problem; the page must never hang on it
             problems.append(f"{t.title}: {e}")
     root_ok = True
     if root_args:
         try:
             root_runner(root_args)
-        except RuntimeError as e:
+        except Exception as e:                       # e.g. FileNotFoundError when pkexec is missing
             root_ok = False
             problems.append("You cancelled the password prompt" if str(e) == "cancelled" else f"System changes: {e}")
     for tid in changes:
@@ -551,5 +551,8 @@ def apply(changes: dict[str, bool], root_runner=run_root) -> list[str]:
         failed = not root_ok if t.root else any(p.startswith(t.title + ":") for p in problems)
         if t.when != "now" and not failed:
             saved["pending"][tid] = boot_id() if t.when == "restart" else session_id()
-    save_saved(saved)
+    try:
+        save_saved(saved)
+    except OSError as e:
+        problems.append(f"Couldn't save OptimizeL's state: {e}")
     return problems

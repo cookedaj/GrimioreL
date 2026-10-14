@@ -74,10 +74,10 @@ units_restore() {
     rm -f "$STATE/$id.units"
 }
 
-# need_pkg PKG: install it if missing (needs the network)
+# need_pkg PKG: install it if missing (needs the network); returns 1 if that fails, so callers can undo first
 need_pkg() {
     dpkg -s "$1" >/dev/null 2>&1 && return 0
-    run apt-get install -y --no-install-recommends "$1" >/dev/null || { echo "couldn't install $1" >&2; exit 4; }
+    run apt-get install -y --no-install-recommends "$1" >/dev/null || { echo "couldn't install $1" >&2; return 1; }
 }
 
 # background maintenance jobs that get a low-priority drop-in ("maint")
@@ -103,7 +103,7 @@ tweak() {
         "off dirty")     sysctl_off dirty ;;
         "on bbr")
             echo tcp_bbr > "$R/etc/modules-load.d/grimoire-optimizel-bbr.conf"
-            run modprobe tcp_bbr
+            run modprobe tcp_bbr || warn "couldn't load tcp_bbr now; it loads after a restart"
             sysctl_on bbr net.core.default_qdisc=fq net.ipv4.tcp_congestion_control=bbr ;;
         "off bbr")
             rm -f "$R/etc/modules-load.d/grimoire-optimizel-bbr.conf"
@@ -113,10 +113,10 @@ tweak() {
             if [[ -e "$conf" ]] && ! grep -q "Grimoire OptimizeL" "$conf"; then
                 echo "$conf is your own zram setup; not replacing it" >&2; exit 3
             fi
-            need_pkg systemd-zram-generator
+            need_pkg systemd-zram-generator || exit 4
             zram_conf > "$conf"
             SAVE="vm.swappiness vm.page-cluster" sysctl_on zram vm.swappiness=180 vm.page-cluster=0
-            run systemctl daemon-reload
+            run systemctl daemon-reload || warn "couldn't reload systemd"
             run systemctl restart systemd-zram-setup@zram0.service || warn "zram starts after a restart" ;;
         "off zram")
             local conf="$R/etc/systemd/zram-generator.conf"
@@ -130,8 +130,11 @@ tweak() {
             fi
             sysctl_off zram
             run systemctl stop systemd-zram-setup@zram0.service || warn "zram goes away after a restart"
-            run systemctl daemon-reload ;;
-        "on earlyoom")   units_save earlyoom earlyoom.service; need_pkg earlyoom; units_set earlyoom enable earlyoom.service ;;
+            run systemctl daemon-reload || warn "couldn't reload systemd" ;;
+        "on earlyoom")   # the saved state is what marks it On, so it goes again if the install fails
+            units_save earlyoom earlyoom.service
+            need_pkg earlyoom || { rm -f "$STATE/earlyoom.units"; exit 4; }
+            units_set earlyoom enable earlyoom.service ;;
         "off earlyoom")  units_restore earlyoom ;;
         "on waitonline") units_set waitonline disable NetworkManager-wait-online.service ;;
         "off waitonline") units_restore waitonline ;;
@@ -141,15 +144,15 @@ tweak() {
         "off cupsbrowsed") units_restore cupsbrowsed ;;
         "on journal")
             printf '%s\n[Journal]\nSystemMaxUse=200M\n' "$MARK" > "$R/etc/systemd/journald.conf.d/99-grimoire-optimizel.conf"
-            run systemctl restart systemd-journald
+            run systemctl restart systemd-journald || warn "couldn't restart the journal; the limit applies after a restart"
             run journalctl --vacuum-size=200M >/dev/null 2>&1 || true ;;
         "off journal")
             rm -f "$R/etc/systemd/journald.conf.d/99-grimoire-optimizel.conf"
-            run systemctl restart systemd-journald ;;
+            run systemctl restart systemd-journald || warn "couldn't restart the journal; it changes after a restart" ;;
         "on aptcache")   # only downloaded .deb files go; apt fetches them again when it needs them
             printf '%s\nAPT::Keep-Downloaded-Packages "false";\nBinary::apt::APT::Keep-Downloaded-Packages "false";\n' \
                 "$MARK" > "$R/etc/apt/apt.conf.d/99grimoire-optimizel"
-            run apt-get clean ;;
+            run apt-get clean || warn "couldn't clear the apt cache now" ;;
         "off aptcache")  rm -f "$R/etc/apt/apt.conf.d/99grimoire-optimizel" ;;
         "on maint")
             local u
@@ -157,14 +160,14 @@ tweak() {
                 mkdir -p "$R/etc/systemd/system/$u.d"
                 printf '%s\n[Service]\nNice=19\nCPUWeight=20\n' "$MARK" > "$R/etc/systemd/system/$u.d/grimoire-optimizel.conf"
             done
-            run systemctl daemon-reload ;;
+            run systemctl daemon-reload || warn "couldn't reload systemd; it applies after a restart" ;;
         "off maint")
             local u
             for u in $MAINT_UNITS; do
                 rm -f "$R/etc/systemd/system/$u.d/grimoire-optimizel.conf"
                 rmdir "$R/etc/systemd/system/$u.d" 2>/dev/null || true
             done
-            run systemctl daemon-reload ;;
+            run systemctl daemon-reload || warn "couldn't reload systemd; it applies after a restart" ;;
         *) echo "unknown tweak: $how $id" >&2; exit 2 ;;
     esac
 }

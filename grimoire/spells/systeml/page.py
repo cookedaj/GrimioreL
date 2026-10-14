@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import time
+import traceback
 from pathlib import Path
 
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QTimer, Signal
@@ -34,7 +35,9 @@ PRIORITIES = [("Very high", -10), ("High", -5), ("Normal", 0), ("Low", 10), ("Ve
 
 class _Signals(QObject):
     sampled = Signal(object)
-    acted = Signal(object)        # (what, message, ok)
+    acted = Signal(object)        # (what, message, ok, then, quiet)
+    failed = Signal(object)       # failed service count
+    log = Signal(object)          # (unit, text)
     services = Signal(object)
     startup = Signal(object)
     drives = Signal(object)
@@ -102,6 +105,8 @@ class ProcModel(QAbstractItemModel):
         super().__init__()
         self.rows: list[dict] = []
         self.top: list[Node] = []
+        self.nodes: dict[int, Node] = {}
+        self.visible: set[int] = set()
         self.tree = False
         self.query = ""
         self.show_kernel = False
@@ -141,8 +146,10 @@ class ProcModel(QAbstractItemModel):
                 for n in nodes.values():
                     n.children = [c for c in n.children if c.row["pid"] in shown]
                 top = [n for n in top if n.row["pid"] in shown]
+                keep = shown
         else:
             top = [n for p, n in nodes.items() if keep is None or p in keep]
+        self.visible = set(nodes) if keep is None else keep
         key = COLS[self.col][1]
         rev = self.order == Qt.SortOrder.DescendingOrder
 
@@ -221,7 +228,7 @@ class ProcModel(QAbstractItemModel):
 
     def find(self, pid: int) -> QModelIndex:
         n = self.nodes.get(pid)
-        if n is None or (n.parent is None and n not in self.top):
+        if n is None or pid not in self.visible:     # filtered out: an index to it would act on a hidden row
             return QModelIndex()
         return self.createIndex(n.pos, 0, n)
 
@@ -306,7 +313,12 @@ class ProcPanel(QWidget):
         r = self.selected()
         for b in (self.prio_btn, self.pause_btn, self.kill_btn, self.end_btn):
             b.setEnabled(bool(r) and not r["kernel"] and not r["self"])
-        self.pause_btn.setText("Resume" if r and r["status"] == "stopped" else "Pause")
+        stopped = bool(r) and r["status"] == "stopped"
+        if r and system.is_protected(r["name"]):         # the session needs it; only Resume and Priority stay
+            self.kill_btn.setEnabled(False)
+            self.end_btn.setEnabled(False)
+            self.pause_btn.setEnabled(stopped)
+        self.pause_btn.setText("Resume" if stopped else "Pause")
         if r:
             started = time.strftime("%b %d %H:%M", time.localtime(r["started"]))
             self.info.setText(f"{r['name']} · PID {r['pid']} · started {started}" + (f" · {r['exe']}" if r["exe"] else ""))
@@ -360,10 +372,12 @@ class ProcPanel(QWidget):
         if not r or r["kernel"] or r["self"]:
             return
         m = QMenu(self)
-        m.addAction("End process", lambda: self._signal("TERM"))
-        m.addAction("Force quit", lambda: self._signal("KILL"))
+        guarded = system.is_protected(r["name"])
+        m.addAction("End process", lambda: self._signal("TERM")).setEnabled(not guarded)
+        m.addAction("Force quit", lambda: self._signal("KILL")).setEnabled(not guarded)
         m.addAction("Resume" if r["status"] == "stopped" else "Pause",
-                    lambda: self._signal("CONT" if r["status"] == "stopped" else "STOP"))
+                    lambda: self._signal("CONT" if r["status"] == "stopped" else "STOP")) \
+            .setEnabled(r["status"] == "stopped" or not guarded)
         m.addMenu(self._prio_menu()).setText("Priority")
         m.addSeparator()
         m.addAction("Show only this app", lambda: self.search.setText(probe.app_name(r)))
@@ -375,20 +389,23 @@ class ProcPanel(QWidget):
         r = self.selected()
         if not r:
             return
-        if sig in ("TERM", "KILL"):
-            verb = "Force quit" if sig == "KILL" else "End"
-            note = " Unsaved work in it will be lost." if sig == "KILL" else " It gets the chance to save and close."
+        if sig != "CONT" and system.is_protected(r["name"]):
+            return
+        if sig in ("TERM", "KILL", "STOP"):
+            verb = {"KILL": "Force quit", "TERM": "End", "STOP": "Pause"}[sig]
+            note = {"KILL": " Unsaved work in it will be lost.", "TERM": " It gets the chance to save and close.",
+                    "STOP": " It freezes until you resume it; if other apps wait on it, they freeze too."}[sig]
             if r["user"] != ME:
                 note += " It belongs to another user, so this asks for your password."
             if QMessageBox.question(self, f"{verb} {r['name']}", f"{verb} {r['name']} (PID {r['pid']})?{note}") \
                     != QMessageBox.StandardButton.Yes:
                 return
-        self.page.act(f"{r['name']}", lambda: system.send(r["pid"], sig))
+        self.page.act(f"{r['name']}", lambda: system.send(r["pid"], sig, r["started"]))
 
     def _renice(self, nice: int):
         r = self.selected()
         if r:
-            self.page.act(f"{r['name']} priority", lambda: system.renice(r["pid"], nice))
+            self.page.act(f"{r['name']} priority", lambda: system.renice(r["pid"], nice, r["started"]))
 
 
 # ---------------------------------------------------------------- apps & history
@@ -613,11 +630,11 @@ class ServicesPanel(QWidget):
         self.btns["log"].setEnabled(bool(u))
         self.btns["start"].setEnabled(bool(u) and not active)
         self.btns["stop"].setEnabled(active and not core)
-        self.btns["restart"].setEnabled(active)
+        self.btns["restart"].setEnabled(active and not core)
         self.btns["enable"].setEnabled(en == "disabled")
         self.btns["disable"].setEnabled(en == "enabled" and not core)
         if u and core:
-            self.info.setText(f"{u['unit']} keeps the system running, so it can't be stopped from here")
+            self.info.setText(f"{u['unit']} keeps the system running, so it can't be stopped or restarted from here")
         elif u:
             self.info.setText(u["unit"] + ("" if self.user else " · system changes ask for your password"))
         else:
@@ -629,12 +646,14 @@ class ServicesPanel(QWidget):
             return
         unit, user = u["unit"], self.user
         if action == "log":
-            POOL.start(Job(lambda: ("log", unit, system.unit_log(user, unit)), self.page.sig.acted.emit))
+            POOL.start(Job(lambda: (unit, system.unit_log(user, unit)), self.page.sig.log.emit))
             return
-        if action in ("stop", "disable") and QMessageBox.question(
-                self, unit, f"{'Stop' if action == 'stop' else 'Stop starting'} {unit}"
-                f"{'' if action == 'stop' else ' at boot'}? Whatever depends on it may stop working.") \
-                != QMessageBox.StandardButton.Yes:
+        if action in ("stop", "disable", "restart") and system.is_core(unit):
+            return
+        ask = {"stop": f"Stop {unit}?", "disable": f"Stop starting {unit} at boot?", "restart": f"Restart {unit}?"}
+        if action in ask and QMessageBox.question(
+                self, unit, ask[action] + " Whatever depends on it may stop working"
+                + (" for a moment." if action == "restart" else ".")) != QMessageBox.StandardButton.Yes:
             return
         self.page.act(unit, lambda: system.unit_action(user, action, unit), then=self.load)
 
@@ -1015,12 +1034,14 @@ class SystemLPage(QWidget):
 
         self.sig.sampled.connect(self._sampled)
         self.sig.acted.connect(self._acted)
+        self.sig.failed.connect(lambda n: self.panels["overview"].tiles["failed"].setText(str(n)))
+        self.sig.log.connect(lambda r: self._show_log(*r))
         self.sig.services.connect(self.panels["services"].loaded)
         self.sig.startup.connect(self.panels["startup"].loaded)
         self.sig.drives.connect(self.panels["disks"].loaded)
         self.timer = QTimer(self, interval=1000, timeout=self._sample)
         self.show_panel("overview")
-        POOL.start(Job(system.failed_count, lambda n: self.sig.acted.emit(("failed", n, True))))
+        POOL.start(Job(system.failed_count, self.sig.failed.emit))
 
     # ------------------------------------------------------------ sampling
     def showEvent(self, e):
@@ -1040,16 +1061,22 @@ class SystemLPage(QWidget):
         prev, prev_t = self._disk_prev, self._disk_t
 
         def work():
-            snap = sampler.sample()
-            history.add(snap["procs"])
-            now = time.monotonic()
-            snap["disk_counters"], snap["disk_rates"] = system.disk_rates(prev, now - prev_t if prev else 0)
-            snap["disk_t"] = now
-            return snap
+            try:
+                snap = sampler.sample()
+                history.add(snap["procs"])
+                now = time.monotonic()
+                snap["disk_counters"], snap["disk_rates"] = system.disk_rates(prev, now - prev_t if prev else 0)
+                snap["disk_t"] = now
+                return snap
+            except Exception:              # always answer, so _busy clears and the next tick tries again
+                traceback.print_exc()
+                return None
         POOL.start(Job(work, self.sig.sampled.emit))
 
     def _sampled(self, s):
         self._busy = False
+        if s is None:
+            return
         self._tick += 1
         self._disk_prev, self._disk_t = s["disk_counters"], s["disk_t"]
         self.uptime.setText(f"Up {probe.uptime_text(s['uptime'])}\nLoad {s['load'][0]:.2f}")
@@ -1096,12 +1123,6 @@ class SystemLPage(QWidget):
         POOL.start(Job(work, self.sig.acted.emit))
 
     def _acted(self, result):
-        if result[0] == "failed":
-            self.panels["overview"].tiles["failed"].setText(str(result[1]))
-            return
-        if result[0] == "log":
-            self._show_log(result[1], result[2])
-            return
         what, msg, ok, then, quiet = result
         if not ok or not quiet:
             self.say(f"{what}: {msg}" if ok else f"Couldn't change {what}: {msg}")
@@ -1141,8 +1162,7 @@ class SystemLPage(QWidget):
         def work():
             subprocess.run(["systemctl", "--user", "reset-failed"], check=True, timeout=30)
             return f"cleared · {system.failed_count()} failed system service(s) left"
-        self.act("Failed services", work, then=lambda: POOL.start(Job(
-            system.failed_count, lambda n: self.sig.acted.emit(("failed", n, True)))))
+        self.act("Failed services", work, then=lambda: POOL.start(Job(system.failed_count, self.sig.failed.emit)))
 
     def open_optimizel(self):
         win = self.window()
