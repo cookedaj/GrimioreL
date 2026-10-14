@@ -6,6 +6,7 @@
 #     on the home page adds its own; ./install.sh --all adds every spell's launcher)
 #   - copies the MuraL wallpaper plugin into Plasma
 #   - adds the Grimoire Tray menu entry (it starts at login only once you turn that on)
+#   - records the commit it came from (app/INSTALLED.json), so Grimoire can tell when there's an update
 # Settings stay in ~/.config/grimoire and ~/.local/share/grimoire; ./uninstall.sh removes the app again.
 set -euo pipefail
 SRC="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
@@ -30,6 +31,28 @@ if [ "$SRC" != "$APP" ]; then
     fi
 fi
 chmod +x "$APP"/bin/grimoire* "$APP"/*.sh
+
+# INSTALLED.json: what this copy was built from, for Grimoire's self-update (grimoire/update.py). The commit the
+# updater passes in, else the checkout's HEAD (only a checkout of Grimoire itself, not a repo a download sits in),
+# else what an earlier install recorded (when the installed copy refreshes itself), else 'unknown'
+SHA="${GRIMOIRE_SOURCE_SHA:-}" DATE="${GRIMOIRE_SOURCE_DATE:-}" DIRTY=0
+if [ -z "$SHA" ] && [ -e "$SRC/.git" ] && SHA="$(git -C "$SRC" rev-parse HEAD 2>/dev/null)"; then
+    DATE="$(git -C "$SRC" log -1 --format=%cI HEAD 2>/dev/null || true)"
+    if [ -n "$(git -C "$SRC" status --porcelain --untracked-files=no 2>/dev/null)" ]; then DIRTY=1; fi
+fi
+if [ -n "$SHA" ] || [ "$SRC" != "$APP" ] || [ ! -f "$APP/INSTALLED.json" ]; then
+    SHA="$SHA" DATE="$DATE" DIRTY="$DIRTY" python3 - "$APP/INSTALLED.json" <<'PY'
+import json, os, sys, time
+sha = os.environ["SHA"].strip().lower()
+ok = len(sha) == 40 and all(c in "0123456789abcdef" for c in sha)
+info = {"sha": sha if ok else "unknown", "date": os.environ["DATE"] if ok else "",
+        "installed": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+if ok and os.environ["DIRTY"] == "1":
+    info["dirty"] = True           # installed from a checkout with uncommitted changes
+with open(sys.argv[1], "w") as f:
+    json.dump(info, f, indent=1)
+PY
+fi
 
 # 2. commands: point every grimoire* link at the installed copy; drop links an old install left dangling
 mkdir -p "$BIN" "$DATA/applications" "$DATA/plasma/wallpapers" "$DATA/icons/hicolor/scalable/apps"

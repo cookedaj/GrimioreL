@@ -60,8 +60,13 @@ To make VaultL the default file manager: `xdg-mime default grimoire-vaultl.deskt
 
 ## Upgrade
 
-Get the newer version (`git pull` in your clone, or a fresh download) and run `./install.sh` from it again.
-It replaces the installed copy and keeps your settings, timer and autostart.
+Grimoire checks GitHub every few hours (no account needed). When there's a newer version, the version at the foot of
+the rail shows an arrow and the home page says so: **What's new** lists the changes since yours, **Update now**
+downloads and installs it, then **Restart now**. From a terminal: `grimoire update` (or `grimoire update --check` to
+only look). Set `GRIMOIRE_NO_UPDATE_CHECK=1` to stop the automatic check; clicking the version still checks.
+
+By hand: get the newer version (`git pull` in your clone, or a fresh download) and run `./install.sh` from it again.
+Either way it replaces the installed copy and keeps your settings, timer and autostart.
 
 ## Uninstall
 
@@ -119,6 +124,7 @@ if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/sha
 grimoire/            the app (PySide6)
   app.py             window: icon rail + home
   glyphs.py          monochrome line icons drawn in code
+  update.py          self-update from GitHub (updateview.py: What's new panel, banner, rail version)
   spells/mural/      MuraL tabs, store, previews, root helper, SDDM theme, splash templates
   spells/sightc/     SightsL overlay + page
   spells/vaultl/     VaultL window, file operations, tidy engine, tidy panels, CLI/timer

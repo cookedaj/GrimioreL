@@ -7,11 +7,12 @@ from PySide6.QtGui import QColor, QFont, QIcon, QPalette
 from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QFrame, QGridLayout, QHBoxLayout, QLabel,
                                QMainWindow, QMessageBox, QPushButton, QStackedWidget, QVBoxLayout, QWidget)
 
-from grimoire import __version__, standalone
+from grimoire import standalone
 from grimoire.glyphs import clover, glyph
 from grimoire.paths import ASSETS
 from grimoire.spells import SPELLS
 from grimoire.theme import FONT, QSS
+from grimoire.updateview import Banner, Updater, VersionButton, WhatsNew
 
 
 def spaced(text: str, size: int, spacing: float, weight=QFont.Weight.DemiBold) -> QLabel:
@@ -127,12 +128,13 @@ class TrayToggle(QCheckBox):
 
 
 class Home(QWidget):
-    def __init__(self, open_spell):
+    def __init__(self, open_spell, banner: QWidget):
         super().__init__()
         self.setObjectName("Page")
         lay = QVBoxLayout(self)
         lay.setContentsMargins(56, 52, 56, 44)
         lay.setSpacing(4)
+        lay.addWidget(banner)                    # hidden unless an update is waiting
         hour = datetime.now().hour
         greeting = "Good morning" if hour < 12 else "Good afternoon" if hour < 18 else "Good evening"
         hello = QLabel(greeting)
@@ -200,21 +202,29 @@ class Window(QMainWindow):
         rl.addWidget(logo)
         rl.addSpacing(22)
 
+        self.updater = Updater(self)
+        self._whatsnew = None
         self.stack = QStackedWidget()
         self.nav = QButtonGroup(self)
         self.pages: dict[str, tuple] = {}
-        self._add_page("home", "Home", "home", Home(self.open), rl)
+        self._add_page("home", "Home", "home", Home(self.open, Banner(self.updater, self.whats_new)), rl)
         for spell in SPELLS:
             self._add_page(spell.id, spell.name, spell.icon, None, rl, spell)
         rl.addStretch(1)
-        ver = QLabel(f"v{__version__}")
-        ver.setObjectName("Tiny")
-        ver.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        rl.addWidget(ver)
+        rl.addWidget(VersionButton(self.updater, self.whats_new), 0, Qt.AlignmentFlag.AlignHCenter)
 
         root.addWidget(rail)
         root.addWidget(self.stack, 1)
         self.open("home")
+        self.updater.start()
+
+    def whats_new(self):
+        """The What's new panel (also 'Check for updates'); one per window, kept while it lives."""
+        if self._whatsnew is None:
+            self._whatsnew = WhatsNew(self.updater, self)
+        self._whatsnew.show()
+        self._whatsnew.raise_()
+        self._whatsnew.activateWindow()
 
     def _add_page(self, pid, label, icon, widget, rail_layout, spell=None):
         btn = QPushButton()
