@@ -3,6 +3,7 @@
 SCREENS  desktop, lock screen, splash, login, boot
 SHELL    taskbar, style, windows, motion
 LOOK     colors, icons, fonts, cursor, terminal
+SAVED    looks (snapshots of all of the above)
 Tabs are built the first time they're opened.
 """
 from importlib import import_module
@@ -33,6 +34,9 @@ SECTIONS = [
         ("Fonts", "fonts", "fonts", "FontsTab"),
         ("Cursor", "cursor", "cursor", "CursorTab"),
         ("Terminal", "terminal", "terminal", "TerminalTab"),
+    ]),
+    ("SAVED", [
+        ("Looks", "looks", "lookstab", "LooksTab"),
     ]),
 ]
 TABS = [tab for _, tabs in SECTIONS for tab in tabs]
@@ -104,6 +108,16 @@ class MuralPage(QWidget):
         if i not in self.built:
             self.built[i] = getattr(import_module(f"grimoire.spells.mural.{module}"), cls)()
             self.stack.addWidget(self.built[i])
+            if hasattr(self.built[i], "restored"):
+                self.built[i].restored.connect(lambda keep=self.built[i]: self._forget_others(keep))
         self.stack.setCurrentWidget(self.built[i])
         self.group.button(i).setChecked(True)
         self.heading.setText(name)
+
+    def _forget_others(self, keep: QWidget):
+        """A look was restored: drop the other built tabs so they're rebuilt showing what's in use now."""
+        for i, w in list(self.built.items()):
+            if w is not keep:
+                self.stack.removeWidget(w)
+                w.deleteLater()
+                del self.built[i]

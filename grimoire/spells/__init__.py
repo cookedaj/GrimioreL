@@ -32,6 +32,9 @@ def _mural_status() -> str:
              "terminal": "Terminal", "fonts": "Fonts", "cursor": "Cursor", "colors": "Colors", "style": "Style"}
     bits = [f"{label} · {state[k]['design'].removeprefix('store:').split(':')[-1].replace('_', ' ').title()}"
             for k, label in names.items() if k in state]
+    from grimoire.spells.mural.looks import active_name
+    look = active_name()
+    bits = ([f"Look · {look}"] if look else []) + bits
     return "   ".join(bits[:6]) or "Nothing applied yet"
 
 

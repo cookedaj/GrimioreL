@@ -24,6 +24,13 @@ def _draw(name: str, p: QPainter):
         path = QPainterPath(QPointF(5, 17)); path.lineTo(10, 11.5); path.lineTo(13.5, 15); path.lineTo(16, 12.5)
         path.lineTo(19.5, 16.5); p.drawPath(path)
         p.drawEllipse(QPointF(15.5, 9), 1.4, 1.4)
+    elif name == "looks":                                  # two framed pictures, one behind the other
+        back = QPainterPath(QPointF(7, 9)); back.lineTo(7, 5.5); back.quadTo(7, 3.5, 9, 3.5); back.lineTo(18.5, 3.5)
+        back.quadTo(20.5, 3.5, 20.5, 5.5); back.lineTo(20.5, 12.5); back.quadTo(20.5, 14.5, 18.5, 14.5)
+        back.lineTo(17, 14.5); p.drawPath(back)
+        p.drawRoundedRect(r(3.5, 9, 13.5, 11), 2, 2)
+        path = QPainterPath(QPointF(5.5, 18)); path.lineTo(9, 14); path.lineTo(11.5, 16.5); path.lineTo(15, 13)
+        p.drawPath(path)
     elif name == "sight":                                  # crosshair
         p.drawEllipse(QPointF(12, 12), 6.5, 6.5)
         for a, b in (((12, 2.5), (12, 8)), ((12, 16), (12, 21.5)), ((2.5, 12), (8, 12)), ((16, 12), (21.5, 12))):
