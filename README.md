@@ -1,112 +1,183 @@
-# Grimoire
+# Grimoire Linux
 
-A black & white suite of personal desktop tools ("spells") for **KDE Plasma 6** on Linux.
-One app, one look: a slim icon rail, monochrome line icons, and every spell built to stay out of your way.
+**Grimoire Linux — a black & white toolkit for KDE Plasma 6: customize every screen, a crosshair overlay for games,
+a file manager that tidies itself, a system monitor, a terminal and more, in one sleek app.**
 
-| Spell | What it does |
-|---|---|
-| **MuraL** | Customize everything you look at: desktop wallpaper & crossfading playlists (images and video), lock screen, splash, login (SDDM), boot (Plymouth), taskbar, Plasma style, window title bars, motion/effects, colors, icons, fonts, cursor and terminal. Every tab has live previews, and a **Community** view with the top 100 from the KDE Store and Wallhaven, installable in one click. |
-| **SightsL** | A crosshair overlay drawn above every window and fullscreen game (KDE layer-shell), fully click-through. Pixel-sharp styles, presets, saved crosshairs and share codes, rotation, outline, offsets, screen choice, live updates, and global hotkeys: Ctrl+Alt+X hides it, Ctrl+Alt+Shift+X flips to the next crosshair. |
-| **VaultL** | A file manager with tidying built in (FileL and TidyL, merged). Places & drives sidebar, breadcrumbs, grid with image thumbnails or a details list, preview panel, Trash with restore, KDE-compatible copy/cut/paste, Dolphin's keyboard shortcuts. Its **Tidy** section keeps `~/Downloads` sorted by file type in the background, sends stale installers/archives to the Trash, and finds big files and duplicates; Downloads gets a bar with Tidy now and Undo. Never deletes: everything goes to the Trash, and every move can be undone. Runs inside Grimoire or as its own window, and can be the default for opening folders. |
-| **OptimizeL** | Scans the PC and lays out ~24 speed tweaks as on/off switches, grouped by power, memory (zram, earlyoom), storage & boot, network (BBR), services, startup apps, desktop and gaming. Every switch is written to persistent config, so it survives restarts, and turning it off restores exactly what was there. Also lists what's already set the fast way. |
-| **SystemL** | A system monitor in place of KDE System Monitor. Live graphs for CPU (and every core), memory, swap, disk, network, GPU, temperatures and load; a process list with search, sorting, a tree view, end/force quit, pause and priority; per-app history (what was busy an hour, a day or a week ago) and the top offenders right now; systemd services (system and yours) with start, stop, restart, boot on/off and logs; startup apps; disks with usage and live read/write; and background alerts (a desktop notification when memory, CPU/GPU temperature, a disk's free space or a stuck app crosses the line you set, even while SystemL is closed). Quick actions empty swap, restart the Plasma desktop and jump to OptimizeL. |
-| **TerminalL** | A terminal in Grimoire's black & white. Your own shell on a real PTY in tabs that split side by side or top and bottom; full 16/256/true color as programs ask for it, Unicode and wide characters, mouse support for apps like htop and vim, scrollback with search, Ctrl+Shift+C/V and middle-click paste, Ctrl+= / Ctrl+- zoom, profiles (font, size, cursor, scrollback), a palette of saved commands (Ctrl+Shift+P), and new tabs right in VaultL's folder. |
-| **NetL** | A network monitor with quick controls. Live download/upload graphs (all traffic and per interface), addresses, gateway and DNS, and on-demand checks (public IP, ping to the gateway or 1.1.1.1; nothing is sent until you press). Per-app bandwidth from the kernel's own TCP counters (no root; UDP such as QUIC and games shows as not attributed), a filterable connection list with lazy host names and End app, Wi-Fi networks with scan and connect (passwords never go on a command line), Wi-Fi and airplane-mode switches and a switch per VPN, and daily/monthly usage per interface and per app, recorded by an optional 5-minute user timer. |
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-black?style=flat-square)](LICENSE)
+[![KDE Plasma 6](https://img.shields.io/badge/KDE%20Plasma-6-black?style=flat-square&logo=kde&logoColor=white)](https://kde.org/plasma-desktop/)
+[![Wayland](https://img.shields.io/badge/Wayland-first-black?style=flat-square&logo=wayland&logoColor=white)](#does-it-work-on-x11-or-gnome)
+[![Python + PySide6](https://img.shields.io/badge/Python%203.12%2B-PySide6-black?style=flat-square&logo=python&logoColor=white)](https://doc.qt.io/qtforpython-6/)
+[![Latest release](https://img.shields.io/github/v/release/cookedaj/grimoire-linux?style=flat-square&color=black&label=release)](https://github.com/cookedaj/grimoire-linux/releases/latest)
+[![GitHub stars](https://img.shields.io/github/stars/cookedaj/grimoire-linux?style=flat-square&color=black)](https://github.com/cookedaj/grimoire-linux/stargazers)
 
-## Requirements
+![Grimoire Linux: the hub, with every spell on one page](docs/screenshots/hub.png)
 
-- KDE Plasma 6 (Wayland is best; tested on Kubuntu 26.04)
-- Python 3.12+ with PySide6 and Pillow, plus layer-shell-qt (SightsL), Qt Multimedia (video wallpapers),
-  ffmpeg (video thumbnails), rsync (installer), pyte (TerminalL) and dbus-python (GitHub sign-in's keyring access;
-  preinstalled on Kubuntu):
+```bash
+git clone https://github.com/cookedaj/grimoire-linux.git && cd grimoire-linux && ./install.sh
+```
 
-  ```bash
-  # Ubuntu / Kubuntu / Debian
-  sudo apt install python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick} python3-pil python3-psutil \
-      qml6-module-org-kde-layershell qml6-module-qtmultimedia ffmpeg rsync python3-pyte python3-dbus
-  # Fedora
-  sudo dnf install python3-pyside6 python3-pillow python3-psutil layer-shell-qt qt6-qtmultimedia ffmpeg-free rsync python3-pyte python3-dbus
-  # Arch / Manjaro / EndeavourOS
-  sudo pacman -S pyside6 python-pillow python-psutil layer-shell-qt qt6-multimedia ffmpeg rsync python-pyte python-dbus
-  ```
+No sudo, no telemetry, uninstalls cleanly. Made for Kubuntu and any KDE Plasma 6 desktop on Wayland.
+
+## Why
+
+Ricing and tuning a Plasma desktop usually means a dozen apps, a dozen looks and a lot of config files. Grimoire
+Linux puts the tools you reach for every day into one monochrome app with one design language: a slim icon rail,
+line icons, no accent colors. Each tool (a "spell") stays out of your way, changes things the way KDE itself would,
+and can undo every change it makes. Anything that needs root says so and asks first.
+
+## Spells
+
+### MuraL: KDE Plasma customization
+
+![MuraL](docs/screenshots/mural.png)
+
+Customize everything you look at: desktop wallpaper with crossfading playlists (images and video), lock screen,
+splash, login (SDDM), boot (Plymouth), taskbar, Plasma style, window title bars, motion and effects, colors, icons,
+fonts, cursor and terminal. Every tab has live previews, saved **Looks** switch the whole desktop at once, and a
+**Community** view lists the top 100 from the KDE Store and Wallhaven, installable in one click.
+
+### SightsL: crosshair overlay for Linux games
+
+![SightsL](docs/screenshots/sightc.png)
+
+A crosshair drawn above every window and fullscreen game (KDE layer-shell), fully click-through and pixel-sharp.
+Presets, saved crosshairs and share codes, rotation, outline, offsets, screen choice, live updates, and global
+hotkeys: Ctrl+Alt+X hides it, Ctrl+Alt+Shift+X flips to the next one. It draws an overlay; it never touches a game.
+
+### VaultL: a file manager that tidies itself
+
+![VaultL](docs/screenshots/vaultl.png)
+
+Places and drives, breadcrumbs, a thumbnail grid or details list, a preview panel, Trash with restore,
+KDE-compatible copy/cut/paste and Dolphin's keyboard shortcuts. Its **Tidy** section keeps `~/Downloads` sorted by
+type in the background, sends stale installers and archives to the Trash, and finds big files and duplicates.
+Never deletes: everything goes to the Trash and every move can be undone. Can be your default file manager.
+
+### OptimizeL: speed tweaks as switches
+
+![OptimizeL](docs/screenshots/optimizel.png)
+
+Scans the PC and lays out speed tweaks as on/off switches: power, memory (zram, earlyoom), storage and boot,
+network (BBR), services, startup apps, desktop and gaming. Each one says what it changes, what you gain and what it
+risks; one-click plans (Recommended, Max performance, Restore everything) and before/after benchmarks. Switches
+survive restarts, and turning one off puts back exactly what was there.
+
+### SystemL: a Linux system monitor
+
+![SystemL](docs/screenshots/systeml.png)
+
+In place of KDE System Monitor: live graphs for CPU (every core), memory, swap, disk, network, GPU, temperatures
+and load; a process list with search, tree view, end/force quit and priority; per-app history (what was busy an
+hour, a day or a week ago); systemd services with start/stop/logs; startup apps; disks; and background alerts when
+memory, temperatures, free space or a stuck app cross the line you set, even while SystemL is closed.
+
+### TerminalL: a black & white terminal
+
+![TerminalL](docs/screenshots/terminall.png)
+
+Your shell on a real PTY, in tabs that split side by side or top and bottom. Full 16/256/true color when programs
+ask for it, Unicode and wide characters, mouse support for htop and vim, scrollback with search, zoom, profiles,
+a palette of saved commands (Ctrl+Shift+P), and new tabs right in VaultL's folder.
+
+### ShotL: screenshots and screen recording
+
+![ShotL](docs/screenshots/shotl.png)
+
+Region, window or whole-screen screenshots, a black & white editor to mark them up, screen recording (H.264 on
+the graphics card when it can), and a gallery of every shot. Bind `grimoire-shotl region|window|full|record` to
+any key.
+
+### FocusL: a focus timer
+
+![FocusL](docs/screenshots/focusl.png)
+
+Focus in rounds with breaks. While you focus: Do Not Disturb, no crosshair, and the apps and sites you pick kept
+away; then your streak, today, this week and the last 14 days. It keeps running when you close the window.
+
+### NetL: network monitor and quick controls
+
+![NetL](docs/screenshots/netl.png)
+
+Live download/upload per interface and per app (from the kernel's own TCP counters, no root), connections with
+host names, addresses, gateway and DNS, Wi-Fi scan and connect, Wi-Fi/airplane/VPN switches, and daily and monthly
+usage. Public IP and ping checks only run when you press them.
+
+### LaunchL: a Plasma app launcher
+
+![LaunchL](docs/screenshots/launchl.png)
+
+A black & white panel launcher in Kickoff's place: favorites, every app by category, places and recent files,
+search that also finds files, does sums and unit conversions and runs Grimoire's spells, plus the leave buttons.
+Meta opens it. **Replace launcher** records your Kickoff first, so **Restore Kickoff** puts back exactly what was there.
+
+### Tray, Settings and updates
+
+![Tray icon and menu](docs/screenshots/tray.png)
+
+- **Tray icon** (`grimoire-tray`): live CPU/RAM bars in the system tray, with the crosshair, the next crosshair,
+  "Tidy Downloads now", Performance mode and every spell in its menu. Optional start at login.
+- **Settings** (the gear at the foot of the rail): every Grimoire hotkey in one list (written to KDE's own shortcut
+  service, conflicts refused); **Backup & restore** of all settings in one `.grimoire-backup` file, with a preview
+  of what would change and a safety backup first; **GitHub** sign-in to keep that backup in a secret gist and
+  restore it on another PC; open at login and update checks.
+- **Self-update**: Grimoire checks GitHub every few hours. When there's something new, **What's new** lists the
+  changes, **Update now** installs them and **Restart now** reloads. Or run `grimoire update`.
+
+![Settings](docs/screenshots/settings.png)
 
 ## Install
 
-Download Grimoire anywhere (git clone or the ZIP from GitHub), then run its installer:
+### From source (recommended, no sudo)
 
 ```bash
-git clone https://github.com/cookedaj/GrimioreL.git
-cd GrimioreL
-./install.sh          # add --all to also put every spell in the app menu
-grimoire              # or open "Grimoire" from the app menu
+git clone https://github.com/cookedaj/grimoire-linux.git
+cd grimoire-linux
+./install.sh          # add --all to put every spell in the app menu too
+grimoire              # or open "Grimoire Linux" from the app menu
 ```
 
-The installer needs no sudo. It copies the app into `~/.local/share/grimoire/app`, links the commands into
-`~/.local/bin`, adds the app-menu entries and copies the MuraL wallpaper plugin into Plasma. Everything runs
-from that copy, so you can move or delete the download afterwards. If `grimoire` isn't found in a terminal,
-add `~/.local/bin` to your `PATH` (or log out and back in).
+The installer copies the app into `~/.local/share/grimoire/app`, links the commands into `~/.local/bin`, adds the
+menu entries and copies the MuraL wallpaper plugin and LaunchL widget into Plasma. Everything runs from that copy,
+so you can move or delete the download afterwards. If `grimoire` isn't found in a terminal, add `~/.local/bin` to
+your `PATH` (or log out and back in). A ZIP download from GitHub works the same way.
 
-Every spell also runs as its own app: press **Install** on its card on the home page (or use `./install.sh --all`),
-or run `grimoire-mural`, `grimoire-sightc`, `grimoire-vaultl`, `grimoire-optimizel`, `grimoire-systeml`, `grimoire-terminall` directly.
+### Packages
 
-Command-line helpers: `grimoire-sightc on|off|toggle|next`, `grimoire-vaultl [folder]`,
-`grimoire-vaultl tidy run|undo|enable|disable|status`, `grimoire-systeml alerts check|test|enable|disable|status`, `grimoire-terminall [folder]`. The old `grimoire-filel` and `grimoire-tidyl` commands
-still work and open VaultL.
+- **Debian / Ubuntu / Kubuntu (.deb)**: coming soon on the
+  [Releases page](https://github.com/cookedaj/grimoire-linux/releases); then
+  `sudo apt install ./grimoire-linux_*_all.deb`.
+- **Arch / Manjaro / EndeavourOS (AUR)**: coming soon as `grimoire-linux-git` (`yay -S grimoire-linux-git`).
 
-**Tray icon**: `grimoire-tray` (or "Grimoire Tray" in the app menu) puts live CPU/RAM bars in the system tray,
-with the crosshair, the next crosshair profile, "Tidy Downloads now", Performance mode and every spell in its menu.
-Tick "Tray icon at login" on Grimoire's home page (or "Start tray at login" in its menu, or
-`grimoire-tray autostart on`) to start it with Plasma.
+Packages install system-wide into `/usr/share/grimoire-linux` and update with your system; the in-app updater is
+off there.
 
-To make VaultL the default file manager: `xdg-mime default grimoire-vaultl.desktop inode/directory`
-(switch back any time in System Settings → Default Applications → File manager).
+### Requirements
 
-## Upgrade
+KDE Plasma 6 (Wayland is best; made on Kubuntu 26.04) and Python 3.12+ with PySide6, Pillow and psutil, plus
+layer-shell-qt (SightsL), Qt Multimedia (video wallpapers), pyte (TerminalL) and dbus-python (GitHub sign-in).
+Optional: ffmpeg (video thumbnails, recordings), Spectacle (ShotL), NetworkManager (NetL controls), rsync.
 
-Grimoire checks GitHub every few hours (no account needed). When there's a newer version, the version at the foot of
-the rail shows an arrow and the home page says so: **What's new** lists the changes since yours, **Update now**
-downloads and installs it, then **Restart now**. From a terminal: `grimoire update` (or `grimoire update --check` to
-only look). Turn the automatic check off in Settings → General (or set `GRIMOIRE_NO_UPDATE_CHECK=1`); clicking the
-version still checks.
+```bash
+# Ubuntu / Kubuntu / Debian
+sudo apt install python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtnetwork,qtqml,qtquick} python3-pil \
+    python3-psutil python3-pyte python3-dbus qml6-module-org-kde-layershell qml6-module-qtmultimedia ffmpeg rsync
+# Fedora
+sudo dnf install python3-pyside6 python3-pillow python3-psutil python3-pyte python3-dbus layer-shell-qt \
+    qt6-qtmultimedia ffmpeg-free rsync
+# Arch / Manjaro / EndeavourOS
+sudo pacman -S pyside6 python-pillow python-psutil python-pyte python-dbus layer-shell-qt qt6-multimedia ffmpeg rsync
+```
 
-By hand: get the newer version (`git pull` in your clone, or a fresh download) and run `./install.sh` from it again.
-Either way it replaces the installed copy and keeps your settings, timer and autostart.
+### Every spell as its own app
 
-## Settings
+Press **Install** on a spell's card on the home page (or `./install.sh --all`), or run `grimoire-mural`,
+`grimoire-sightc`, `grimoire-vaultl`, `grimoire-optimizel`, `grimoire-systeml`, `grimoire-terminall`,
+`grimoire-shotl`, `grimoire-focusl` or `grimoire-netl` directly. Command-line helpers:
+`grimoire-sightc on|off|toggle|next`, `grimoire-vaultl [folder]`, `grimoire-vaultl tidy run|undo|enable|disable|status`,
+`grimoire-systeml alerts check|enable|disable|status`, `grimoire-focusl start|stop|status`, `grimoire update`.
 
-The gear at the foot of the rail opens Settings:
-
-- **Hotkeys**: every Grimoire global shortcut (SightsL's, and any later spell's) plus suggested commands you can bind
-  (open Grimoire, tidy Downloads, ShotL captures when installed…). Click a field and press the keys; it's written
-  straight to KDE's shortcut service and refused if another shortcut already uses that key. **Default** puts it back.
-- **Backup & restore**: all of Grimoire's settings in one `.grimoire-backup` file (wallpapers only if you tick them).
-  Restoring checks the file, shows what would change file by file, and saves a safety backup of your current settings
-  in `~/.local/share/grimoire/backups` first.
-- **GitHub**: sign in with GitHub to back your settings up to a secret gist and restore them on another PC.
-- **General**: automatic update checks, tray icon at login, open Grimoire at login, version.
-
-### Sign-in and backups: threat model
-
-- **No password, no server.** Sign-in is GitHub's OAuth *device flow*: Grimoire shows a code, you approve it on
-  github.com in your own browser. There's no redirect or local web server, so nothing to forge (no CSRF `state`
-  needed), and no client secret exists, in the repo or anywhere else.
-- **Least access.** The token only gets the `gist` scope: it can read and write your gists, nothing else on your
-  account. Revoke it any time at github.com/settings/applications (Sign out links there; GitHub doesn't let an app
-  without a client secret revoke its own token).
-- **Token storage.** Only in the system keyring (Secret Service: KWallet on Plasma), as an item with
-  `application=grimoire, service=github`. Never in a file, a log, an error message or the UI; inside Grimoire it's
-  wrapped so printing it shows `Token(…)`. It crosses the local session bus to the keyring unencrypted ("plain"
-  session), like most keyring clients.
-- **Secret isn't private.** The backup gist is *secret*: unlisted, but anyone who has its link can read it. It holds
-  your Grimoire settings (which can include local file paths such as wallpaper locations), never the token.
-- **Restores are untrusted input**, whether a file or the gist: zip only, size and file-count caps, only known
-  relative paths under Grimoire's config/data folders, no absolute or `..` paths, no links or special files, every
-  file matching the manifest's sha256, JSON that parses; unknown files are ignored and nothing is executed. Machine
-  "undo" state (OptimizeL's originals, store install records) is never backed up or restored. A safety backup is
-  made before anything is written, and each file is replaced atomically.
-- **Network.** All calls run off the UI thread with clear messages for offline, rate limits (GitHub's slow_down and
-  hourly limits are respected) and revoked sign-ins. Only github.com, api.github.com, gist.githubusercontent.com and
-  avatars.githubusercontent.com are contacted.
+To make VaultL the default file manager: `xdg-mime default grimoire-vaultl.desktop inode/directory` (switch back in
+System Settings → Default Applications).
 
 ## Uninstall
 
@@ -115,92 +186,69 @@ The gear at the foot of the rail opens Settings:
 ~/.local/share/grimoire/app/uninstall.sh --purge    # also moves settings, logs and cache to the Trash
 ```
 
-This removes the app, its commands and menu entries, the wallpaper plugin, the auto-tidy and alert timers, SightsL's
-and the tray's autostart (and stops the tray).
-Looks and tweaks you applied stay as they are, so turn off MuraL themes and OptimizeL switches in Grimoire first
-if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/share/grimoire`.
+It removes the app, commands, menu entries, the wallpaper plugin (switching your desktop to MuraL's current picture first),
+LaunchL (putting Kickoff back first), the timers, and the autostart entries. Looks and tweaks you applied stay as
+they are, so turn off MuraL themes and OptimizeL switches first if you want them undone. With a package, run
+`/usr/share/grimoire-linux/uninstall.sh` as yourself, then remove the package.
 
-## How it works
+## FAQ
 
-- **MuraL** writes Plasma's own config (`plasma-apply-*`, `kwriteconfig6`, plasmashell scripting) and ships a
-  Plasma wallpaper plugin (`plasma/com.cookedaj.grimoire.mural`) for playlists, crossfades and video wallpapers
-  that pause while a window is fullscreen. Previews render on worker threads (splash and login previews are
-  rendered from the real QML). System-wide pieces (SDDM login, Plymouth boot) install through `pkexec` via
-  `grimoire/spells/mural/root-helper.sh`, which validates its input and keeps backups so you can restore.
-- **Community store**: downloads only happen when you press Install. Archives are extracted defensively
-  (no absolute paths, no `..`, regular files only, size-capped) and only theme files are copied into place.
-  Community login/boot themes run code at login/boot, so prefer popular, well-rated ones.
-- **SightsL** runs a small layer-shell overlay process and registers its hotkey with KGlobalAccel.
-- **VaultL** uses the same system underneath (Qt's `QFileSystemModel`, the freedesktop Trash that Dolphin uses,
-  KDE's clipboard format), so files, Trash and clipboard are shared with every other KDE app. Auto-tidy runs as
-  the systemd user timer `grimoire-tidyl.timer` every 10 minutes; rules live in `~/.config/grimoire/vaultl.json`
-  and the undo log in `~/.local/share/grimoire/vaultl/` (copied once from TidyL's files, which stay as a backup).
-- **OptimizeL** stages switch flips and applies them in one go. System tweaks go through `pkexec` to
-  `grimoire/spells/optimizel/root-helper.sh`, which only knows a fixed list of tweaks, writes files whose names
-  contain `grimoire-optimizel` (sysctl.d, journald.conf.d, apt.conf.d, systemd drop-ins, zram-generator.conf),
-  and saves the old values in `/var/lib/grimoire-optimizel` so "off" puts them back. Your own tweaks (power
-  profile, KDE settings, autostart overrides, `~/.config/environment.d`) keep their old values in
-  `~/.local/share/grimoire/optimizel.json`. Nothing deletes your files; the apt tweak only clears downloaded
-  `.deb` installers.
-- **Tray** (`grimoire/tray.py`) reads CPU and RAM every 2 s (temperatures every 10 s) and only redraws its icon
-  when a bar would look different. Performance mode (`grimoire/spells/optimizel/perfmode.py`) turns on, through
-  OptimizeL, whichever of these are off: the performance power profile, file indexing paused, and split-lock
-  throttling off (the one system change, so it asks for your password). It remembers what it flipped in
-  `~/.local/share/grimoire/performance-mode.json`, and "off" turns back exactly those.
-- **SystemL** reads the machine with psutil and `/proc` once a second, only while its window is on screen.
-  Per-app history is written once a minute to `~/.local/share/grimoire/systeml-history.json` (a week, busiest
-  apps only). Your own processes, user services and startup apps change directly; anything else (another user's
-  process, system services, emptying swap) goes through `pkexec` to `grimoire/spells/systeml/root-helper.sh`,
-  which checks every argument and refuses to stop the processes and services that keep the session alive.
-  Alerts run as the systemd user timer `grimoire-systeml-alerts.timer`: once a minute, one short check (psutil and
-  a D-Bus call, no window) that notifies once per problem, then again only after it clears or the reminder time
-  passes. Stuck apps are windows KWin marks "Not Responding" and your processes frozen on a disk or device with no
-  progress. Thresholds live in `~/.config/grimoire/systeml-alerts.json`, the alert history in
-  `~/.local/share/grimoire/systeml-alerts-history.json`.
-- **TerminalL** runs your login shell (`$SHELL -l`) on a real PTY with `TERM=xterm-256color`; the screen is
-  emulated by [pyte](https://github.com/selectel/pyte) (`python3-pyte`), with scrollback, the alternate screen and a
-  few xterm extras added on top. Without pyte the page just shows the install command. Profiles and saved commands
-  live in `~/.config/grimoire/terminall.json`. "New tab in VaultL's folder" uses the folder VaultL last showed.
-- **ShotL** takes stills with Spectacle's background mode (`spectacle -b -n -f|-m|-a -o …`; KWin lets it grab
-  without asking); regions and single monitors are cut from a full grab in ShotL's own picker. Recordings go
-  through the xdg-desktop-portal ScreenCast (KDE asks once which screen or window; tick "allow restoring" and later
-  recordings start straight away) into GStreamer (`python3-gi`, `gstreamer1.0-pipewire`) and ffmpeg: H.264 MP4 on
-  the NVIDIA encoder, else libx264, else VP8 WebM without ffmpeg. Shots go to `~/Pictures/Screenshots` with dated
-  names that never replace a file; the gallery list is `~/.local/share/grimoire/shotl-history.json` and settings
-  `~/.config/grimoire/shotl.json`. For hotkeys bind `grimoire-shotl region|window|full|screen` or
-  `grimoire-shotl record` (press again to stop) in System Settings → Keyboard → Shortcuts → Add New → Command.
+### Is it safe?
 
-## Layout
+Grimoire runs as you. The few things that change the system (login and boot themes, system tweaks, other users'
+processes, focus-time site blocking) ask for your password through KDE's own prompt and go through small helper
+scripts that only know a fixed list of actions, check every argument and keep the old values so you can undo.
+Your files are never deleted: they go to the Trash, and name clashes become "name (2)". Community themes are only
+downloaded when you press Install, and archives are unpacked defensively. Details: [docs/security.md](docs/security.md).
 
-```
-grimoire/            the app (PySide6)
-  app.py             window: icon rail + home
-  glyphs.py          monochrome line icons drawn in code
-  update.py          self-update from GitHub (updateview.py: What's new panel, banner, rail version)
-  settingsview.py    Settings page: hotkeys.py, backup.py, github.py + keystore.py (sign-in), prefs.py
-  spells/mural/      MuraL tabs, store, previews, root helper, SDDM theme, splash templates
-  spells/sightc/     SightsL overlay + page
-  spells/vaultl/     VaultL window, file operations, tidy engine, tidy panels, CLI/timer
-  spells/optimizel/  OptimizeL tweak catalog, root helper, page
-  spells/systeml/    SystemL readings, graphs, per-app history, actions, alerts, root helper, page
-  spells/terminall/  TerminalL screen state (pyte), PTY sessions, keys, terminal view, page
-  spells/netl/       NetL readings, NetworkManager controls, usage recorder/timer, page and panels
-  spells/shotl/      ShotL capture, region picker, editor, recorder, gallery page, CLI
-plasma/              the MuraL wallpaper plugin
-bin/                 launchers
-install.sh           copies the app into ~/.local/share/grimoire/app and links it in
-uninstall.sh         removes it again (--purge also clears settings)
-```
+### What needs root, and why?
 
-Personal project; artwork you add (wallpapers, community themes) belongs to its creators and isn't part of this repo.
+Only what lives outside your home: the SDDM login theme and Plymouth boot animation (MuraL), system-wide tweaks such
+as sysctl, zram and services (OptimizeL), acting on system services or other users' processes (SystemL), and
+`/etc/hosts` for blocking sites while you focus (FocusL). Each asks at the moment you do it, never in the background.
 
-## FocusL
+### Does it work on X11 or GNOME?
 
-A focus timer in rounds (focus, short breaks, a long break; lengths, rounds and auto-start are yours to set) with a
-big countdown ring, a notification and a soft chime at each change, and stats: sessions today and this week, total
-focus time, your streak and the last 14 days as bars. While you focus it turns on Plasma's Do Not Disturb, hides the
-SightsL crosshair (back after, if it was on), and can keep apps away (a warning, then a polite quit after a grace
-time, or only the warning) and sites (a marked block in `/etc/hosts`, which asks for your password when the session
-starts and ends). The timer runs in the background, so closing Grimoire doesn't stop it:
-`grimoire-focusl start|stop|pause|resume|skip|status`, and `grimoire-focusl unblock` if a session that was killed
-left sites blocked. Code: `grimoire/spells/focusl/` (store, guards, background runner, root helper, ring, page).
+Grimoire Linux is built for **KDE Plasma 6 on Wayland**, and that's where it's tested. Most windows open on Plasma's
+X11 session too, but the crosshair overlay needs Wayland's layer-shell, and MuraL, LaunchL, hotkeys and the tray
+speak to Plasma directly. On GNOME or other desktops much of it won't do anything useful; it isn't a goal for now.
+
+### How do updates work?
+
+A source install checks GitHub every few hours (turn it off in Settings → General or with
+`GRIMOIRE_NO_UPDATE_CHECK=1`) and shows what changed before installing; your settings, timers and autostart are kept.
+`git pull && ./install.sh` works too. Packages update through apt or pacman.
+
+### What about privacy?
+
+No telemetry, no analytics, no accounts needed. The app only goes online when you ask (community store, NetL's
+public-IP and ping checks, GitHub backup) and for the update check, which is one request to GitHub's public API.
+
+### How do I uninstall?
+
+See [Uninstall](#uninstall): one command, and `--purge` if you want your settings gone too (to the Trash).
+
+## Documentation
+
+- [How it works](docs/how-it-works.md): where each spell keeps its settings, what it changes and how to undo it,
+  plus the code layout
+- [Security and privacy](docs/security.md): root helpers, network use, the GitHub sign-in threat model
+
+## Contributing
+
+Issues and pull requests are welcome at [github.com/cookedaj/grimoire-linux](https://github.com/cookedaj/grimoire-linux).
+Keep the look strictly black & white (no accent colors; new icons are line glyphs drawn in `grimoire/glyphs.py`),
+keep modules small, never delete user files (Trash only), and send anything that needs root through a spell's
+whitelisted `root-helper.sh`. Test UI offscreen (`QT_QPA_PLATFORM=offscreen`) and file operations in a sandbox
+folder. `python3 scripts/screenshots.py` regenerates the screenshots; `scripts/release.sh X.Y.Z` prepares a
+release; `packaging/build-deb.sh` builds the .deb.
+
+## License
+
+Copyright (C) 2026 cookedaj
+
+Grimoire Linux is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+version. See [LICENSE](LICENSE). Files adapted from KDE projects, if any are added, keep their original copyright
+and license headers. Wallpapers and community themes you install belong to their creators and aren't part of this
+repository.

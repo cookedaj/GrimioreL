@@ -71,8 +71,16 @@ backup in `DATA/backups`, atomic writes; allowlist in `RULES`/`EXCLUDE`), `prefs
 gist_id; open-at-login autostart), `github.py` (device flow + gists, `HTTP` swappable, `Token` hides itself),
 `github_app.py` (`GITHUB_CLIENT_ID`, env `GRIMOIRE_GITHUB_CLIENT_ID`), `keystore.py` (Secret Service over dbus-python;
 PySide6 QtDBus can't marshal a{ss}/(oayays)). Test hotkey writes with a stub `BUS`, never the real KGlobalAccel; test
-the keyring only with throwaway attributes you delete. Threat model: README "Sign-in and backups".
+the keyring only with throwaway attributes you delete. Threat model: docs/security.md.
 Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); `uv` is available for side tools.
+Packages: `packaging/stage.sh DESTDIR KIND` lays out the system-wide tree (`/usr/share/grimoire-linux` + `PACKAGED`
+marker, `/usr/bin` links, menu entries, icons, MuraL plugin, AppStream) for both `packaging/debian` (hand-written
+rules, no debhelper; `packaging/build-deb.sh` builds under ~/.cache, never install it here) and `packaging/aur`.
+`paths.packaged()`/`command()`/`unit_command()` make timers/autostart/hotkeys run `/usr/bin` commands there and
+`update.managed()` turns the self-updater off. Releases: `scripts/release.sh X.Y.Z` (bump, changelog, PKGBUILD,
+commit, tag; no push), then `.github/workflows/release.yml` builds and publishes on the pushed tag. README images:
+`python3 scripts/screenshots.py [names]` (sandbox home, no session bus, NetL addresses faked); look at each one.
+User-facing docs: README.md (pitch, spells, install, FAQ), docs/how-it-works.md, docs/security.md.
 
 ## Git
 Branch `main`, push to `origin` (github.com/cookedaj/grimoire-linux). Commit messages: a short title + bullet body.
