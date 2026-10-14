@@ -98,6 +98,10 @@ class _Screen(QWidget):
     def mouseDoubleClickEvent(self, e):
         self.picked.emit(QRect(self.crop))
 
+    def closeEvent(self, e):                   # Alt+F4 or the compositor closing it: a cancel, not a hang
+        self.picked.emit(None)
+        super().closeEvent(e)
+
     def keyPressEvent(self, e):
         if e.key() == Qt.Key.Key_Escape:
             self.picked.emit(None)
@@ -114,8 +118,9 @@ def pick(img) -> QRect | None:
     wins = []
 
     def done(r):
-        result[0] = r
-        loop.quit()
+        if loop.isRunning():                   # the first answer counts; closing the windows below sends None
+            result[0] = r
+            loop.quit()
 
     for s in QGuiApplication.screens():
         w = _Screen(img, s, screen_rect(img, s))
