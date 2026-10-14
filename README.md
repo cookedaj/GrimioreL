@@ -123,6 +123,14 @@ if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/sha
   emulated by [pyte](https://github.com/selectel/pyte) (`python3-pyte`), with scrollback, the alternate screen and a
   few xterm extras added on top. Without pyte the page just shows the install command. Profiles and saved commands
   live in `~/.config/grimoire/terminall.json`. "New tab in VaultL's folder" uses the folder VaultL last showed.
+- **ShotL** takes stills with Spectacle's background mode (`spectacle -b -n -f|-m|-a -o …`; KWin lets it grab
+  without asking); regions and single monitors are cut from a full grab in ShotL's own picker. Recordings go
+  through the xdg-desktop-portal ScreenCast (KDE asks once which screen or window; tick "allow restoring" and later
+  recordings start straight away) into GStreamer (`python3-gi`, `gstreamer1.0-pipewire`) and ffmpeg: H.264 MP4 on
+  the NVIDIA encoder, else libx264, else VP8 WebM without ffmpeg. Shots go to `~/Pictures/Screenshots` with dated
+  names that never replace a file; the gallery list is `~/.local/share/grimoire/shotl-history.json` and settings
+  `~/.config/grimoire/shotl.json`. For hotkeys bind `grimoire-shotl region|window|full|screen` or
+  `grimoire-shotl record` (press again to stop) in System Settings → Keyboard → Shortcuts → Add New → Command.
 
 ## Layout
 
@@ -138,6 +146,7 @@ grimoire/            the app (PySide6)
   spells/systeml/    SystemL readings, graphs, per-app history, actions, alerts, root helper, page
   spells/terminall/  TerminalL screen state (pyte), PTY sessions, keys, terminal view, page
   spells/netl/       NetL readings, NetworkManager controls, usage recorder/timer, page and panels
+  spells/shotl/      ShotL capture, region picker, editor, recorder, gallery page, CLI
 plasma/              the MuraL wallpaper plugin
 bin/                 launchers
 install.sh           copies the app into ~/.local/share/grimoire/app and links it in

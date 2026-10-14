@@ -92,6 +92,16 @@ def _terminall_status() -> str:
     return status()
 
 
+def _shotl():
+    from grimoire.spells.shotl.page import ShotLPage
+    return ShotLPage()
+
+
+def _shotl_status() -> str:
+    from grimoire.spells.shotl import shots
+    return shots.status()
+
+
 SPELLS = [
     Spell("mural", "MuraL", "Every screen and surface: wallpaper, lock, login, boot, taskbar, windows, colors, "
           "icons, fonts, cursor, terminal, plus the community store", _mural, "mural", _mural_status),
@@ -105,6 +115,8 @@ SPELLS = [
           "apps, disks and background alerts", _systeml, "system", _systeml_status),
     Spell("terminall", "TerminalL", "Your terminal: tabs and splits, full color, scrollback search, profiles and "
           "saved commands, opening right in VaultL's folder", _terminall, "terminall", _terminall_status),
+    Spell("shotl", "ShotL", "Screenshots and screen recordings: region, window or screen, a black & white editor "
+          "to mark them up, and a gallery of every one", _shotl, "shot", _shotl_status),
 ]
 
 

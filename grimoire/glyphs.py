@@ -228,6 +228,11 @@ def _draw(name: str, p: QPainter):
     elif name == "link":                                   # two chain links: connections
         p.drawRoundedRect(r(2.8, 9.2, 10.5, 5.6), 2.8, 2.8)
         p.drawRoundedRect(r(10.7, 9.2, 10.5, 5.6), 2.8, 2.8)
+    elif name == "shot":                                   # a viewfinder: four corners round a lens
+        for (x, y), (dx, dy) in (((3.5, 3.5), (1, 1)), ((20.5, 3.5), (-1, 1)), ((3.5, 20.5), (1, -1)),
+                                 ((20.5, 20.5), (-1, -1))):
+            path = QPainterPath(QPointF(x, y + 5 * dy)); path.lineTo(x, y); path.lineTo(x + 5 * dx, y); p.drawPath(path)
+        p.drawEllipse(QPointF(12, 12), 4.2, 4.2)
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:
