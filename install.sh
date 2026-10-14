@@ -13,8 +13,8 @@ APP="$DATA/grimoire/app"
 BIN="$HOME/.local/bin"
 SKIP=(--exclude .git --exclude .worktrees --exclude __pycache__ --exclude '*.pyc' --exclude .ENV --exclude CLAUDE.local.md --exclude .claude)
 
-python3 -c "import PySide6.QtWidgets, PIL" 2>/dev/null || {
-    echo "PySide6 or Pillow is missing; see \"Requirements\" in README.md for your distro's packages."
+python3 -c "import PySide6.QtWidgets, PIL, psutil" 2>/dev/null || {
+    echo "PySide6, Pillow or psutil is missing; see \"Requirements\" in README.md for your distro's packages."
     exit 1
 }
 
@@ -22,7 +22,7 @@ python3 -c "import PySide6.QtWidgets, PIL" 2>/dev/null || {
 if [ "$SRC" != "$APP" ]; then
     mkdir -p "$APP"
     if command -v rsync >/dev/null; then
-        rsync -a --delete "${SKIP[@]}" "$SRC/" "$APP/"
+        rsync -a --delete --delete-excluded "${SKIP[@]}" "$SRC/" "$APP/"
     else
         find "$APP" -mindepth 1 -delete
         tar -C "$SRC" "${SKIP[@]}" -cf - . | tar -C "$APP" -xf -
@@ -53,7 +53,7 @@ Exec=$BIN/grimoire %u
 Icon=grimoire
 Categories=Utility;Settings;
 StartupWMClass=grimoire
-Actions=mural;sightc;vaultl;optimizel;
+Actions=mural;sightc;vaultl;optimizel;systeml;
 
 [Desktop Action mural]
 Name=MuraL
@@ -70,6 +70,10 @@ Exec=$BIN/grimoire vaultl
 [Desktop Action optimizel]
 Name=OptimizeL
 Exec=$BIN/grimoire optimizel
+
+[Desktop Action systeml]
+Name=SystemL (system monitor)
+Exec=$BIN/grimoire systeml
 EOF
 
 # 4. standalone spells: VaultL always (it's the file manager; FileL's and TidyL's old entries become hidden

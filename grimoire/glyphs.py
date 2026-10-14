@@ -167,6 +167,11 @@ def _draw(name: str, p: QPainter):
         path = QPainterPath(); path.arcMoveTo(r(3.5, 5, 17, 17), 200); path.arcTo(r(3.5, 5, 17, 17), 200, -220)
         p.drawPath(path)
         p.drawLine(QPointF(12, 13.5), QPointF(16.2, 8.6)); p.drawEllipse(QPointF(12, 13.5), 1.3, 1.3)
+    elif name == "system":                                 # a screen with a pulse line across it
+        p.drawRoundedRect(r(3, 4.5, 18, 13), 2, 2)
+        p.drawLine(QPointF(9, 20.5), QPointF(15, 20.5))
+        path = QPainterPath(QPointF(5.5, 11.5)); path.lineTo(9, 11.5); path.lineTo(10.8, 8); path.lineTo(13.2, 15)
+        path.lineTo(15, 11.5); path.lineTo(18.5, 11.5); p.drawPath(path)
     elif name == "check":
         path = QPainterPath(QPointF(5, 12.5)); path.lineTo(10, 17.5); path.lineTo(19, 7); p.drawPath(path)
 

@@ -65,6 +65,18 @@ def _optimizel_status() -> str:
     return f"{on} of {len(tweaks.TWEAKS)} optimizations on" + (f" · restart to finish {waiting}" if waiting else "")
 
 
+def _systeml():
+    from grimoire.spells.systeml.page import SystemLPage
+    return SystemLPage()
+
+
+def _systeml_status() -> str:
+    import psutil
+    mem = psutil.virtual_memory()
+    return f"CPU {psutil.cpu_percent(interval=0.1):.0f}% · RAM {(mem.total - mem.available) / 2**30:.1f} of " \
+        f"{mem.total / 2**30:.0f} GB"
+
+
 SPELLS = [
     Spell("mural", "MuraL", "Every screen and surface: wallpaper, lock, login, boot, taskbar, windows, colors, "
           "icons, fonts, cursor, terminal, plus the community store", _mural, "mural", _mural_status),
@@ -74,4 +86,6 @@ SPELLS = [
     Spell("optimizel", "OptimizeL", "Tunes the PC for speed: CPU, memory, boot, network, startup apps and "
           "games. Every tweak is a switch that survives restarts and turns back off cleanly",
           _optimizel, "optimize", _optimizel_status),
+    Spell("systeml", "SystemL", "Your system monitor: live graphs, processes, per-app history, services, startup "
+          "apps and disks", _systeml, "system", _systeml_status),
 ]

@@ -10,6 +10,7 @@ Public repo: github.com/cookedaj/Grimoire. Runs on the owner's own Kubuntu 26.04
 | SightsL | `grimoire/spells/sightc/` | layer-shell crosshair overlay (`overlay.py`/`overlay.qml`), drawing in `draw.py`, settings/presets/profiles in `config.py`, hotkeys via KGlobalAccel |
 | VaultL | `grimoire/spells/vaultl/` | file manager with tidying built in (FileL + TidyL merged); `page.py` window (Tidy section in the sidebar), `ops.py` file operations, `tidyview.py` tidy panels, `tidy.py` sorting engine (migrates TidyL's json/log once by copying), `cli.py` (timer keeps the name `grimoire-tidyl.timer`), `__main__.py` standalone window (default for inode/directory). `grimoire-filel`/`grimoire-tidyl` stay as aliases; `standalone.MERGED` keeps their old desktop entries as hidden aliases |
 | OptimizeL | `grimoire/spells/optimizel/` | speed tweaks as persistent on/off switches; catalog + detection in `tweaks.py`, system ones in its own whitelisted `root-helper.sh` (test with `OPTIMIZEL_ROOT=<sandbox> OPTIMIZEL_DRY=1`) |
+| SystemL | `grimoire/spells/systeml/` | system monitor; `probe.py` readings (psutil, one `Sampler` per page, rates from the previous sample), `graph.py` B&W graphs, `history.py` per-app minutes, `system.py` signals/priority/services/startup/disks, `root-helper.sh` for root actions, `page.py` panels (samples only while visible) |
 
 Shell: `grimoire/app.py` (icon rail, home, `style_app()`), icons drawn in code in `grimoire/glyphs.py`, styles in
 `grimoire/theme.py` (QSS). New spells register in `grimoire/spells/__init__.py` (`Spell(id, name, tagline, page, icon,
@@ -24,7 +25,7 @@ status)`). Folder names stay as-is when display names change (e.g. SightsL lives
 ## Safety rules
 - Never permanently delete user files: use the Trash (`gio trash`, or the freedesktop spec as in `vaultl/ops.py`);
   never overwrite on name clashes (`free_name()` → "name (2).ext").
-- Anything needing root goes through a spell's `root-helper.sh` via `pkexec` (MuraL's or OptimizeL's: whitelisted
+- Anything needing root goes through a spell's `root-helper.sh` via `pkexec` (MuraL's, OptimizeL's or SystemL's: whitelisted
   actions, validated input, old values backed up).
 - Simulate package removals (`apt-get -s`) before suggesting them; never let `kubuntu-desktop` or IBM Plex fonts go.
 - Community store downloads happen only on the user's Install click; keep the defensive extraction in `store.py`.
