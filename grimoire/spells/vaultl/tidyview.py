@@ -29,6 +29,14 @@ class _Signals(QObject):
     done = Signal(str, object)        # kind, result
 
 
+def _size(p: Path) -> int | None:
+    """A regular file's size, or None if it's gone (or isn't a plain file any more)."""
+    try:
+        return p.stat().st_size if p.is_file() and not p.is_symlink() else None
+    except OSError:
+        return None
+
+
 def _rules(s: tidy.Settings) -> list[dict]:
     return [asdict(r) for r in s.rules]
 
@@ -521,7 +529,10 @@ class TidyPanel(QWidget):
         extras = []
         for g in range(self.dupes.topLevelItemCount()):
             group = self.dupes.topLevelItem(g)
-            extras += [group.child(i).data(0, Qt.ItemDataRole.UserRole) for i in range(1, group.childCount())]
+            paths = [Path(group.child(i).data(0, Qt.ItemDataRole.UserRole)) for i in range(group.childCount())]
+            keep = _size(paths[0]) if paths else None      # the scan may be old: never trash the copies of a
+            if keep is not None:                           # file whose kept copy is gone or changed since
+                extras += [p for p in paths[1:] if _size(p) == keep]
         if not extras:
             return
         if QMessageBox.question(self, "Trash extra copies?",
@@ -531,7 +542,7 @@ class TidyPanel(QWidget):
         failed = []
         for p in extras:
             try:
-                tidy.trash_by_hand(Path(p), "Duplicates", "duplicate copy")
+                tidy.trash_by_hand(p, "Duplicates", "duplicate copy")
             except OSError as e:
                 failed.append(f"{Path(p).name}: {e}")
         if failed:
