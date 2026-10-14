@@ -174,6 +174,12 @@ def _draw(name: str, p: QPainter):
         path.lineTo(15, 11.5); path.lineTo(18.5, 11.5); p.drawPath(path)
     elif name == "check":
         path = QPainterPath(QPointF(5, 12.5)); path.lineTo(10, 17.5); path.lineTo(19, 7); p.drawPath(path)
+    elif name == "bell":                                   # a bell with its clapper
+        path = QPainterPath(QPointF(5, 17)); path.lineTo(6.5, 15); path.lineTo(6.5, 10.5)
+        path.cubicTo(6.5, 3.5, 17.5, 3.5, 17.5, 10.5); path.lineTo(17.5, 15); path.lineTo(19, 17)
+        path.closeSubpath(); p.drawPath(path)
+        path = QPainterPath(QPointF(10, 19.5)); path.quadTo(12, 21.5, 14, 19.5); p.drawPath(path)
+        p.drawLine(QPointF(12, 3), QPointF(12, 4.6))
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:

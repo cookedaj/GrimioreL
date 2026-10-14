@@ -5,8 +5,8 @@
     python3 -m grimoire.standalone uninstall <id>      remove the menu entry and icon
     python3 -m grimoire.standalone refresh             rewrite launchers that are already installed
 
-Each spell's command is bin/grimoire-<id>. Uninstalling keeps the command in ~/.local/bin, because SightsL's autostart
-and VaultL's auto-tidy timer call it.
+Each spell's command is bin/grimoire-<id>. Uninstalling keeps the command in ~/.local/bin, because SightsL's autostart,
+VaultL's auto-tidy timer and SystemL's alerts timer call it.
 """
 import os
 import sys

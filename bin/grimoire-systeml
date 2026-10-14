@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-# SystemL in its own window: grimoire-systeml
+# SystemL in its own window:      grimoire-systeml
+# background alerts (the timer):  grimoire-systeml alerts check|test|enable|disable|status
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+if [ "${1:-}" = alerts ]; then
+    shift
+    exec python3 -m grimoire.spells.systeml.alerts "$@"
+fi
 exec python3 -m grimoire.standalone systeml

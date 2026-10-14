@@ -1,8 +1,9 @@
 """Registry of spells (tools) shown in Grimoire. Add new spells to SPELLS."""
 from dataclasses import dataclass
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
-from PySide6.QtWidgets import QWidget
+if TYPE_CHECKING:               # background commands (alert checks, auto-tidy) import spells without loading Qt
+    from PySide6.QtWidgets import QWidget
 
 
 @dataclass(frozen=True)
@@ -10,7 +11,7 @@ class Spell:
     id: str
     name: str
     tagline: str
-    page: Callable[[], QWidget]
+    page: Callable[[], "QWidget"]
     icon: str                       # glyph name (grimoire/glyphs.py)
     status: Callable[[], str] = lambda: ""
 
@@ -72,9 +73,10 @@ def _systeml():
 
 def _systeml_status() -> str:
     import psutil
+    from grimoire.spells.systeml import alerts
     mem = psutil.virtual_memory()
     return f"CPU {psutil.cpu_percent(interval=0.1):.0f}% · RAM {(mem.total - mem.available) / 2**30:.1f} of " \
-        f"{mem.total / 2**30:.0f} GB"
+        f"{mem.total / 2**30:.0f} GB · " + ("Alerts on" if alerts.enabled() else "Alerts off")
 
 
 SPELLS = [
@@ -87,5 +89,5 @@ SPELLS = [
           "games. Every tweak is a switch that survives restarts and turns back off cleanly",
           _optimizel, "optimize", _optimizel_status),
     Spell("systeml", "SystemL", "Your system monitor: live graphs, processes, per-app history, services, startup "
-          "apps and disks", _systeml, "system", _systeml_status),
+          "apps, disks and background alerts", _systeml, "system", _systeml_status),
 ]

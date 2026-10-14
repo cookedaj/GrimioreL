@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Remove Grimoire for the current user (no sudo).
-#   ./uninstall.sh            remove the app, its commands, menu entries, wallpaper plugin, auto-tidy timer and
-#                             SightsL autostart; keep your settings so a later install picks them up
+#   ./uninstall.sh            remove the app, its commands, menu entries, wallpaper plugin, auto-tidy and alert
+#                             timers and SightsL autostart; keep your settings so a later install picks them up
 #   ./uninstall.sh --purge    also move Grimoire's settings, logs and cache to the Trash
 # Looks and tweaks you applied (MuraL themes, OptimizeL switches) stay as they are: turn them off in Grimoire first
 # if you want them undone.
@@ -15,11 +15,13 @@ UNITS="$CONFIG/systemd/user"
 
 # background pieces first
 pkill -f '^(/usr/bin/)?python3 -m grimoire\.spells\.sightc\.overlay' 2>/dev/null || true   # it relaunches via sys.executable
-if [ -f "$UNITS/grimoire-tidyl.timer" ]; then
-    systemctl --user disable --now grimoire-tidyl.timer 2>/dev/null || true
-    rm -f "$UNITS/grimoire-tidyl.timer" "$UNITS/grimoire-tidyl.service"
-    systemctl --user daemon-reload 2>/dev/null || true
-fi
+for unit in grimoire-tidyl grimoire-systeml-alerts; do              # VaultL's auto-tidy, SystemL's alerts
+    if [ -f "$UNITS/$unit.timer" ]; then
+        systemctl --user disable --now "$unit.timer" 2>/dev/null || true
+        rm -f "$UNITS/$unit.timer" "$UNITS/$unit.service"
+        systemctl --user daemon-reload 2>/dev/null || true
+    fi
+done
 rm -f "$CONFIG/autostart/grimoire-sightc.desktop"
 
 # commands (only links, never a file someone put there), menu entries and icons Grimoire generated
