@@ -164,7 +164,7 @@ for unit in grimoire-tidyl grimoire-systeml-alerts grimoire-netl-usage; do   # V
         run systemctl --user daemon-reload 2>/dev/null || true
     fi
 done
-run rm -f "$CONFIG/autostart/grimoire-sightc.desktop" "$CONFIG/autostart/grimoire-tray.desktop"
+run rm -f "$CONFIG/autostart/grimoire-sightc.desktop" "$CONFIG/autostart/grimoire-tray.desktop" "$CONFIG/autostart/grimoire.desktop"
 
 # wallpapers in use, before their plugin and pictures go
 release_wallpapers

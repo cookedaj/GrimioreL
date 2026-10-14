@@ -233,6 +233,30 @@ def _draw(name: str, p: QPainter):
                                  ((20.5, 20.5), (-1, -1))):
             path = QPainterPath(QPointF(x, y + 5 * dy)); path.lineTo(x, y); path.lineTo(x + 5 * dx, y); p.drawPath(path)
         p.drawEllipse(QPointF(12, 12), 4.2, 4.2)
+    elif name == "gear":                                   # eight-tooth cog with a hole
+        import math
+        path = QPainterPath()
+        for i in range(8):
+            a = i * 45
+            for ang, rad in ((a - 12, 9), (a + 12, 9), (a + 22.5 - 10, 6.6), (a + 22.5 + 10, 6.6)):
+                pt = QPointF(12 + rad * math.cos(math.radians(ang)), 12 - rad * math.sin(math.radians(ang)))
+                path.moveTo(pt) if path.elementCount() == 0 else path.lineTo(pt)
+        path.closeSubpath(); p.drawPath(path)
+        p.drawEllipse(QPointF(12, 12), 2.8, 2.8)
+    elif name == "keyboard":
+        p.drawRoundedRect(r(3, 6.5, 18, 11), 2, 2)
+        for x in (7, 10, 13, 16):
+            p.drawPoint(QPointF(x, 10))
+        p.drawLine(QPointF(8.5, 14), QPointF(15.5, 14))
+    elif name == "archive":                                # a box with a lid: backups
+        p.drawRoundedRect(r(3.5, 4.5, 17, 4), 1, 1)
+        path = QPainterPath(QPointF(5, 8.5)); path.lineTo(5, 19.5); path.lineTo(19, 19.5); path.lineTo(19, 8.5)
+        p.drawPath(path)
+        p.drawLine(QPointF(10, 12.5), QPointF(14, 12.5))
+    elif name == "sliders":                                # three settings sliders
+        for y, x in ((7, 9), (12, 15.5), (17, 11)):
+            p.drawLine(QPointF(4, y), QPointF(x - 2, y)); p.drawLine(QPointF(x + 2, y), QPointF(20, y))
+            p.drawEllipse(QPointF(x, y), 2, 2)
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:

@@ -1,6 +1,5 @@
 """The hub's side of self-update: a checker that works off the UI thread, the home banner, the rail's version button
 and the What's new panel. The work itself is in update.py."""
-import os
 import sys
 import time
 
@@ -46,10 +45,15 @@ class Updater(QObject):
 
     def start(self):
         """Check on launch (from the cache when recent) and every few hours; only an installed copy updates.
-        GRIMOIRE_NO_UPDATE_CHECK=1 turns the automatic check off; 'Check for updates' still works."""
-        if update.is_installed() and not os.environ.get("GRIMOIRE_NO_UPDATE_CHECK"):
+        Settings → General (or GRIMOIRE_NO_UPDATE_CHECK=1) turns the automatic check off; 'Check for updates'
+        still works."""
+        from grimoire import prefs
+        if update.is_installed() and prefs.auto_update():
             self.check()
             self._timer.start()
+
+    def stop(self):
+        self._timer.stop()
 
     def check(self, force=False):
         if self.busy:

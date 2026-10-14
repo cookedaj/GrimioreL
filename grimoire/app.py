@@ -1,6 +1,7 @@
 """Grimoire hub window: a slim icon rail on the left, a home page of spells, one page per spell."""
 import sys
 from datetime import datetime
+from types import SimpleNamespace
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QFont, QIcon, QPalette
@@ -11,6 +12,7 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QFrame, QG
 from grimoire import standalone
 from grimoire.glyphs import clover, glyph
 from grimoire.paths import ASSETS
+from grimoire.settingsview import SettingsPage
 from grimoire.spells import SPELLS
 from grimoire.theme import FONT, QSS
 from grimoire.updateview import Banner, Updater, VersionButton, WhatsNew
@@ -215,6 +217,8 @@ class Window(QMainWindow):
         for spell in SPELLS:
             self._add_page(spell.id, spell.name, spell.icon, None, rl, spell)
         rl.addStretch(1)
+        self._add_page("settings", "Settings", "gear", None, rl,
+                       SimpleNamespace(page=lambda: SettingsPage(self.updater, self.whats_new)))
         rl.addWidget(VersionButton(self.updater, self.whats_new), 0, Qt.AlignmentFlag.AlignHCenter)
 
         root.addWidget(rail)
