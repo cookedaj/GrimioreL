@@ -55,7 +55,10 @@ def grab(mode: str, pointer=False) -> Path:
         if mode == "window":
             raise CaptureError("Window shots need Spectacle (sudo apt install kde-spectacle)")
         from grimoire.spells.shotl import portal
-        portal.screenshot(out)
+        try:
+            portal.screenshot(out)
+        except Exception as e:                 # PortalError, D-Bus, a file it couldn't copy
+            raise CaptureError(f"The desktop portal took no screenshot: {e}") from e
         return out
     raise CaptureError("Nothing here can take screenshots: install Spectacle (sudo apt install kde-spectacle)")
 
