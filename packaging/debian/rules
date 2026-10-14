@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Hand-written, no debhelper: the app is plain Python and shell, laid out by packaging/stage.sh (the same tree the
+# AUR package installs). Rules-Requires-Root: no, so dpkg-deb gives every file root ownership without fakeroot.
+PKG := grimoire-linux
+D := debian/$(PKG)
+DOC := $(D)/usr/share/doc/$(PKG)
+
+build build-arch build-indep:
+	@true
+
+clean:
+	rm -rf $(D) debian/files debian/*.substvars
+
+binary-arch:
+	@true
+
+binary-indep:
+	rm -rf $(D)
+	bash packaging/stage.sh $(D) deb
+	install -d -m755 $(D)/DEBIAN $(D)/usr/share/doc $(DOC)
+	install -m644 debian/copyright $(DOC)/copyright
+	gzip -9n -c debian/changelog > $(DOC)/changelog.gz
+	chmod 644 $(DOC)/changelog.gz
+	rm -f $(D)/usr/share/grimoire-linux/LICENSE
+	install -m755 debian/postinst debian/prerm $(D)/DEBIAN/
+	cd $(D) && find usr -type f -print0 | LC_ALL=C sort -z | xargs -0 md5sum > DEBIAN/md5sums
+	dpkg-gencontrol -p$(PKG) -P$(D)
+	dpkg-deb --root-owner-group -Zxz --build $(D) ..
+
+binary: binary-indep
+
+.PHONY: build build-arch build-indep clean binary binary-arch binary-indep

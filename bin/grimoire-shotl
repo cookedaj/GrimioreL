@@ -5,4 +5,5 @@
 #   grimoire-shotl record [toggle|start|stop|status] [--sound] [--pick]
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONSAFEPATH=1       # never import a grimoire/ folder from the current directory instead
 exec python3 -m grimoire.spells.shotl "$@"

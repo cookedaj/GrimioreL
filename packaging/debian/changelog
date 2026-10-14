@@ -1,0 +1,12 @@
+grimoire-linux (0.2.0) unstable; urgency=medium
+
+  * First packaged release, as Grimoire Linux (github.com/cookedaj/grimoire-linux).
+  * New name shown everywhere; commands, settings folders and app ids are unchanged.
+  * Licensed GPL-3.0-or-later.
+  * System-wide .deb and AUR packages; a packaged copy leaves updates to the
+    package manager.
+  * Spells: MuraL, SightsL, VaultL, OptimizeL, SystemL, TerminalL, ShotL,
+    FocusL and NetL, plus the tray icon, Settings (hotkeys, backup & restore,
+    GitHub sign-in) and self-update for per-user installs.
+
+ -- cookedaj <285303240+cookedaj@users.noreply.github.com>  Wed, 14 Oct 2026 12:00:00 +0000

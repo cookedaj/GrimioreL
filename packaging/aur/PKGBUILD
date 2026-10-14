@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Maintainer: cookedaj <285303240+cookedaj@users.noreply.github.com>
+#
+# Grimoire Linux from GitHub's main branch, installed system-wide in /usr/share/grimoire-linux with /usr/bin
+# commands, menu entries, icons and the MuraL wallpaper plugin (packaging/stage.sh lays it out, the same tree as
+# the .deb). Nothing per user is set up at install time: the tray, crosshair and "open at login" autostarts, the
+# auto-tidy/alerts/usage timers and hotkeys are written by the app when you turn them on, and run /usr/bin commands.
+# Before removing the package, run /usr/share/grimoire-linux/uninstall.sh as yourself to clear those.
+pkgname=grimoire-linux-git
+_pkgname=grimoire-linux
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Black & white toolkit for KDE Plasma 6: customization, crosshair overlay, file manager, system monitor, terminal"
+arch=('any')
+url="https://github.com/cookedaj/grimoire-linux"
+license=('GPL-3.0-or-later')
+depends=(
+    'python'
+    'pyside6'
+    'python-pillow'
+    'python-psutil'
+    'python-pyte'
+    'python-dbus'
+    'layer-shell-qt'
+    'qt6-multimedia'
+    'qt6-tools'           # qdbus6
+    'kconfig'             # kwriteconfig6 / kreadconfig6
+    'plasma-workspace'    # plasma-apply-*, plasmashell scripting
+    'glib2'               # gio trash
+    'polkit'              # pkexec for the root helpers
+)
+optdepends=(
+    'spectacle: ShotL screenshots'
+    'ffmpeg: video wallpaper thumbnails and ShotL recordings'
+    'python-gobject: ShotL screen recording'
+    'gst-plugin-pipewire: ShotL screen recording'
+    'networkmanager: NetL Wi-Fi and VPN controls'
+    'iproute2: NetL connection list'
+    'kde-cli-tools: open files with kioclient'
+    'python-numpy: OptimizeL memory benchmark'
+    'wl-clipboard: copy screenshots from the command line'
+    'rsync: per-user install with install.sh'
+)
+makedepends=('git')
+provides=("$_pkgname")
+conflicts=("$_pkgname")
+source=("$_pkgname::git+https://github.com/cookedaj/grimoire-linux.git")
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "$_pkgname"
+    local base
+    base="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' grimoire/__init__.py)"
+    printf '%s.r%s.g%s' "$base" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+package() {
+    cd "$_pkgname"
+    bash packaging/stage.sh "$pkgdir" arch
+    rm -f "$pkgdir/usr/share/grimoire-linux/LICENSE"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    python -m compileall -q -d /usr/share/grimoire-linux/grimoire "$pkgdir/usr/share/grimoire-linux/grimoire"
+}

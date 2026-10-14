@@ -4,6 +4,7 @@
 # usage history (the timer):       grimoire-netl usage record|enable|disable|status|show
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONSAFEPATH=1       # never import a grimoire/ folder from the current directory instead
 if [ "${1:-}" = usage ]; then
     shift
     exec python3 -m grimoire.spells.netl.usage "$@"

@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# On a pushed tag vX.Y.Z (made by scripts/release.sh): build the .deb on Ubuntu 26.04 and a source tarball, then
+# publish a GitHub Release with notes from the commit titles since the previous tag.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - name: Tools
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git ca-certificates dpkg-dev python3 python3-pyside6.qtwidgets python3-pyside6.qtsvg
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Version matches the tag
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          V="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' grimoire/__init__.py)"
+          test "v$V" = "$GITHUB_REF_NAME" || { echo "Tag $GITHUB_REF_NAME but __version__ is $V"; exit 1; }
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+      - name: Build the .deb
+        run: packaging/build-deb.sh dist
+      - name: Source tarball
+        run: git archive --format=tar.gz --prefix="grimoire-linux-$VERSION/" -o "dist/grimoire-linux-$VERSION.tar.gz" "$GITHUB_REF_NAME"
+      - name: Release notes
+        run: |
+          PREV="$(git describe --tags --abbrev=0 --match 'v*' "$GITHUB_REF_NAME^" 2>/dev/null || true)"
+          {
+            echo "## Grimoire Linux $VERSION"
+            echo
+            echo "Install: download \`grimoire-linux_${VERSION}_all.deb\` and run \`sudo apt install ./grimoire-linux_${VERSION}_all.deb\`,"
+            echo "or use the per-user installer from the source (\`./install.sh\`, no sudo). See the README for Arch and Fedora."
+            echo
+            echo "### Changes"
+            git log --no-merges --format='- %s' ${PREV:+"$PREV"..}"$GITHUB_REF_NAME"
+          } > dist/NOTES.md
+          (cd dist && sha256sum *.deb *.tar.gz > SHA256SUMS)
+          dpkg-deb -c "dist/grimoire-linux_${VERSION}_all.deb" | head -20
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Grimoire Linux ${GITHUB_REF_NAME#v}" \
+            --notes-file dist/NOTES.md dist/*.deb dist/*.tar.gz dist/SHA256SUMS

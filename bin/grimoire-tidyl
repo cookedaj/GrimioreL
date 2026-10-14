@@ -5,5 +5,6 @@
 #   grimoire-tidyl run|preview|undo|enable|disable|status   same as grimoire-vaultl tidy <cmd>
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONSAFEPATH=1       # never import a grimoire/ folder from the current directory instead
 [ $# -eq 0 ] && exec python3 -m grimoire.spells.vaultl
 exec python3 -m grimoire.spells.vaultl tidy "$1"

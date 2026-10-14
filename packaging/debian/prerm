@@ -1,0 +1,9 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Remove the bytecode postinst made (dpkg doesn't know those files). Per-user parts (timers, autostart, menu entries a
+# spell's Install button added) are each user's: /usr/share/grimoire-linux/uninstall.sh clears them, run as that user.
+set -e
+if [ -d /usr/share/grimoire-linux/grimoire ]; then
+    find /usr/share/grimoire-linux/grimoire -name __pycache__ -type d -prune -exec rm -rf {} + 2>/dev/null || true
+fi
+exit 0

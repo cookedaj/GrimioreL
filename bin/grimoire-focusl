@@ -4,5 +4,6 @@
 # the focus timer:            grimoire-focusl start|stop|pause|resume|skip|status|unblock
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONSAFEPATH=1       # never import a grimoire/ folder from the current directory instead
 [ $# -eq 0 ] && exec python3 -m grimoire.standalone focusl
 exec python3 -m grimoire.spells.focusl.runner "$@"

@@ -3,4 +3,5 @@
 # MuraL in its own window: grimoire-mural
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONSAFEPATH=1       # never import a grimoire/ folder from the current directory instead
 exec python3 -m grimoire.standalone mural

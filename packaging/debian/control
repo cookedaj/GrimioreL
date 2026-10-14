@@ -1,0 +1,58 @@
+Source: grimoire-linux
+Section: utils
+Priority: optional
+Maintainer: cookedaj <285303240+cookedaj@users.noreply.github.com>
+Build-Depends-Indep: python3, python3-pyside6.qtwidgets, python3-pyside6.qtsvg
+Rules-Requires-Root: no
+Standards-Version: 4.7.0
+Homepage: https://github.com/cookedaj/grimoire-linux
+Vcs-Browser: https://github.com/cookedaj/grimoire-linux
+Vcs-Git: https://github.com/cookedaj/grimoire-linux.git
+
+Package: grimoire-linux
+Architecture: all
+Depends: python3 (>= 3.12),
+         python3-pyside6.qtcore,
+         python3-pyside6.qtgui,
+         python3-pyside6.qtwidgets,
+         python3-pyside6.qtsvg,
+         python3-pyside6.qtdbus,
+         python3-pyside6.qtnetwork,
+         python3-pyside6.qtqml,
+         python3-pyside6.qtquick,
+         python3-pil,
+         python3-psutil,
+         python3-pyte,
+         python3-dbus,
+         qml6-module-org-kde-layershell,
+         qml6-module-qtmultimedia,
+         qdbus-qt6,
+         libkf6config-bin,
+         libglib2.0-bin,
+         pkexec,
+         plasma-workspace
+Recommends: kde-spectacle,
+            ffmpeg,
+            network-manager,
+            iproute2,
+            python3-gi,
+            gir1.2-gstreamer-1.0,
+            gstreamer1.0-pipewire,
+            kde-cli-tools,
+            desktop-file-utils,
+            xdg-user-dirs
+Suggests: rsync, python3-numpy, wl-clipboard, baloo6
+Description: black & white toolkit for KDE Plasma 6
+ Grimoire Linux is one app with a set of black & white desktop tools
+ ("spells") for KDE Plasma 6 on Wayland:
+  * MuraL: customize wallpaper playlists and video wallpapers, lock screen,
+    splash, login, boot, taskbar, colors, icons, fonts and cursor
+  * SightsL: a click-through crosshair overlay above fullscreen games
+  * VaultL: a file manager that keeps Downloads tidy, with undo
+  * OptimizeL: speed tweaks as on/off switches that turn back off cleanly
+  * SystemL: a system monitor with graphs, processes, services and alerts
+  * TerminalL, ShotL, FocusL and NetL: a terminal, screenshots and screen
+    recording, a focus timer and a network monitor
+ .
+ Anything that needs root asks through pkexec and a whitelisted helper.
+ There is no telemetry.

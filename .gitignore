@@ -10,3 +10,6 @@ CLAUDE.local.md
 
 # Parallel work (git worktrees) lives inside the repo, never as sibling folders
 .worktrees/
+
+# Packages built by packaging/build-deb.sh
+dist/

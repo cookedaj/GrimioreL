@@ -4,6 +4,7 @@
 # background alerts (the timer):  grimoire-systeml alerts check|test|enable|disable|status
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONSAFEPATH=1       # never import a grimoire/ folder from the current directory instead
 if [ "${1:-}" = alerts ]; then
     shift
     exec python3 -m grimoire.spells.systeml.alerts "$@"

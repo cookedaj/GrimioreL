@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- AppStream data for software centers (Discover, GNOME Software). packaging/stage.sh fills in @VERSION@ and @DATE@. -->
+<component type="desktop-application">
+  <id>io.github.cookedaj.grimoire_linux</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Grimoire Linux</name>
+  <summary>A black &amp; white toolkit for KDE Plasma 6</summary>
+  <developer id="io.github.cookedaj">
+    <name>cookedaj</name>
+  </developer>
+  <description>
+    <p>
+      Grimoire Linux is one app with a set of black &amp; white desktop tools ("spells") for KDE Plasma 6 on Wayland:
+    </p>
+    <ul>
+      <li>MuraL: customize wallpaper playlists and video wallpapers, lock screen, splash, login, boot, taskbar, colors, icons, fonts and cursor, with a community store</li>
+      <li>SightsL: a click-through crosshair overlay above every window and fullscreen game</li>
+      <li>VaultL: a file manager that keeps Downloads tidy, with undo and a real Trash</li>
+      <li>OptimizeL: speed tweaks as on/off switches that survive restarts and turn back off cleanly</li>
+      <li>SystemL: a system monitor with live graphs, processes, per-app history, services and alerts</li>
+      <li>TerminalL, ShotL, FocusL and NetL: a terminal, screenshots and recording, a focus timer and a network monitor</li>
+    </ul>
+    <p>No telemetry: it only goes online when you ask it to, or to check GitHub for updates.</p>
+  </description>
+  <launchable type="desktop-id">grimoire.desktop</launchable>
+  <url type="homepage">https://github.com/cookedaj/grimoire-linux</url>
+  <url type="bugtracker">https://github.com/cookedaj/grimoire-linux/issues</url>
+  <url type="vcs-browser">https://github.com/cookedaj/grimoire-linux</url>
+  <categories>
+    <category>Utility</category>
+    <category>Settings</category>
+  </categories>
+  <keywords>
+    <keyword>KDE Plasma customization</keyword>
+    <keyword>ricing</keyword>
+    <keyword>crosshair overlay</keyword>
+    <keyword>system monitor</keyword>
+    <keyword>file manager</keyword>
+    <keyword>Kubuntu</keyword>
+  </keywords>
+  <screenshots>
+    <screenshot type="default">
+      <caption>The hub: every spell on one page</caption>
+      <image>https://raw.githubusercontent.com/cookedaj/grimoire-linux/main/docs/screenshots/hub.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>MuraL customizes every screen</caption>
+      <image>https://raw.githubusercontent.com/cookedaj/grimoire-linux/main/docs/screenshots/mural.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>SystemL, the system monitor</caption>
+      <image>https://raw.githubusercontent.com/cookedaj/grimoire-linux/main/docs/screenshots/systeml.png</image>
+    </screenshot>
+  </screenshots>
+  <requires>
+    <display_length compare="ge">1000</display_length>
+  </requires>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="@VERSION@" date="@DATE@"/>
+  </releases>
+</component>
