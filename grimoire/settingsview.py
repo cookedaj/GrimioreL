@@ -408,8 +408,9 @@ class BackupPanel(QWidget):
         if not path:
             return
         dest = Path(path)
-        if dest.suffix != backup.SUFFIX:
-            dest = dest.with_name(dest.name + backup.SUFFIX)
+        if dest.suffix != backup.SUFFIX:                 # the dialog only confirmed overwriting the name as typed
+            from grimoire.fsutil import free_name
+            dest = free_name(dest.with_name(dest.name + backup.SUFFIX))
         lib = self.library.isChecked()
         self.report("Saving…", False)
         run(lambda: backup.export(dest, lib),
