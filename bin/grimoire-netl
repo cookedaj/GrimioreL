@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# NetL in its own window:          grimoire-netl
+# usage history (the timer):       grimoire-netl usage record|enable|disable|status|show
+DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+export PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}"
+if [ "${1:-}" = usage ]; then
+    shift
+    exec python3 -m grimoire.spells.netl.usage "$@"
+fi
+exec python3 -m grimoire.standalone netl

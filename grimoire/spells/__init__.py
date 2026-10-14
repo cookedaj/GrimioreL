@@ -121,3 +121,17 @@ def _focusl_status() -> str:
 SPELLS.append(Spell("focusl", "FocusL", "A focus timer in rounds with breaks: Do Not Disturb, no crosshair and your "
                     "distracting apps and sites kept away while you focus, plus your streak and stats",
                     _focusl, "focus", _focusl_status))
+
+
+def _netl():
+    from grimoire.spells.netl.page import NetLPage
+    return NetLPage()
+
+
+def _netl_status() -> str:
+    from grimoire.spells.netl.probe import status_line
+    return status_line()
+
+
+SPELLS.append(Spell("netl", "NetL", "Your network: live traffic per interface and per app, connections, Wi-Fi and "
+                    "VPN switches, and daily and monthly usage", _netl, "net", _netl_status))

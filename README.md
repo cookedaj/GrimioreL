@@ -11,6 +11,7 @@ One app, one look: a slim icon rail, monochrome line icons, and every spell buil
 | **OptimizeL** | Scans the PC and lays out ~24 speed tweaks as on/off switches, grouped by power, memory (zram, earlyoom), storage & boot, network (BBR), services, startup apps, desktop and gaming. Every switch is written to persistent config, so it survives restarts, and turning it off restores exactly what was there. Also lists what's already set the fast way. |
 | **SystemL** | A system monitor in place of KDE System Monitor. Live graphs for CPU (and every core), memory, swap, disk, network, GPU, temperatures and load; a process list with search, sorting, a tree view, end/force quit, pause and priority; per-app history (what was busy an hour, a day or a week ago) and the top offenders right now; systemd services (system and yours) with start, stop, restart, boot on/off and logs; startup apps; disks with usage and live read/write; and background alerts (a desktop notification when memory, CPU/GPU temperature, a disk's free space or a stuck app crosses the line you set, even while SystemL is closed). Quick actions empty swap, restart the Plasma desktop and jump to OptimizeL. |
 | **TerminalL** | A terminal in Grimoire's black & white. Your own shell on a real PTY in tabs that split side by side or top and bottom; full 16/256/true color as programs ask for it, Unicode and wide characters, mouse support for apps like htop and vim, scrollback with search, Ctrl+Shift+C/V and middle-click paste, Ctrl+= / Ctrl+- zoom, profiles (font, size, cursor, scrollback), a palette of saved commands (Ctrl+Shift+P), and new tabs right in VaultL's folder. |
+| **NetL** | A network monitor with quick controls. Live download/upload graphs (all traffic and per interface), addresses, gateway and DNS, and on-demand checks (public IP, ping to the gateway or 1.1.1.1; nothing is sent until you press). Per-app bandwidth from the kernel's own TCP counters (no root; UDP such as QUIC and games shows as not attributed), a filterable connection list with lazy host names and End app, Wi-Fi networks with scan and connect (passwords never go on a command line), Wi-Fi and airplane-mode switches and a switch per VPN, and daily/monthly usage per interface and per app, recorded by an optional 5-minute user timer. |
 
 ## Requirements
 
@@ -136,6 +137,7 @@ grimoire/            the app (PySide6)
   spells/optimizel/  OptimizeL tweak catalog, root helper, page
   spells/systeml/    SystemL readings, graphs, per-app history, actions, alerts, root helper, page
   spells/terminall/  TerminalL screen state (pyte), PTY sessions, keys, terminal view, page
+  spells/netl/       NetL readings, NetworkManager controls, usage recorder/timer, page and panels
 plasma/              the MuraL wallpaper plugin
 bin/                 launchers
 install.sh           copies the app into ~/.local/share/grimoire/app and links it in
