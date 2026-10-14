@@ -79,7 +79,8 @@ def install(sid: str):
     for d in (cmd.parent, entry.parent, icon.parent):
         d.mkdir(parents=True, exist_ok=True)
     src = BIN / f"grimoire-{sid}"
-    src.chmod(0o755)
+    if not os.access(src, os.X_OK):                   # a package's root-owned copy is executable but not ours to chmod
+        src.chmod(0o755)
     if cmd.is_symlink() or not cmd.exists():          # never replace a real file someone put there
         cmd.unlink(missing_ok=True)
         cmd.symlink_to(src)
