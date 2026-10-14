@@ -164,8 +164,7 @@ class Session:
         c = store._read(store.CONTROL, None)
         if not isinstance(c, dict) or c.get("id") == self._control_id:
             return
-        self._control_id = c.get("id")
-        store.CONTROL.unlink(missing_ok=True)
+        self._control_id = c.get("id")                      # not unlinked: a command sent just now would go too
         cmd = c.get("cmd")
         log(f"command: {cmd}")
         if cmd == "pause":
