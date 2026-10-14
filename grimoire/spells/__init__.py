@@ -94,3 +94,17 @@ SPELLS = [
     Spell("systeml", "SystemL", "Your system monitor: live graphs, processes, per-app history, services, startup "
           "apps, disks and background alerts", _systeml, "system", _systeml_status),
 ]
+
+
+def _netl():
+    from grimoire.spells.netl.page import NetLPage
+    return NetLPage()
+
+
+def _netl_status() -> str:
+    from grimoire.spells.netl.probe import status_line
+    return status_line()
+
+
+SPELLS.append(Spell("netl", "NetL", "Your network: live traffic per interface and per app, connections, Wi-Fi and "
+                    "VPN switches, and daily and monthly usage", _netl, "net", _netl_status))

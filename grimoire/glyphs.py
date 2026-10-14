@@ -191,6 +191,19 @@ def _draw(name: str, p: QPainter):
         path.closeSubpath(); p.drawPath(path)
         path = QPainterPath(QPointF(10, 19.5)); path.quadTo(12, 21.5, 14, 19.5); p.drawPath(path)
         p.drawLine(QPointF(12, 3), QPointF(12, 4.6))
+    elif name == "net":                                    # traffic: an arrow down beside an arrow up
+        p.drawLine(QPointF(8, 4), QPointF(8, 19.5))
+        path = QPainterPath(QPointF(4.5, 16)); path.lineTo(8, 19.5); path.lineTo(11.5, 16); p.drawPath(path)
+        p.drawLine(QPointF(16, 20), QPointF(16, 4.5))
+        path = QPainterPath(QPointF(12.5, 8)); path.lineTo(16, 4.5); path.lineTo(19.5, 8); p.drawPath(path)
+    elif name == "wifi":                                   # three arcs over a dot
+        for rad in (3.6, 7.4, 11.2):
+            path = QPainterPath(); path.arcMoveTo(r(12 - rad, 18.5 - rad, rad * 2, rad * 2), 45)
+            path.arcTo(r(12 - rad, 18.5 - rad, rad * 2, rad * 2), 45, 90); p.drawPath(path)
+        p.drawEllipse(QPointF(12, 18.5), 0.9, 0.9)
+    elif name == "link":                                   # two chain links: connections
+        p.drawRoundedRect(r(2.8, 9.2, 10.5, 5.6), 2.8, 2.8)
+        p.drawRoundedRect(r(10.7, 9.2, 10.5, 5.6), 2.8, 2.8)
 
 
 def _pixmap(name: str, color: str, size: int) -> QPixmap:

@@ -25,6 +25,11 @@ for unit in grimoire-tidyl grimoire-systeml-alerts; do              # VaultL's a
     fi
 done
 rm -f "$CONFIG/autostart/grimoire-sightc.desktop" "$CONFIG/autostart/grimoire-tray.desktop"
+if [ -f "$UNITS/grimoire-netl-usage.timer" ]; then                    # NetL's usage recording
+    systemctl --user disable --now grimoire-netl-usage.timer 2>/dev/null || true
+    rm -f "$UNITS/grimoire-netl-usage.timer" "$UNITS/grimoire-netl-usage.service"
+    systemctl --user daemon-reload 2>/dev/null || true
+fi
 
 # commands (only links, never a file someone put there), menu entries and icons Grimoire generated
 for link in "$BIN"/grimoire*; do
