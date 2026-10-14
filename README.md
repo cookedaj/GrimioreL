@@ -16,16 +16,17 @@ One app, one look: a slim icon rail, monochrome line icons, and every spell buil
 
 - KDE Plasma 6 (Wayland is best; tested on Kubuntu 26.04)
 - Python 3.12+ with PySide6 and Pillow, plus layer-shell-qt (SightsL), Qt Multimedia (video wallpapers),
-  ffmpeg (video thumbnails), rsync (installer) and pyte (TerminalL):
+  ffmpeg (video thumbnails), rsync (installer), pyte (TerminalL) and dbus-python (GitHub sign-in's keyring access;
+  preinstalled on Kubuntu):
 
   ```bash
   # Ubuntu / Kubuntu / Debian
   sudo apt install python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick} python3-pil python3-psutil \
-      qml6-module-org-kde-layershell qml6-module-qtmultimedia ffmpeg rsync python3-pyte
+      qml6-module-org-kde-layershell qml6-module-qtmultimedia ffmpeg rsync python3-pyte python3-dbus
   # Fedora
-  sudo dnf install python3-pyside6 python3-pillow python3-psutil layer-shell-qt qt6-qtmultimedia ffmpeg-free rsync python3-pyte
+  sudo dnf install python3-pyside6 python3-pillow python3-psutil layer-shell-qt qt6-qtmultimedia ffmpeg-free rsync python3-pyte python3-dbus
   # Arch / Manjaro / EndeavourOS
-  sudo pacman -S pyside6 python-pillow python-psutil layer-shell-qt qt6-multimedia ffmpeg rsync python-pyte
+  sudo pacman -S pyside6 python-pillow python-psutil layer-shell-qt qt6-multimedia ffmpeg rsync python-pyte python-dbus
   ```
 
 ## Install
@@ -64,10 +65,47 @@ To make VaultL the default file manager: `xdg-mime default grimoire-vaultl.deskt
 Grimoire checks GitHub every few hours (no account needed). When there's a newer version, the version at the foot of
 the rail shows an arrow and the home page says so: **What's new** lists the changes since yours, **Update now**
 downloads and installs it, then **Restart now**. From a terminal: `grimoire update` (or `grimoire update --check` to
-only look). Set `GRIMOIRE_NO_UPDATE_CHECK=1` to stop the automatic check; clicking the version still checks.
+only look). Turn the automatic check off in Settings → General (or set `GRIMOIRE_NO_UPDATE_CHECK=1`); clicking the
+version still checks.
 
 By hand: get the newer version (`git pull` in your clone, or a fresh download) and run `./install.sh` from it again.
 Either way it replaces the installed copy and keeps your settings, timer and autostart.
+
+## Settings
+
+The gear at the foot of the rail opens Settings:
+
+- **Hotkeys**: every Grimoire global shortcut (SightsL's, and any later spell's) plus suggested commands you can bind
+  (open Grimoire, tidy Downloads, ShotL captures when installed…). Click a field and press the keys; it's written
+  straight to KDE's shortcut service and refused if another shortcut already uses that key. **Default** puts it back.
+- **Backup & restore**: all of Grimoire's settings in one `.grimoire-backup` file (wallpapers only if you tick them).
+  Restoring checks the file, shows what would change file by file, and saves a safety backup of your current settings
+  in `~/.local/share/grimoire/backups` first.
+- **GitHub**: sign in with GitHub to back your settings up to a secret gist and restore them on another PC.
+- **General**: automatic update checks, tray icon at login, open Grimoire at login, version.
+
+### Sign-in and backups: threat model
+
+- **No password, no server.** Sign-in is GitHub's OAuth *device flow*: Grimoire shows a code, you approve it on
+  github.com in your own browser. There's no redirect or local web server, so nothing to forge (no CSRF `state`
+  needed), and no client secret exists, in the repo or anywhere else.
+- **Least access.** The token only gets the `gist` scope: it can read and write your gists, nothing else on your
+  account. Revoke it any time at github.com/settings/applications (Sign out links there; GitHub doesn't let an app
+  without a client secret revoke its own token).
+- **Token storage.** Only in the system keyring (Secret Service: KWallet on Plasma), as an item with
+  `application=grimoire, service=github`. Never in a file, a log, an error message or the UI; inside Grimoire it's
+  wrapped so printing it shows `Token(…)`. It crosses the local session bus to the keyring unencrypted ("plain"
+  session), like most keyring clients.
+- **Secret isn't private.** The backup gist is *secret*: unlisted, but anyone who has its link can read it. It holds
+  your Grimoire settings (which can include local file paths such as wallpaper locations), never the token.
+- **Restores are untrusted input**, whether a file or the gist: zip only, size and file-count caps, only known
+  relative paths under Grimoire's config/data folders, no absolute or `..` paths, no links or special files, every
+  file matching the manifest's sha256, JSON that parses; unknown files are ignored and nothing is executed. Machine
+  "undo" state (OptimizeL's originals, store install records) is never backed up or restored. A safety backup is
+  made before anything is written, and each file is replaced atomically.
+- **Network.** All calls run off the UI thread with clear messages for offline, rate limits (GitHub's slow_down and
+  hourly limits are respected) and revoked sign-ins. Only github.com, api.github.com, gist.githubusercontent.com and
+  avatars.githubusercontent.com are contacted.
 
 ## Uninstall
 
@@ -130,6 +168,7 @@ grimoire/            the app (PySide6)
   app.py             window: icon rail + home
   glyphs.py          monochrome line icons drawn in code
   update.py          self-update from GitHub (updateview.py: What's new panel, banner, rail version)
+  settingsview.py    Settings page: hotkeys.py, backup.py, github.py + keystore.py (sign-in), prefs.py
   spells/mural/      MuraL tabs, store, previews, root helper, SDDM theme, splash templates
   spells/sightc/     SightsL overlay + page
   spells/vaultl/     VaultL window, file operations, tidy engine, tidy panels, CLI/timer

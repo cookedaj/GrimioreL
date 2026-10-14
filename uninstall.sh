@@ -24,7 +24,7 @@ for unit in grimoire-tidyl grimoire-systeml-alerts; do              # VaultL's a
         systemctl --user daemon-reload 2>/dev/null || true
     fi
 done
-rm -f "$CONFIG/autostart/grimoire-sightc.desktop" "$CONFIG/autostart/grimoire-tray.desktop"
+rm -f "$CONFIG/autostart/grimoire-sightc.desktop" "$CONFIG/autostart/grimoire-tray.desktop" "$CONFIG/autostart/grimoire.desktop"
 
 # commands (only links, never a file someone put there), menu entries and icons Grimoire generated
 for link in "$BIN"/grimoire*; do

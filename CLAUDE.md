@@ -58,6 +58,14 @@ Self-update: install.sh records the source commit in `app/INSTALLED.json` (`GRIM
 the checkout's HEAD); `grimoire/update.py` compares it with GitHub main (API answers cached in CACHE, 60 req/h limit),
 downloads codeload's tarball, extracts it defensively and runs its install.sh; `updateview.py` is the hub's UI and
 `grimoire update [--check]` the CLI. Test it with HOME/XDG dirs in a sandbox, never against the real install.
+Settings (gear at the foot of the rail): `settingsview.py` lays out Qt-free modules: `hotkeys.py` (KGlobalAccel via
+busctl through a swappable `BUS`; commands bind as hidden `grimoire-hotkey-<id>.desktop` components with `_launch`;
+conflicts checked against allShortcutInfos), `backup.py` (`.grimoire-backup` zip + manifest; strict `inspect()`, safety
+backup in `DATA/backups`, atomic writes; allowlist in `RULES`/`EXCLUDE`), `prefs.py` (`settings.json`: auto_update,
+gist_id; open-at-login autostart), `github.py` (device flow + gists, `HTTP` swappable, `Token` hides itself),
+`github_app.py` (`GITHUB_CLIENT_ID`, env `GRIMOIRE_GITHUB_CLIENT_ID`), `keystore.py` (Secret Service over dbus-python;
+PySide6 QtDBus can't marshal a{ss}/(oayays)). Test hotkey writes with a stub `BUS`, never the real KGlobalAccel; test
+the keyring only with throwaway attributes you delete. Threat model: README "Sign-in and backups".
 Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); `uv` is available for side tools.
 
 ## Git
