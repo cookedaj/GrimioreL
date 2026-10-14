@@ -64,10 +64,26 @@ class DeviceCode:
 
 
 # ---------------------------------------------------------------- HTTP
+class _Redirects(urllib.request.HTTPRedirectHandler):
+    """urllib keeps every header on a redirect, to any host and even to http://; the token only follows one that
+    stays on the same host over https."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None:
+            old, to = urllib.parse.urlparse(req.full_url), urllib.parse.urlparse(new.full_url)
+            if to.scheme != "https" or to.hostname != old.hostname:
+                new.remove_header("Authorization")
+        return new
+
+
+_OPENER = urllib.request.build_opener(_Redirects)
+
+
 def _urllib(method: str, url: str, headers: dict, body: bytes | None) -> tuple[int, dict, bytes]:
     req = urllib.request.Request(url, data=body, method=method, headers={"User-Agent": UA, **headers})
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with _OPENER.open(req, timeout=30) as r:
             return r.status, dict(r.headers), r.read(MAX_BODY + 1)
     except urllib.error.HTTPError as e:
         try:
