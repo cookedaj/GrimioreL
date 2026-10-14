@@ -115,6 +115,7 @@ class ScreenTab(QWidget):
         self._designs = self.designs()
         self.applied = saved.get("design")
         self._gen = 0                                   # bumps on every change; stale renders are dropped
+        self._big_seq = 0                               # bumps per big preview: only the newest one is shown
         self._big_image: QImage | None = None
         self._sig = _Signals()
         self._sig.image.connect(self._on_image)
@@ -275,6 +276,9 @@ class ScreenTab(QWidget):
         return self._designs[max(0, min(self.gallery.currentRow(), len(self._designs) - 1))]
 
     def _submit(self, slot: str, fn):
+        if slot == "big":                    # picking A then B quickly: A's slower render must not land last
+            self._big_seq += 1
+            slot = f"big{self._big_seq}"
         gen, sig = self._gen, self._sig
 
         def work():
@@ -303,9 +307,11 @@ class ScreenTab(QWidget):
         return community_preview(d.id, 640, 360) if d.id.startswith("store:") else self.thumbnail(d, opts)
 
     def _on_image(self, gen: int, slot: str, img: QImage):
-        if gen != self._gen or img.isNull() or (slot != "big" and int(slot) >= self.gallery.count()):
+        big = slot.startswith("big")
+        stale = slot != f"big{self._big_seq}" if big else int(slot) >= self.gallery.count()
+        if gen != self._gen or img.isNull() or stale:
             return
-        if slot == "big":
+        if big:
             self._big_image = img
             self._show_big()
         else:
