@@ -121,6 +121,7 @@ class ProcModel(QAbstractItemModel):
         if q:
             keep = {p for p, n in nodes.items() if q in n.row["name"].lower() or q in n.row["cmd"].lower()
                     or q == str(p) or q in probe.app_name(n.row).lower()}
+        self.shown = len(nodes) if keep is None else len(keep)
         top = []
         if self.tree:
             for n in nodes.values():
@@ -310,7 +311,7 @@ class ProcPanel(QWidget):
             started = time.strftime("%b %d %H:%M", time.localtime(r["started"]))
             self.info.setText(f"{r['name']} · PID {r['pid']} · started {started}" + (f" · {r['exe']}" if r["exe"] else ""))
         else:
-            self.info.setText(f"{len(self.model.rows)} processes")
+            self.info.setText(f"{getattr(self.model, 'shown', len(self.model.rows))} processes")
 
     def _filter(self, text):
         self.model.query = text
