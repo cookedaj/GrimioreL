@@ -15,10 +15,14 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow
 
+from grimoire.paths import DATA
 from grimoire.spells import SPELLS
 
 _app = None
-BIN = Path(__file__).resolve().parent.parent / "bin"
+# launchers point at the installed copy (install.sh puts it in ~/.local/share/grimoire/app), so they keep working
+# when the download is moved or deleted; a checkout that was never installed links to itself
+INSTALLED = DATA / "app" / "bin"
+BIN = INSTALLED if (INSTALLED / "grimoire").is_file() else Path(__file__).resolve().parent.parent / "bin"
 # extra desktop-entry lines; FileL is also the default folder handler
 EXTRA = {"filel": {"GenericName": "File Manager", "Categories": "Utility;System;FileTools;FileManager;",
                    "MimeType": "inode/directory;"}}

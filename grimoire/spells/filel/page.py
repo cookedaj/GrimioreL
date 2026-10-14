@@ -26,7 +26,7 @@ from grimoire.spells.filel import ops
 IMAGE_EXT = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".avif", ".tif", ".tiff", ".svg"}
 TEXT_EXT = {".txt", ".md", ".py", ".lua", ".luau", ".json", ".toml", ".yaml", ".yml", ".sh", ".ini", ".cfg",
             ".conf", ".log", ".csv", ".qml", ".js", ".ts", ".rs", ".c", ".h", ".cpp", ".html", ".css", ".xml"}
-PLACES = [("Home", "home", "~"), ("Desktop", "desktop", "~/Desktop"), ("Repo", "terminal", "~/Desktop/Repo"),
+PLACES = [("Home", "home", "~"), ("Desktop", "desktop", "~/Desktop"), ("Repos", "terminal", "~/Desktop/Repos"),
           ("Documents", "document", "~/Documents"), ("Downloads", "store", "~/Downloads"),
           ("Pictures", "mural", "~/Pictures"), ("Videos", "video", "~/Videos"), ("Music", "music", "~/Music"),
           ("Trash", "trash", str(ops.TRASH_FILES))]
@@ -189,7 +189,7 @@ class FileLPage(QWidget):
         self.places.setIconSize(QSize(18, 18))
         for name, icon, path in PLACES:
             p = Path(path).expanduser()
-            if p.exists() or name == "Trash":
+            if p.exists() or name == "Trash":            # e.g. no Repos folder: no shortcut
                 it = QListWidgetItem(glyph(icon, 18), name)
                 it.setData(Qt.ItemDataRole.UserRole, str(p))
                 self.places.addItem(it)

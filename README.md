@@ -13,31 +13,60 @@ One app, one look: a slim icon rail, monochrome line icons, and every spell buil
 
 ## Requirements
 
-- KDE Plasma 6 (Wayland) — tested on Kubuntu 26.04
-- Python 3.12+ with PySide6 (Ubuntu/Kubuntu packages):
+- KDE Plasma 6 (Wayland is best; tested on Kubuntu 26.04)
+- Python 3.12+ with PySide6 and Pillow, plus layer-shell-qt (SightsL), Qt Multimedia (video wallpapers),
+  ffmpeg (video thumbnails) and rsync (installer):
+
   ```bash
-  sudo apt install python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick} python3-pil
+  # Ubuntu / Kubuntu / Debian
+  sudo apt install python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick} python3-pil \
+      qml6-module-org-kde-layershell qml6-module-qtmultimedia ffmpeg rsync
+  # Fedora
+  sudo dnf install python3-pyside6 python3-pillow layer-shell-qt qt6-qtmultimedia ffmpeg-free rsync
+  # Arch / Manjaro / EndeavourOS
+  sudo pacman -S pyside6 python-pillow layer-shell-qt qt6-multimedia ffmpeg rsync
   ```
-- `layer-shell-qt` (for SightsL) and `ffmpeg` (video thumbnails)
 
 ## Install
 
+Download Grimoire anywhere (git clone or the ZIP from GitHub), then run its installer:
+
 ```bash
-git clone https://github.com/cookedaj/Grimoire.git
-cd Grimoire
-./install.sh          # links launchers into ~/.local/bin, adds the app-menu entry, links the wallpaper plugin
+git clone https://github.com/cookedaj/GrimioreL.git
+cd GrimioreL
+./install.sh          # add --all to also put every spell in the app menu
 grimoire              # or open "Grimoire" from the app menu
 ```
 
-Every spell also runs as its own app: press **Install** on its card on the home page (or run
-`./install.sh --all`) to add it to the app menu, or run `grimoire-mural`, `grimoire-sightc`, `grimoire-tidyl`,
-`grimoire-filel` directly.
+The installer needs no sudo. It copies the app into `~/.local/share/grimoire/app`, links the commands into
+`~/.local/bin`, adds the app-menu entries and copies the MuraL wallpaper plugin into Plasma. Everything runs
+from that copy, so you can move or delete the download afterwards. If `grimoire` isn't found in a terminal,
+add `~/.local/bin` to your `PATH` (or log out and back in).
+
+Every spell also runs as its own app: press **Install** on its card on the home page (or use `./install.sh --all`),
+or run `grimoire-mural`, `grimoire-sightc`, `grimoire-tidyl`, `grimoire-filel`, `grimoire-optimizel` directly.
 
 Command-line helpers: `grimoire-sightc on|off|toggle|next`, `grimoire-tidyl run|undo|enable|disable|status`,
 `grimoire-filel [folder]`.
 
 To make FileL the default file manager: `xdg-mime default grimoire-filel.desktop inode/directory`
 (switch back any time in System Settings → Default Applications → File manager).
+
+## Upgrade
+
+Get the newer version (`git pull` in your clone, or a fresh download) and run `./install.sh` from it again.
+It replaces the installed copy and keeps your settings, timer and autostart.
+
+## Uninstall
+
+```bash
+~/.local/share/grimoire/app/uninstall.sh            # keeps your settings for a later install
+~/.local/share/grimoire/app/uninstall.sh --purge    # also moves settings, logs and cache to the Trash
+```
+
+This removes the app, its commands and menu entries, the wallpaper plugin, TidyL's timer and SightsL's autostart.
+Looks and tweaks you applied stay as they are, so turn off MuraL themes and OptimizeL switches in Grimoire first
+if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/share/grimoire`.
 
 ## How it works
 
@@ -74,6 +103,8 @@ grimoire/            the app (PySide6)
   spells/optimizel/  OptimizeL tweak catalog, root helper, page
 plasma/              the MuraL wallpaper plugin
 bin/                 launchers
+install.sh           copies the app into ~/.local/share/grimoire/app and links it in
+uninstall.sh         removes it again (--purge also clears settings)
 ```
 
 Personal project; artwork you add (wallpapers, community themes) belongs to its creators and isn't part of this repo.

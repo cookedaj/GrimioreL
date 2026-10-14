@@ -40,10 +40,13 @@ status)`). Folder names stay as-is when display names change (e.g. SightsL lives
 - Qt signals carrying sizes/large numbers: use `object`, not `int` (32-bit overflow).
 
 ## Install / run
-`./install.sh` links `bin/*` into `~/.local/bin`, installs desktop entries and the MuraL wallpaper plugin.
+`./install.sh` copies the app (rsync, no `.git`) into `~/.local/share/grimoire/app`, links its `bin/*` into
+`~/.local/bin`, writes desktop entries and copies the MuraL wallpaper plugin; re-running it from a newer checkout
+upgrades. Nothing installed may point into the clone (public repo: it must work from any download location), so
+after editing code, re-run `./install.sh` to see it in the menu apps. `uninstall.sh [--purge]` undoes it.
 Run `grimoire [spell-id]`, `grimoire-filel [folder]`, `grimoire-sightc on|off|next`, `grimoire-tidyl run`.
 Standalone spells: `grimoire/standalone.py` opens any spell in its own window and writes its launcher (command link,
-glyph icon, menu entry); a spell gets an Install button on its home card once `bin/grimoire-<id>` exists (no args
+glyph icon, menu entry; links target the installed copy when there is one); a spell gets an Install button on its home card once `bin/grimoire-<id>` exists (no args
 opens the window). `./install.sh --all` installs every launcher; plain `./install.sh` refreshes installed ones.
 Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); `uv` is available for side tools.
 

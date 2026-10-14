@@ -205,8 +205,11 @@ SKIP_DIRS = {".cache", ".local/share/Trash", ".var", "snap", ".local/share/flatp
 SKIP_NAMES = {".git", "node_modules", "__pycache__"}    # skipped at any depth
 
 
-def _walk(root: Path):
+def _walk(root: Path, skip_repos=False):
     for dirpath, dirnames, filenames in os.walk(root):
+        if skip_repos and ".git" in dirnames + filenames:     # a git repo or worktree (.git is a file there)
+            dirnames[:] = []
+            continue
         rel = os.path.relpath(dirpath, HOME)
         dirnames[:] = [d for d in dirnames if d not in SKIP_NAMES
                        and os.path.normpath(os.path.join(rel, d)) not in SKIP_DIRS]
@@ -239,9 +242,7 @@ def duplicates(roots=("~/Downloads", "~/Documents", "~/Pictures", "~/Videos", "~
         root = expand(r)
         if not root.is_dir():
             continue
-        for p in _walk(root):
-            if "Desktop/Repo" in str(p):
-                continue                      # code repos legitimately repeat files (worktrees etc.)
+        for p in _walk(root, skip_repos=True):   # code repos legitimately repeat files (worktrees etc.)
             try:
                 size = p.stat().st_size
             except OSError:

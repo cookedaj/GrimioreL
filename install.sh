@@ -1,32 +1,55 @@
 #!/usr/bin/env bash
-# Install Grimoire for the current user (no sudo). Re-run any time; it only (re)creates links.
-#   - links the launcher into ~/.local/bin
-#   - adds an app-menu entry, plus FileL's (each spell's Install button on the home page adds its own;
-#     ./install.sh --all adds every spell's launcher)
-#   - links the MuraL wallpaper plugin into Plasma
-# Requires (apt): python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick} python3-pil
+# Install Grimoire for the current user (no sudo). Run it from wherever you downloaded Grimoire; run it again from a
+# newer download to upgrade. Afterwards the download can be moved or deleted.
+#   - copies the app into ~/.local/share/grimoire/app (everything runs from there)
+#   - links the commands into ~/.local/bin and adds the app-menu entry, plus FileL's (each spell's Install button
+#     on the home page adds its own; ./install.sh --all adds every spell's launcher)
+#   - copies the MuraL wallpaper plugin into Plasma
+# Settings stay in ~/.config/grimoire and ~/.local/share/grimoire; ./uninstall.sh removes the app again.
 set -euo pipefail
-DIR="$(cd "$(dirname "$0")" && pwd)"
+SRC="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+APP="$DATA/grimoire/app"
+BIN="$HOME/.local/bin"
+SKIP=(--exclude .git --exclude __pycache__ --exclude '*.pyc' --exclude .ENV --exclude CLAUDE.local.md --exclude .claude)
 
 python3 -c "import PySide6.QtWidgets, PIL" 2>/dev/null || {
-    echo "PySide6 or Pillow missing. Run:"
-    echo "  sudo apt install python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets python3-pyside6.qtsvg python3-pyside6.qtdbus python3-pyside6.qtqml python3-pyside6.qtquick python3-pil"
+    echo "PySide6 or Pillow is missing; see \"Requirements\" in README.md for your distro's packages."
     exit 1
 }
 
-chmod +x "$DIR"/bin/grimoire*
-mkdir -p ~/.local/bin ~/.local/share/applications ~/.local/share/plasma/wallpapers ~/.local/share/icons/hicolor/scalable/apps
-for cmd in "$DIR"/bin/grimoire*; do ln -sfn "$cmd" ~/.local/bin/"$(basename "$cmd")"; done
-ln -sfn "$DIR/plasma/com.cookedaj.grimoire.mural" ~/.local/share/plasma/wallpapers/com.cookedaj.grimoire.mural
-cp "$DIR/grimoire/assets/clover5.svg" ~/.local/share/icons/hicolor/scalable/apps/grimoire.svg
+# 1. the app itself (skipped when this script is the installed copy, e.g. to refresh the links)
+if [ "$SRC" != "$APP" ]; then
+    mkdir -p "$APP"
+    if command -v rsync >/dev/null; then
+        rsync -a --delete "${SKIP[@]}" "$SRC/" "$APP/"
+    else
+        find "$APP" -mindepth 1 -delete
+        tar -C "$SRC" "${SKIP[@]}" -cf - . | tar -C "$APP" -xf -
+    fi
+fi
+chmod +x "$APP"/bin/grimoire* "$APP"/*.sh
 
-cat > ~/.local/share/applications/grimoire.desktop <<EOF
+# 2. commands: point every grimoire* link at the installed copy; drop links an old install left dangling
+mkdir -p "$BIN" "$DATA/applications" "$DATA/plasma/wallpapers" "$DATA/icons/hicolor/scalable/apps"
+for cmd in "$APP"/bin/grimoire*; do ln -sfn "$cmd" "$BIN/$(basename "$cmd")"; done
+for link in "$BIN"/grimoire*; do
+    if [ -L "$link" ] && [ ! -e "$link" ]; then rm -f "$link"; fi
+done
+
+# 3. the wallpaper plugin, copied so Plasma doesn't depend on the download
+PLUGIN="$DATA/plasma/wallpapers/com.cookedaj.grimoire.mural"
+rm -rf "$PLUGIN"
+cp -r "$APP/plasma/com.cookedaj.grimoire.mural" "$PLUGIN"
+cp "$APP/grimoire/assets/clover5.svg" "$DATA/icons/hicolor/scalable/apps/grimoire.svg"
+
+cat > "$DATA/applications/grimoire.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Grimoire
 GenericName=Personal tools
 Comment=Your spells: MuraL wallpapers and more
-Exec=$HOME/.local/bin/grimoire %u
+Exec=$BIN/grimoire %u
 Icon=grimoire
 Categories=Utility;Settings;
 StartupWMClass=grimoire
@@ -34,24 +57,28 @@ Actions=mural;sightc;tidyl;optimizel;
 
 [Desktop Action mural]
 Name=MuraL
-Exec=$HOME/.local/bin/grimoire mural
+Exec=$BIN/grimoire mural
 
 [Desktop Action sightc]
 Name=SightsL (crosshair)
-Exec=$HOME/.local/bin/grimoire sightc
+Exec=$BIN/grimoire sightc
 
 [Desktop Action tidyl]
 Name=TidyL
-Exec=$HOME/.local/bin/grimoire tidyl
+Exec=$BIN/grimoire tidyl
 
 [Desktop Action optimizel]
 Name=OptimizeL
-Exec=$HOME/.local/bin/grimoire optimizel
+Exec=$BIN/grimoire optimizel
 EOF
-# standalone spells: FileL always (it's the default folder handler), the rest when installed or with --all
-standalone() { PYTHONPATH="$DIR" QT_QPA_PLATFORM=offscreen python3 -m grimoire.standalone "$@"; }
+
+# 4. standalone spells: FileL always (it's the folder handler), the rest when installed or with --all.
+#    Their menu entries, TidyL's timer and SightsL's autostart all run the ~/.local/bin commands linked above.
+standalone() { PYTHONPATH="$APP" QT_QPA_PLATFORM=offscreen python3 -m grimoire.standalone "$@"; }
 standalone install filel >/dev/null
 standalone refresh
-[ "${1:-}" = "--all" ] && standalone install all
-update-desktop-database ~/.local/share/applications 2>/dev/null || true
-echo "Grimoire installed. Launch it from the app menu or run: grimoire"
+if [ "${1:-}" = "--all" ]; then standalone install all; fi
+update-desktop-database "$DATA/applications" 2>/dev/null || true
+
+case ":$PATH:" in *":$BIN:"*) ;; *) echo "Note: add $BIN to your PATH to run grimoire from a terminal." ;; esac
+echo "Grimoire installed in $APP. Launch it from the app menu or run: grimoire"

@@ -108,7 +108,7 @@ def render(design_id: str, o: dict, w=1280, h=720) -> QImage:
         inner = QRectF(win.x() + 20 + len(left) * gap, win.y(), ww - 40 - (len(left) + len(right)) * gap, title_h)
         align = {"Left": Qt.AlignmentFlag.AlignLeft, "Center": Qt.AlignmentFlag.AlignHCenter,
                  "Right": Qt.AlignmentFlag.AlignRight}[o["align"]]
-        p.drawText(inner, align | Qt.AlignmentFlag.AlignVCenter, "Konsole — ~/Desktop/Repo" if active else "Dolphin")
+        p.drawText(inner, align | Qt.AlignmentFlag.AlignVCenter, "Konsole — ~/Projects" if active else "Dolphin")
         if o["outline"] != "Off":
             alpha = {"Low": 40, "Medium": 80, "High": 130}[o["outline"]]
             p.setPen(QColor(255, 255, 255, alpha))

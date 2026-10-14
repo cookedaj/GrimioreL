@@ -115,8 +115,8 @@ def _prompt_text(style: str) -> list[tuple[str, int]]:
     if style == "Clover":
         return [("♣", -2), (" Repo › ", -1)]
     if style == "Two-line":
-        return [("~/Desktop/Repo", 8), ("\n❯ ", -1)]
-    return [("you@grimoire", 2), (":", -1), ("~/Desktop/Repo", 4), ("$ ", -1)]
+        return [("~/Projects", 8), ("\n❯ ", -1)]
+    return [("you@grimoire", 2), (":", -1), ("~/Projects", 4), ("$ ", -1)]
 
 
 def render(pid: str, o: dict, w=1280, h=720) -> QImage:
