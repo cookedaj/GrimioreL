@@ -294,7 +294,7 @@ class TidyPanel(QWidget):
     def _toggle_auto(self):
         try:
             cli.set_auto(not cli.timer_active())
-        except subprocess.CalledProcessError as e:
+        except (OSError, subprocess.CalledProcessError) as e:      # OSError: no systemctl, or a settings write
             QMessageBox.warning(self, "VaultL", f"Couldn't change the background timer: {e}")
         self.refresh_auto()
         self.changed.emit()

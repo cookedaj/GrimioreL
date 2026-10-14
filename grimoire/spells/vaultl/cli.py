@@ -37,9 +37,10 @@ WantedBy=timers.target
 
 def set_auto(on: bool):
     """Install/enable (or disable) the systemd user timer and remember the choice."""
-    s = tidy.Settings.load()
-    s.auto = on
-    s.save()
+    try:
+        tidy.edit(lambda s: setattr(s, "auto", on))    # under the lock, and never over an unreadable file
+    except ValueError:
+        pass                                            # its rules stay for the user to fix; run() won't use them
     if on:
         UNITS.mkdir(parents=True, exist_ok=True)
         (UNITS / "grimoire-tidyl.service").write_text(SERVICE.format(exe=unit_command("grimoire-tidyl")))
