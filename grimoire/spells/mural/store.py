@@ -84,14 +84,21 @@ class Item:
 
 
 # ---------------------------------------------------------------- networking
+def _web(url: str) -> str:
+    """Store data is untrusted: only fetch http(s) (urllib would also read file:// URLs off this machine)."""
+    if urllib.parse.urlparse(url).scheme not in ("https", "http"):
+        raise RuntimeError(f"not a web address: {url[:80]}")
+    return url
+
+
 def _get(url: str, timeout=30) -> bytes:
-    req = urllib.request.Request(url, headers=UA)
+    req = urllib.request.Request(_web(url), headers=UA)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
 
 
 def _download(url: str, dest: Path, limit=MAX_ARCHIVE):
-    req = urllib.request.Request(url, headers=UA)
+    req = urllib.request.Request(_web(url), headers=UA)
     with urllib.request.urlopen(req, timeout=60) as r, open(dest, "wb") as f:
         total = 0
         while chunk := r.read(1 << 16):
@@ -162,7 +169,7 @@ def thumbnail(url: str) -> Path | None:
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
             path.write_bytes(_get(url, timeout=20))
-        except OSError:
+        except (OSError, RuntimeError):
             return None
     return path
 
@@ -296,7 +303,8 @@ def _copytree(src: Path, dst: Path, item: str):
 def install(cat: Category, item: Item, to_bw: bool = False) -> list[dict]:
     """Download + install one store item. Returns the registry entries created."""
     url, fname = _pick_file(item)
-    work = DOWNLOADS / item.id
+    item_slug = _slug(item.id) or "item"           # ids come from the store: never let one be a path
+    work = DOWNLOADS / item_slug
     if work.exists():
         shutil.rmtree(work)
     work.mkdir(parents=True)
@@ -316,7 +324,7 @@ def install(cat: Category, item: Item, to_bw: bool = False) -> list[dict]:
     k = cat.kind
 
     def folder(d: Path) -> str:               # a flat archive's root is the work folder, not a theme name
-        return d.name if d != root else (_slug(item.name) or item.id)
+        return d.name if d != root else (_slug(item.name) or item_slug)
     if k == "colors":
         for f in root.rglob("*.colors"):
             dst = HOME / ".local/share/color-schemes" / f.name
@@ -363,7 +371,7 @@ def install(cat: Category, item: Item, to_bw: bool = False) -> list[dict]:
             add(item.name, ident, dst)
     elif k == "sddm":
         for d in _dirs_with(root, lambda d: (d / "metadata.desktop").is_file() and (d / "Main.qml").is_file()):
-            ident = _slug(folder(d)) or item.id
+            ident = _slug(folder(d)) or item_slug
             dst = STAGED / "sddm" / ident
             _copytree(d, dst, item.id)
             add(_ini(d / "metadata.desktop").get("SddmGreeterTheme", "Name", fallback=d.name), ident, dst)
@@ -379,7 +387,7 @@ def install(cat: Category, item: Item, to_bw: bool = False) -> list[dict]:
                   and p.stat().st_size > 50_000]
         images.sort(key=lambda p: p.stat().st_size, reverse=True)
         for p in images[:1]:                       # the largest image = the actual wallpaper
-            dst = library.LIBRARY / f"{item.id}{p.suffix.lower()}"
+            dst = library.LIBRARY / f"{item_slug}{p.suffix.lower()}"
             if to_bw:
                 from PIL import Image, ImageOps
                 ImageOps.autocontrast(Image.open(p).convert("L"), cutoff=1).save(dst.with_suffix(".png"))

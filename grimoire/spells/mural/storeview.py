@@ -113,7 +113,7 @@ class StoreView(QWidget):
         info.addWidget(self.d_meta)
         dl.addLayout(info, 1)
         self.page_btn = QPushButton("Store page")
-        self.page_btn.clicked.connect(lambda: self._current() and webbrowser.open(self._current().page))
+        self.page_btn.clicked.connect(self._open_page)
         self.install_btn = QPushButton("Install")
         self.install_btn.setObjectName("Primary")
         self.install_btn.setMinimumWidth(130)
@@ -121,6 +121,7 @@ class StoreView(QWidget):
         dl.addWidget(self.page_btn)
         dl.addWidget(self.install_btn)
         lay.addWidget(detail)
+        self._busy = False
         self._select(-1)
         self._loaded = False
 
@@ -180,7 +181,7 @@ class StoreView(QWidget):
 
     def _select(self, _row):
         it = self._current()
-        self.install_btn.setEnabled(it is not None)
+        self.install_btn.setEnabled(it is not None and not self._busy)
         self.page_btn.setEnabled(bool(it and it.page))
         if not it:
             return
@@ -190,10 +191,16 @@ class StoreView(QWidget):
         self.d_meta.setText("  ·  ".join(b for b in bits if b))
         self.install_btn.setText("Uninstall" if store.is_installed(it.id) else "Install")
 
+    def _open_page(self):
+        it = self._current()
+        if it and it.page.startswith(("https://", "http://")):     # store data: never hand xdg-open a file or app URL
+            webbrowser.open(it.page)
+
     def _install(self):
         it, cat, bw, sig = self._current(), self.cat(), self.bw.isChecked(), self._sig
-        if not it:
+        if not it or self._busy:          # a double-click while one runs would race it in the same work folder
             return
+        self._busy = True
         self.install_btn.setEnabled(False)
         removing = store.is_installed(it.id)
         self.install_btn.setText("Removing…" if removing else "Installing…")
@@ -213,6 +220,7 @@ class StoreView(QWidget):
         POOL.start(Job(work, lambda r: sig.installed.emit(*r)))
 
     def _on_installed(self, ok, msg):
+        self._busy = False
         self.d_meta.setText(msg)
         row = self.grid.currentRow()
         if ok and 0 <= row < len(self.items):
