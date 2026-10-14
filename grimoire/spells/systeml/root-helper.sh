@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # System-wide actions for Grimoire SystemL. Run through pkexec (asks for your password):
 #   root-helper.sh signal PID TERM|KILL|STOP|CONT     signal a process you don't own
 #   root-helper.sh renice PID NICE                    set a process's priority (-20..19)

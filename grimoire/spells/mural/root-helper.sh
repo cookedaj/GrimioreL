@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # System-wide installs for Grimoire MuraL. Run through pkexec (asks for your password):
 #   root-helper.sh sddm STAGED_THEME_DIR        install the login theme + make it current
 #   root-helper.sh sddm-restore                 put the previous login theme back

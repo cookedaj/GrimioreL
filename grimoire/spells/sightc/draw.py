@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Crosshair drawing, shared by the Grimoire preview and the in-game overlay.
 
 Lines are placed on whole pixels: with an odd thickness the center moves to the middle of a pixel, so a 1 px

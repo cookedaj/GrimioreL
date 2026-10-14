@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Colors tab: 5 black & white KDE color schemes, applied to every window and app.
 
 Generates ~/.local/share/color-schemes/Grimoire<Name>.colors and applies it with plasma-apply-colorscheme.

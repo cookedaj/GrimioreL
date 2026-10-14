@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SystemL's Alerts panel: the background-alerts switch (installs the timer), each alert's switch and threshold,
 a test notification and the recent alerts. Settings save as you change them; the timer reads them on its next pass.
 """

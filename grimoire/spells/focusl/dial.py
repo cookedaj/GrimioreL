@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """FocusL's two drawings: the countdown ring and the focus-minutes bar chart, both in black and white."""
 import datetime as dt
 

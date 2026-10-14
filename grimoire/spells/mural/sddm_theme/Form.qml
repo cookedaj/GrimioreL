@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Username + password line. Enter logs in; a wrong password shakes the line.
 import QtQuick
 

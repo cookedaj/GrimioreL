@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Remove Grimoire Linux for the current user (no sudo). With a distro package, run this before removing the package
 # to clear the per-user parts (timers, autostart, menu entries a spell's Install button added).
 #   ./uninstall.sh            remove the app, its commands, menu entries, wallpaper plugin, auto-tidy and alert

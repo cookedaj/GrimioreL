@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Grimoire hub window: a slim icon rail on the left, a home page of spells, one page per spell."""
 import sys
 from datetime import datetime

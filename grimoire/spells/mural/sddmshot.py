@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Render the Grimoire SDDM theme offscreen with a fake SDDM backend (for MuraL's previews).
 
     QT_QPA_PLATFORM=offscreen python3 -m grimoire.spells.mural.sddmshot THEME_DIR OUT.png

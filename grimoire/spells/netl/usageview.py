@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """NetL's Usage history panel: bytes per day or per month as black & white bars and a table, per interface or all
 of them, the apps NetL measured in the picked day or month, and the switch for background recording (the timer
 in usage.py).

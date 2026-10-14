@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Thin wrappers around KDE's command-line tools, shared by the MuraL tabs. Failures raise RuntimeError,
 which a tab's Apply shows as "Couldn't apply: …"."""
 import subprocess

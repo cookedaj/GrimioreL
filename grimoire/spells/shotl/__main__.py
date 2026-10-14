@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """ShotL from a terminal or a hotkey.
 
     grimoire-shotl                                          open the window

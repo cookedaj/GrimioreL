@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Black & white look shared by every spell."""
 
 from grimoire.paths import ASSETS

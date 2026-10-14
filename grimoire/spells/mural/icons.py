@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Icons tab: the icon theme. Your current theme plus community icon packs; previews draw real icons
 from each theme's own files (following its Inherits= chain for anything it doesn't include).
 """

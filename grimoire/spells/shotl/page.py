@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """ShotL page: capture buttons and options on top, then either the gallery of past shots and recordings or the
 editor. Grimoire's window hides while a capture is taken, so it's never in the picture."""
 import hashlib

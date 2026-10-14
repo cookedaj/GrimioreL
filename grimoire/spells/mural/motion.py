@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Motion tab: animation speed + which KWin effects run (open/close, minimize, desktop switch,
 wobbly windows, translucency, blur). Effects are loaded/unloaded live and saved to kwinrc.
 """

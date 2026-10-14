@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """MuraL Looks: the whole desktop look (every tab's applied design + options, and the wallpaper playlist) saved
 as a named snapshot, and put back in one go through each tab's own apply().
 

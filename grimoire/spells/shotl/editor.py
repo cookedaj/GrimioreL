@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The editor: crop, arrows, boxes, freehand, text, pixelate and highlight, in white, grays or black only.
 Edits are a list of operations replayed over the untouched capture, so undo/redo is just moving along that list and
 nothing is baked in until you save or copy. A crop is an operation too; later marks use the cropped coordinates."""

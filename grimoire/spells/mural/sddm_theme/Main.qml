@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Grimoire login (SDDM). Layout and look come from theme.conf, written by Grimoire → MuraL → Login.
 import QtQuick
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Grimoire-wide preferences (CONFIG/settings.json) and the "open Grimoire at login" autostart entry.
 
 Kept tiny and Qt-free: the hub, the Settings page and backups all read it. Never holds a secret: the GitHub

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Grimoire's own monochrome line icons, drawn with QPainter so they stay black & white whatever icon
 theme is installed. glyph(name) -> QIcon with a gray normal state and a white active/checked state.
 """

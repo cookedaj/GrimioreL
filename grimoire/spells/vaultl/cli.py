@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """VaultL's auto-tidy from the command line and the systemd timer.
 
     grimoire-vaultl tidy [run|preview|undo|enable|disable|status]     (grimoire-tidyl <cmd> still works)

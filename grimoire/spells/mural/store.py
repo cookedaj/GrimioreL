@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """MuraL community store: top items from the KDE Store (OCS API) and Wallhaven, installed on demand.
 
 Nothing is downloaded until you press Install. Archives are extracted defensively (no absolute paths,

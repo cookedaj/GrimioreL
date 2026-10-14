@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The current desktop wallpaper, scaled for previews (shared by the interface tabs)."""
 from functools import lru_cache
 

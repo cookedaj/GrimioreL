@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """NetL page: network monitor and quick controls. Overview (live traffic, addresses, on-demand checks), per-app
 bandwidth, connections, Wi-Fi & VPN, and usage history, each a panel picked from the list on the left.
 

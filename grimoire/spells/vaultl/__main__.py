@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """VaultL as its own window (this is what opens when you open a folder anywhere).
 
     python3 -m grimoire.spells.vaultl [folder or file or file:// URL]

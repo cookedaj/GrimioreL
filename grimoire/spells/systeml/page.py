@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SystemL page: Grimoire's system monitor (in place of KDE System Monitor). Overview graphs, processes, per-app
 history, services, startup apps, disks and background alerts, each a panel picked from the list on the left.
 

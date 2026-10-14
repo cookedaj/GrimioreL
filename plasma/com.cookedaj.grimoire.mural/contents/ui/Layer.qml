@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // One wallpaper layer: shows an image or a looping video. main.qml crossfades two of these.
 import QtQuick
 import QtMultimedia

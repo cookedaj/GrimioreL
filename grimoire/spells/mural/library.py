@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """MuraL library: a folder of wallpapers (images + videos) and their cached thumbnails."""
 import hashlib
 import shutil

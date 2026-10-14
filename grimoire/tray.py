@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Grimoire's tray icon: live CPU/RAM in the icon, and quick spells in its menu (crosshair, tidy Downloads,
 performance mode, open any spell). Plasma shows it through StatusNotifierItem, so the menu uses the Plasma theme.
 

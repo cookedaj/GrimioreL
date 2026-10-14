@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """VaultL's tidy engine (TidyL before the merge): sort ~/Downloads by file type, send stale installers and
 archives to the Trash, undo moves, and find big files and duplicates.
 

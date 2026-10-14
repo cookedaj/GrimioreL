@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Site blocking for Grimoire FocusL. Run through pkexec (asks for your password):
 #   root-helper.sh block DOMAIN...    point these sites (and their www.) at 0.0.0.0 / :: in a marked block in /etc/hosts
 #   root-helper.sh unblock            remove that block again

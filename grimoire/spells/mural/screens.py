@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Shared UI for MuraL's design tabs: a big live preview, a gallery of design cards,
 adjustments + Apply on the right. Previews and Apply run on worker threads so the window never freezes.
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """NetL's usage history: bytes per interface per day and per month, plus per app where NetL measured it.
 
     grimoire-netl usage [record|enable|disable|status|show]

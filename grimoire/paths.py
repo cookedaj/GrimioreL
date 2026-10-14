@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Where Grimoire keeps its files (XDG locations)."""
 import os
 from pathlib import Path

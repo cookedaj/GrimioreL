@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Per-app history: while SystemL is open, each snapshot's processes are summed per app; once a minute the
 averages and peaks go into a small file, kept for a week, so "what was eating my CPU an hour ago" has an
 answer. Only the busiest apps of each minute are kept, so the file stays small.

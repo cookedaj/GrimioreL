@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Registry of spells (tools) shown in Grimoire. Add new spells to SPELLS."""
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable

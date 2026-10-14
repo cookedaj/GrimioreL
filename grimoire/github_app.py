@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Grimoire's GitHub OAuth App, for "Sign in with GitHub" (device flow).
 
 The client ID is public by design (device flow has no client secret, so there is none to keep here or anywhere

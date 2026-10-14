@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SystemL's actions and lists: process signals and priority, systemd services, startup apps, disks.
 
 Anything you own is done directly; anything that needs root goes through root-helper.sh with pkexec (one

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """OptimizeL's catalog: every tweak on this PC as an on/off switch, the "already good" checks, and applying a
 batch of changes. The kinds of tweak (and how each one is detected, persisted and undone) live in kinds.py.
 

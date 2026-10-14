@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Splash tab: Grimoire's animated splash (shown after login), installed as a Plasma look-and-feel package,
 plus community splash screens.
 

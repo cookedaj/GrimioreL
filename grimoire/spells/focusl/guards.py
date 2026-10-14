@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """What a focus session switches on, and how each piece is put back.
 
 Do Not Disturb: Plasma 6's notification server (org.freedesktop.Notifications) has Inhibit/UnInhibit, the same call

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """TerminalL settings: profiles (font, size, cursor shape, scrollback) and saved palette commands, as JSON."""
 import json
 

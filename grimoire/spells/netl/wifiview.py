@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """NetL's Wi-Fi & VPN panel: the current connection, Wi-Fi and airplane-mode switches, networks in range (scanned
 only when you press Scan), joining one (a black & white password prompt; see nm.py for how the key travels), and
 a switch per VPN. Everything goes through NetworkManager as you, like Plasma's network applet.

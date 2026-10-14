@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """MuraL → Desktop tab: pick wallpapers from the library, build a playlist, apply to the desktop.
 
 Selection order is playlist order: click wallpapers in the order you want them to play.

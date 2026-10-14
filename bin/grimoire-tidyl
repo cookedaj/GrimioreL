@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # TidyL is now part of VaultL; kept because the auto-tidy timer calls it:
 #   grimoire-tidyl                                          open VaultL
 #   grimoire-tidyl run|preview|undo|enable|disable|status   same as grimoire-vaultl tidy <cmd>

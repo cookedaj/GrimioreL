@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Performance mode: a few OptimizeL tweaks for gaming switched on together (from the tray), and off again.
 
 It only flips tweaks that are off right now, and remembers exactly which ones it flipped, so "off" turns back

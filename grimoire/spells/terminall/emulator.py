@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Screen state on top of pyte, plus what pyte leaves out and real programs need: scrollback, the alternate screen
 (vim, less and htop give the shell back when they quit), xterm-style resizing, REP/SU/SD/DECSCUSR, answers to the
 program's queries, and a filter for sequences pyte would otherwise print as text or choke on.

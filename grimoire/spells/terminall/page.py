@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """TerminalL's window: tabs of terminals that split side by side or top and bottom, a search bar for the
 scrollback, a profile picker and a command palette.
 

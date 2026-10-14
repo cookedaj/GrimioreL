@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SystemL's drawing: live line graphs, usage bars and the per-core grid, all in black and white.
 The first series is a solid white line over a faint fill; a second one is a dashed gray line."""
 from collections import deque

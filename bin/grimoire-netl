@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # NetL in its own window:          grimoire-netl
 # usage history (the timer):       grimoire-netl usage record|enable|disable|status|show
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"

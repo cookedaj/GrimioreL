@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """NetL's quick controls: NetworkManager through nmcli (current connection, Wi-Fi networks, radios, VPNs).
 
 Everything here is a short nmcli call meant for a worker thread. Reads use nmcli's terse output (-t: fields split

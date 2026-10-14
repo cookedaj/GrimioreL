@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """File helpers shared by several spells: safe names, the Trash, and friendly sizes/paths."""
 import subprocess
 from pathlib import Path

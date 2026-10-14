@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # System-wide tweaks for Grimoire OptimizeL. Run through pkexec (one password prompt per batch):
 #   root-helper.sh on ID [on|off ID ...]
 # Every ID is a fixed, whitelisted change below: a file Grimoire owns (its name has "grimoire-optimizel" in it)

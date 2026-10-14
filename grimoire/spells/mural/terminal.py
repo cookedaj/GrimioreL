@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Terminal tab: Konsole in black & white. a grayscale palette (Ink) + font, size, transparency, padding,
 cursor, and an optional shell prompt.
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """One-click profiles: each is a plan of switches to flip, worked out from the latest scan, shown to you before
 anything happens and then applied in one batch (one password prompt).
 

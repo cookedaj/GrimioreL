@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """MuraL: everything you look at, in one place. A side menu of sections, each opening a tab.
 
 SCREENS  desktop, lock screen, splash, login, boot

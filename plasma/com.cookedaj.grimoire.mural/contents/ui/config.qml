@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Shown in "Configure Desktop and Wallpaper". MuraL is managed from the Grimoire app.
 import QtQuick
 import QtQuick.Controls as QQC2

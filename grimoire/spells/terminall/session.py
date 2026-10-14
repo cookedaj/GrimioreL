@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """One shell on a real PTY. The shell is started through util-linux `setsid -c`, which gives it its own session with
 the PTY as controlling terminal (job control works) without forking the multi-threaded Qt process in Python.
 Output is read with a QSocketNotifier as it arrives; writes that don't fit go out when the PTY can take them.

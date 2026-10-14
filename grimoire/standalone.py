@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Spells as their own apps: one window per spell, plus its own launcher in the app menu.
 
     python3 -m grimoire.standalone <spell-id>          open that spell in its own window

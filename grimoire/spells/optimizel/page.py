@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """OptimizeL page: a scan of this PC as grouped on/off switches (with search and tier filters), one-click profiles,
 and a Benchmark tab to measure before and after. Flipping switches only stages changes; the bar at the bottom
 applies them in one go (one password prompt for all the system ones). A profile shows its plan first."""

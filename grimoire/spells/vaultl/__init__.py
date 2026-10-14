@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """VaultL: Grimoire's file manager with tidying built in (FileL and TidyL merged).
 
 page.py is the window (places, drives, the file views, and a Tidy section in the sidebar), tidyview.py the tidy

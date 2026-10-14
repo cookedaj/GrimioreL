@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """A minimal Secret Service client (org.freedesktop.secrets: KWallet on Plasma, GNOME Keyring elsewhere) for the
 one secret Grimoire keeps: the GitHub sign-in token.
 

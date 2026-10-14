@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Taking stills. Spectacle's background mode is the backend: it's KWin's authorized screenshot client, so it grabs
 any screen or the active window without a permission prompt in ~0.4 s. Regions and single monitors are cut from a
 full grab (region.py draws the selector), so they look the same whatever Spectacle's own settings are. Without

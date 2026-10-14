@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """xdg-desktop-portal calls: Screenshot (the fallback when Spectacle is missing) and ScreenCast (what the recorder
 records). Each portal call returns a Request whose Response signal carries the answer, so these helpers wait for it
 on a private GLib loop and read synchronously."""

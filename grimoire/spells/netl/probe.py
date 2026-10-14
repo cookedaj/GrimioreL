@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """NetL's readings: interface counters and rates, addresses, gateway and DNS, sockets from `ss`, per-app TCP
 bandwidth, and the on-demand checks (latency, public IP).
 

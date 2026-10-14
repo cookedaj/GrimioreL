@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """ShotL's settings and history: where shots go, what happens after a capture, and the list of past captures.
 No Qt here, so the status line and the recorder process can read it cheaply."""
 import json

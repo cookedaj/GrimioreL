@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """ShotL's own line icons (editor tools and capture modes), drawn like grimoire/glyphs.py: gray normally, white when
 active. Kept here so the shared glyphs.py only gains the spell's rail icon."""
 from functools import lru_cache

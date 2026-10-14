@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """MuraL → Looks tab: saved snapshots of the whole desktop look, restored in one click.
 The work is in looks.py; this is the list on the left and the details + buttons on the right.
 """

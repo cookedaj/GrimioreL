@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Key presses → the bytes an xterm-256color program expects (arrows, Home/End, PgUp/PgDn, F-keys, Ctrl and Alt
 combinations, with xterm's modifier parameter when Shift/Alt/Ctrl are held)."""
 from PySide6.QtCore import Qt

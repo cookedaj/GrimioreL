@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SystemL's readings: one Sampler per page takes a snapshot of the whole machine (CPU, cores, memory, swap,
 disk and network rates, GPU, temperatures, processes). Snapshots run on a worker thread; rates are worked
 out from the previous snapshot, so the first one reads zero.

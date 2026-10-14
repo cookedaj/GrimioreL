@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """TerminalL as its own window.
 
     python3 -m grimoire.spells.terminall [folder or file:// URL]     open with a tab in that folder

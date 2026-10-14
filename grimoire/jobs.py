@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Background work for the UI: run a function on a worker thread, hand its result to a callback."""
 import traceback
 

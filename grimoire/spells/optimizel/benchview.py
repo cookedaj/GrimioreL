@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """OptimizeL's Benchmark tab: run the quick tests, compare the latest run with a baseline, boot-time history."""
 import subprocess
 import time

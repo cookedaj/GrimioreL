@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Sign in with GitHub (OAuth device flow) and settings backups in a secret gist.
 
 Device flow: Grimoire asks GitHub for a short user code, you type it at github.com/login/device in your browser

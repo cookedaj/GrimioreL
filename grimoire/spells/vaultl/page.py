@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """VaultL: Grimoire's file manager with tidying built in (FileL and TidyL merged). Same system underneath
 (the local filesystem via QFileSystemModel, the freedesktop Trash via gio, KDE-compatible clipboard), new black &
 white interface. The sidebar's Tidy section swaps the file views for the tidy panels (tidyview.py), and the

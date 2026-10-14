@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The kinds of tweak OptimizeL has, and the small readers they use. Every tweak is an on/off switch whose "on"
 lives in persistent config (sysctl.d, tmpfiles.d, udev rules, modprobe.d, GRUB, systemd, KDE config, autostart
 overrides) so it survives restarts, and whose "off" restores exactly what was there before. System tweaks are

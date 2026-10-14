@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """One terminal on screen: paints pyte's cells with the colors the program asked for (Grimoire's black & white rule
 is for its own chrome; default text is white on black), plus scrollback, selection, search hits, the cursor and
 mouse reporting. Output arrives in bursts, so repaints are batched on a short timer.

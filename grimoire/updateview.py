@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The hub's side of self-update: a checker that works off the UI thread, the home banner, the rail's version button
 and the What's new panel. The work itself is in update.py."""
 import sys

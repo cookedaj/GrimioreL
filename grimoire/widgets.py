@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Small widgets shared by several spells."""
 from PySide6.QtCore import QRectF, QSize, Qt, QVariantAnimation
 from PySide6.QtGui import QColor, QPainter

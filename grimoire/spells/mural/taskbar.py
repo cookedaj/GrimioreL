@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Taskbar tab: the Dock panel layout + a black & white look (a generated Plasma Style, see plasmastyle.py),
 height, opacity, floating and auto-hide.
 

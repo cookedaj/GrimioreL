@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """VaultL file operations. Everything goes through the normal Linux/KDE system: plain filesystem calls for
 copy/move/rename, and `gio` for the Trash (the same freedesktop Trash Dolphin uses)."""
 import os

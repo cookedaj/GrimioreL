@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SightsL overlay process: draws the crosshair above everything and redraws when sightc.json changes.
 
     python3 -m grimoire.spells.sightc.overlay [run|on|off|toggle|status]

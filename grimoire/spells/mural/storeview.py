@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The Community view inside a MuraL tab: browse the top 100 of a store category and install items."""
 import webbrowser
 

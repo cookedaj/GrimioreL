@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SightsL page: design the crosshair with a live preview; every change goes straight to the overlay."""
 import subprocess
 

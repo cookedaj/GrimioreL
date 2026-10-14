@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """TerminalL: Grimoire's terminal emulator. Tabs and splits around real PTY sessions running your shell.
 
 emulator.py keeps the screen state (pyte plus scrollback, alternate screen and a few xterm extras), session.py owns

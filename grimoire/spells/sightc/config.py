@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SightsL settings: one crosshair, saved as JSON. The overlay watches this file and redraws live.
 
 Saved profiles live next to it in sightc-profiles.json; built-in presets are in PRESETS below.

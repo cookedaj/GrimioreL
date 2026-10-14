@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """SystemL's background alerts: a desktop notification when memory, a CPU/GPU temperature, a disk's free space or a
 stuck app crosses its threshold, even while SystemL is closed.
 

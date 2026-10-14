@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """VaultL's tidy panels (TidyL before the merge): sorting rules, activity log with undo, big files and
 duplicates. The sidebar's Tidy section picks the panel; the header carries Tidy now, Undo and the auto-tidy switch.
 Tidy now always shows its preview first: nothing moves until the user has seen (and can untick) every file."""

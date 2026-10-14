@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Fonts tab: a system font pairing (interface + monospace), size, title weight, hinting, sub-pixel.
 Written to kdeglobals with --notify, so running KDE apps update immediately.
 """

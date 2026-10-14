@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # VaultL, Grimoire's file manager with tidying built in:
 #   grimoire-vaultl [folder]                                      open a window
 #   grimoire-vaultl tidy run|preview|undo|enable|disable|status   auto-tidy from the terminal (and the timer)

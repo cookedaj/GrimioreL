@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """FocusL's files: settings, the live session state the background runner writes (and the page and CLI read), the
 control file they use to steer it, and the history behind the stats. No Qt, so the runner stays light.
 """

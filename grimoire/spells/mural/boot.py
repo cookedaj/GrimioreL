@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Boot tab: Grimoire's Plymouth boot animation, built on Plymouth's stock "two-step" engine
 (the one Kubuntu's own logo uses), so password prompts and messages keep working.
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Lock screen tab: black & white backgrounds for Plasma's lock screen (Negative or any
 library image), with dim, blur and clock options.
 

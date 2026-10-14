@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The hub's Settings page (the gear at the foot of the rail): hotkeys, backup & restore, GitHub account, general.
 
 The work lives in Qt-free modules (hotkeys.py, backup.py, github.py, keystore.py, prefs.py); this file only lays it

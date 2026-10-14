@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """OptimizeL's before/after benchmark: about 30 s of small, fixed tests that need no root, so a tweak's effect can
 be measured instead of guessed. Results are kept with timestamps (and which tweaks were on) in
 DATA/optimizel-bench.json; the page compares the latest run with a baseline run.

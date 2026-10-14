@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Login tab: the SDDM login screen, Grimoire's own "grimoire" theme (Card layout) plus
 community themes.
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Self-update from the public repo: compare the installed copy's commit with GitHub's main, list what's new, and
 reinstall from main's tarball.
 

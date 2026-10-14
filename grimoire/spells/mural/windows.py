@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Windows tab: title bar button layouts + Breeze decoration options (button size, title alignment,
 border, outline, hide title bar when maximized). Applies live through KWin.
 """

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """The region picker: a frozen copy of each screen, dimmed, where you drag out the part to keep. One frameless
 fullscreen window per monitor, all sharing one selection; Enter or releasing the mouse confirms, Esc cancels, Space
 or a double click takes the whole screen under the pointer."""

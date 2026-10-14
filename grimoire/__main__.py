@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import sys
 
 if sys.argv[1:2] in (["update"], ["--update"]):     # `grimoire update` works without a display

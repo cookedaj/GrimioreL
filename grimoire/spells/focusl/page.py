@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """FocusL page: the countdown ring with its controls, today's numbers and the last two weeks, and the session
 settings. The timer itself lives in the background runner (runner.py); this page only reads its state file and sends
 it commands, so closing the page or Grimoire never stops a session.

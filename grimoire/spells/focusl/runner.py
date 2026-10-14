@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """FocusL's background runner: one per user, it runs a whole session (focus rounds, short breaks, the long break) by
 itself, so closing Grimoire doesn't stop the timer. It writes focusl-state.json whenever something changes (the page
 counts down from the end time in it) and takes pause/resume/skip/stop from focusl-control.json.

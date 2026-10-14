@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Backup & restore of Grimoire's settings: one .grimoire-backup file (a zip with a manifest.json).
 
 What goes in: the settings JSONs in CONFIG (and MuraL's saved-look thumbnails), the small state JSONs in DATA and,

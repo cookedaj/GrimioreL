@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Cursor tab: black & white cursor themes on this system and from the store, at any size.
 Previews are drawn from the real cursor files (a tiny Xcursor reader), on black and on white.
 """

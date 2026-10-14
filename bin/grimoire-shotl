@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # ShotL: grimoire-shotl opens its window; for hotkeys:
 #   grimoire-shotl region|window|full|screen [--delay N] [--edit|--copy|--save]
 #   grimoire-shotl record [toggle|start|stop|status] [--sound] [--pick]

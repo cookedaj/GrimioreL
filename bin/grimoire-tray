@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Grimoire's tray icon (live CPU/RAM, crosshair, tidy, performance mode, open spells):
 #   grimoire-tray                     start it (one per session)
 #   grimoire-tray autostart on|off    start it at login or not

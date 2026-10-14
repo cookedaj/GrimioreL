@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // Grimoire MuraL: image/video wallpaper with crossfading playlists and fullscreen auto-pause.
 // Configuration is written by the Grimoire app (see contents/config/main.xml for keys).
 import QtQuick

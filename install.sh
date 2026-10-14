@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Install Grimoire Linux for the current user (no sudo). Run it from wherever you downloaded Grimoire; run it again from a
 # newer download to upgrade. Afterwards the download can be moved or deleted. (Distro packages install it system-wide
 # instead: see packaging/.)

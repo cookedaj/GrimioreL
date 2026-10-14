@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // SightsL overlay window: transparent, click-through, centred, in KDE's overlay layer (above fullscreen games).
 // overlay.py sizes it to fit the crosshair, picks the screen (targetScreen) and flips `shown` on the hotkey.
 import QtQuick

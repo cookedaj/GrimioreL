@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Bridge to Plasma: applies MuraL settings to every desktop through plasmashell's scripting API."""
 import json
 from dataclasses import asdict, dataclass, field

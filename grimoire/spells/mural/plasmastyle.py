@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Generates a black & white Plasma Style (the look of the taskbar, popups and tooltips).
 
 Plasma draws panels and popups from 9-slice SVGs (topleft, top, …, center + hint-*-margin + mask-* for blur).

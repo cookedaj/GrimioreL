@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # SystemL in its own window:      grimoire-systeml
 # background alerts (the timer):  grimoire-systeml alerts check|test|enable|disable|status
 DIR="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"

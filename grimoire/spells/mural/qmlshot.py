@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Render a splash QML to a PNG offscreen (used for MuraL's previews).
 
     QT_QPA_PLATFORM=offscreen python3 -m grimoire.spells.mural.qmlshot SPLASH.qml OUT.png [STAGE] [W] [H]

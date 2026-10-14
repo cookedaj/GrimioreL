@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Grimoire's global shortcuts, read and changed through KDE's KGlobalAccel over D-Bus.
 
 Two sorts:

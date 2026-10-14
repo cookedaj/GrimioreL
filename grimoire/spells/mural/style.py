@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Style tab: the Plasma Style (look of the taskbar, menus, popups, tooltips).
 Grimoire's own Onyx plus any community styles installed from the store.
 """

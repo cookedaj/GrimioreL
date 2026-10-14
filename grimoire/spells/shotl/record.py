@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """Screen recording, run as its own small process so recording survives closing the window and a hotkey can stop it.
 
 Backend: the xdg-desktop-portal ScreenCast (KDE asks once which screen or window; "allow restoring" makes later
