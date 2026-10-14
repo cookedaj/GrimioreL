@@ -27,6 +27,8 @@ class Screen(pyte.Screen):
         self.pushed = 0                  # lines ever pushed into history (the view keeps its place with it)
         self.dropped = 0                 # lines that fell off the top of a full history
         self.alt = None                  # the main screen, kept while a program uses the alternate one
+        self.alt_y = 0                   # ...the row its cursor was on
+        self.alt_saved = None            # ...and the cursor ESC [?1049h saved, to restore on the way out
         self.reply = reply
         self.cursor_shape = None         # set by the program (DECSCUSR); None = the profile's
         self.bell_rung = False
@@ -83,30 +85,17 @@ class Screen(pyte.Screen):
 
     def resize(self, lines=None, columns=None):
         """Like xterm: shrinking pushes the top into scrollback only as far as the cursor needs, growing pulls
-        lines back out of it."""
+        lines back out of it. The main screen kept during vim or htop is refitted too, for when they quit."""
         lines, columns = lines or self.lines, columns or self.columns
         if (lines, columns) == (self.lines, self.columns):
             return
-        rows = [self.buffer[y] for y in range(self.lines)]
-        if lines < self.lines:
-            shift = max(0, self.cursor.y - (lines - 1))
-            for row in rows[:shift]:
-                if self.alt is None:
-                    self._push(row)
-            rows = rows[shift:shift + lines]
-            self.cursor.y -= shift
-        elif self.alt is None and self.history:
-            pull = min(lines - self.lines, len(self.history))
-            rows = [self.history.pop() for _ in range(pull)][::-1] + rows
-            self.pushed -= pull
-            self.cursor.y += pull
-        if columns < self.columns:
-            for row in rows:
-                for x in range(columns, self.columns):
-                    row.pop(x, None)
-        self.buffer.clear()
-        for y, row in enumerate(rows):
-            self.buffer[y] = row
+        if self.alt is not None:
+            self.alt, dy = self._fit(self.alt, self.alt_y, lines, columns, history=True)
+            self.alt_y = max(0, min(self.alt_y + dy, lines - 1))
+            if self.alt_saved is not None:
+                self.alt_saved.y = self.alt_y
+        self.buffer, dy = self._fit(self.buffer, self.cursor.y, lines, columns, history=self.alt is None)
+        self.cursor.y += dy
         self.lines, self.columns = lines, columns
         self.tabstops = {t for t in self.tabstops if t < columns} | set(range(8, columns, 8))
         self.cursor.x = min(self.cursor.x, columns)
@@ -114,12 +103,38 @@ class Screen(pyte.Screen):
         self.set_margins()
         self.dirty.update(range(lines))
 
+    def _fit(self, buffer, cursor_y: int, lines: int, columns: int, history: bool):
+        """A buffer cut or grown to lines x columns, and how far its rows moved down."""
+        rows = [buffer[y] for y in range(self.lines)]
+        dy = 0
+        if lines < self.lines:
+            shift = max(0, cursor_y - (lines - 1))
+            if history:
+                for row in rows[:shift]:
+                    self._push(row)
+            rows = rows[shift:shift + lines]
+            dy = -shift
+        elif history and self.history:
+            dy = min(lines - self.lines, len(self.history))
+            rows = [self.history.pop() for _ in range(dy)][::-1] + rows
+            self.pushed -= dy
+        if columns < self.columns:
+            for row in rows:
+                for x in range(columns, self.columns):
+                    row.pop(x, None)
+        out = self._empty_buffer()
+        for y, row in enumerate(rows):
+            out[y] = row
+        return out, dy
+
     # -- alternate screen --------------------------------------------------------------------------------------
     def set_mode(self, *modes, **kwargs):
         if kwargs.get("private") and ALT & set(modes) and self.alt is None:
+            self.alt_saved = None
             if 1049 in modes:
                 self.save_cursor()
-            self.alt = self.buffer
+                self.alt_saved = self.savepoints[-1].cursor      # moved along when the window is resized
+            self.alt, self.alt_y = self.buffer, self.cursor.y
             self.buffer = self._empty_buffer()
             self.dirty.update(range(self.lines))
         super().set_mode(*modes, **kwargs)
