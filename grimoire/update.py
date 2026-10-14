@@ -21,14 +21,14 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from grimoire import __version__
-from grimoire.paths import CACHE, DATA
+from grimoire import NAME, __version__
+from grimoire.paths import CACHE, DATA, packaged
 
-REPO = "cookedaj/GrimioreL"
+REPO = "cookedaj/grimoire-linux"   # GitHub redirects the old cookedaj/GrimioreL
 BRANCH = "main"
 API = f"https://api.github.com/repos/{REPO}"
 TARBALL = f"https://codeload.github.com/{REPO}/tar.gz/{{sha}}"
-UA = {"User-Agent": f"Grimoire/{__version__} (self-update)", "Accept": "application/vnd.github+json"}
+UA = {"User-Agent": f"Grimoire-Linux/{__version__} (self-update)", "Accept": "application/vnd.github+json"}
 APP = DATA / "app"                     # the installed copy (install.sh's $APP)
 STATE = CACHE / "update.json"          # last check, ETag, cached comparisons
 STAGING = CACHE / "update"             # download + extraction; wiped after each update
@@ -76,6 +76,15 @@ def installed() -> dict:
 
 def is_installed() -> bool:
     return (APP / "bin" / "grimoire").is_file()
+
+
+def managed() -> bool:
+    """A distro package (.deb, AUR) runs this copy and there's no per-user install: updates come from the package
+    manager, so Grimoire never installs a second copy over it."""
+    return bool(packaged()) and not is_installed()
+
+
+PACKAGE_NOTE = "Installed from a distro package: updates come with your system updates (apt, pacman…)."
 
 
 def _sha_ok(sha: str) -> bool:
@@ -281,6 +290,8 @@ def _extract(archive: Path, dest: Path) -> Path:
 def apply(sha: str, date: str = "", progress=lambda text: None) -> dict:
     """Download main at sha and install it over the installed copy with its own install.sh.
     Returns the new INSTALLED.json. Only one update runs at a time."""
+    if managed():
+        raise UpdateError(PACKAGE_NOTE)
     if not _sha_ok(sha):
         raise UpdateError("No valid version to update to; check for updates first.")
     STAGING.mkdir(parents=True, exist_ok=True)
@@ -350,8 +361,11 @@ def cli(argv: list[str]) -> int:
     if argv and argv[0] not in ("--check", "-n"):
         print("usage: grimoire update [--check]")
         return 2
+    if managed():
+        print(PACKAGE_NOTE)
+        return 0
     if not is_installed():
-        print("Grimoire isn't installed (run ./install.sh from a download first); "
+        print(f"{NAME} isn't installed (run ./install.sh from a download first); "
               "a git checkout updates with git pull.")
         return 1
     try:
@@ -365,7 +379,7 @@ def cli(argv: list[str]) -> int:
     if st.note:
         print(st.note)
     if not st.available:
-        print("Grimoire is up to date." if not st.note else "Nothing to update automatically.")
+        print(f"{NAME} is up to date." if not st.note else "Nothing to update automatically.")
         return 0
     print(f"\nWhat's new ({st.total} change{'s' if st.total != 1 else ''}):")
     for c in st.changes:
@@ -379,5 +393,5 @@ def cli(argv: list[str]) -> int:
     except UpdateError as e:
         print(e)
         return 1
-    print(f"Updated to {short(new['sha'])}. Restart Grimoire (and any open spell windows) to use it.")
+    print(f"Updated to {short(new['sha'])}. Restart {NAME} (and any open spell windows) to use it.")
     return 0

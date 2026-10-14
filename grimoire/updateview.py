@@ -8,7 +8,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QApplication, QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea,
                                QToolButton, QVBoxLayout, QWidget)
 
-from grimoire import __version__, update
+from grimoire import NAME, __version__, update
 from grimoire.glyphs import _pixmap
 from grimoire.jobs import POOL, Job
 
@@ -48,7 +48,7 @@ class Updater(QObject):
         Settings → General (or GRIMOIRE_NO_UPDATE_CHECK=1) turns the automatic check off; 'Check for updates'
         still works."""
         from grimoire import prefs
-        if update.is_installed() and prefs.auto_update():
+        if update.is_installed() and not update.managed() and prefs.auto_update():
             self.check()
             self._timer.start()
 
@@ -125,7 +125,7 @@ class VersionButton(QToolButton):
         self.setProperty("avail", on)
         inst = update.installed()
         built = f" · {update.short(inst['sha'])}" if inst.get("sha") != "unknown" else ""
-        self.setToolTip(f"Grimoire v{__version__}{built}\n"
+        self.setToolTip(f"{NAME} v{__version__}{built}\n"
                         + ("Update available: see what's new" if on else "Check for updates"))
         self.style().unpolish(self)
         self.style().polish(self)
@@ -166,7 +166,7 @@ class Banner(QWidget):
         show = self.updater.available and not update.snoozed(st.latest["sha"])
         if show:
             n = st.total
-            self.text.setText("A new version of Grimoire is ready" + (f" · {n} change{'s' * (n != 1)}" if n else ""))
+            self.text.setText(f"A new version of {NAME} is ready" + (f" · {n} change{'s' * (n != 1)}" if n else ""))
         self.setVisible(show)
 
     def _later(self):
@@ -207,7 +207,7 @@ class WhatsNew(QDialog):
     def __init__(self, updater: Updater, parent=None):
         super().__init__(parent)
         self.setObjectName("WhatsNew")
-        self.setWindowTitle("What's new in Grimoire")
+        self.setWindowTitle(f"What's new in {NAME}")
         self.resize(620, 640)
         self.updater = updater
         lay = QVBoxLayout(self)
@@ -251,6 +251,8 @@ class WhatsNew(QDialog):
         self._render()
         if updater.busy:                                  # the launch check is still out
             self.message.setText("Checking GitHub…")
+        elif update.managed():                            # the package manager updates this copy
+            self.again.hide()
         elif updater.status is None:                      # first open with nothing known yet
             self._check(force=False)
 
@@ -281,7 +283,7 @@ class WhatsNew(QDialog):
     def _applied(self, info, error):
         self._render()
         if info is not None:
-            self.message.setText("Updated. Restart Grimoire (and any open spell windows) to use the new version.")
+            self.message.setText(f"Updated. Restart {NAME} (and any open spell windows) to use the new version.")
         else:
             self.message.setText(error)
 
@@ -289,7 +291,7 @@ class WhatsNew(QDialog):
     def _buttons(self, busy=False):
         u = self.updater
         self.again.setEnabled(not busy and not u.updated)
-        self.again.setVisible(not u.updated)
+        self.again.setVisible(not u.updated and not update.managed())
         self.go.setEnabled(not busy and (u.available or u.updated))
         self.go.setText("Restart now" if u.updated else "Update now")
         self.go.setVisible(u.updated or u.available or busy)
@@ -306,9 +308,9 @@ class WhatsNew(QDialog):
         if st is None:
             sha = update.installed()["sha"]
             built = f" · {update.short(sha)}" if sha != "unknown" else ""
-            self.versions.setText(f"Grimoire v{__version__}" + (built if update.is_installed() else
-                                  " · not installed (run ./install.sh; a git checkout updates with git pull)"))
-            self.note.setText("")
+            self.versions.setText(f"{NAME} v{__version__}" + (built if update.is_installed() else "" if update.managed()
+                                  else " · not installed (run ./install.sh; a git checkout updates with git pull)"))
+            self.note.setText(update.PACKAGE_NOTE if update.managed() else "")
         else:
             inst, latest = st.installed, st.latest
 
@@ -319,7 +321,7 @@ class WhatsNew(QDialog):
                 self.versions.setText(f"Now on {ver(inst)}")
             elif not st.available and not st.note:
                 when = f" · checked at {time.strftime('%H:%M', time.localtime(st.checked))}" if st.checked else ""
-                self.versions.setText(f"Grimoire is up to date · {ver(inst)}{when}")
+                self.versions.setText(f"{NAME} is up to date · {ver(inst)}{when}")
             else:
                 self.versions.setText(f"You have {ver(inst)} · latest is {ver(latest)}")
             note = st.note

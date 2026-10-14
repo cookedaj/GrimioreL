@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Remove Grimoire for the current user (no sudo).
+# Remove Grimoire Linux for the current user (no sudo). With a distro package, run this before removing the package
+# to clear the per-user parts (timers, autostart, menu entries a spell's Install button added).
 #   ./uninstall.sh            remove the app, its commands, menu entries, wallpaper plugin, auto-tidy and alert
 #                             timers and SightsL and tray autostart (and stops the tray); keep your settings so a
 #                             later install picks them up
@@ -185,9 +186,9 @@ if [ -n "$PURGE" ]; then
     for d in "$CONFIG/grimoire" "$DATA/grimoire" "$CACHE/grimoire"; do
         if [ -e "$d" ]; then run gio trash "$d" 2>/dev/null || echo "Couldn't move $d to the Trash; remove it by hand."; fi
     done
-    echo "Grimoire removed, settings moved to the Trash."
+    echo "Grimoire Linux removed, settings moved to the Trash."
 else
-    echo "Grimoire removed. Settings kept in $CONFIG/grimoire and $DATA/grimoire (./uninstall.sh --purge clears them)."
+    echo "Grimoire Linux removed. Settings kept in $CONFIG/grimoire and $DATA/grimoire (./uninstall.sh --purge clears them)."
 fi
 if [ -n "$DRY" ]; then echo "(dry run: nothing was changed)"; fi
 echo "If VaultL opened your folders, pick another file manager in System Settings > Default Applications."

@@ -23,7 +23,7 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
-from grimoire.paths import CACHE, DATA, HOME
+from grimoire.paths import CACHE, DATA, HOME, unit_command
 
 FILE = DATA / "netl-usage.json"
 LOCK = CACHE / "netl-usage.lock"
@@ -38,7 +38,7 @@ Description=Grimoire NetL: add up network usage per interface
 
 [Service]
 Type=oneshot
-ExecStart=%h/.local/bin/grimoire-netl usage record
+ExecStart={exe} usage record
 Nice=10
 IOSchedulingClass=idle
 """
@@ -186,7 +186,7 @@ def set_enabled(on: bool):
     """Install and start (or stop) the 5-minute user timer; recording once right away sets the baseline."""
     if on:
         UNITS.mkdir(parents=True, exist_ok=True)
-        (UNITS / f"{UNIT}.service").write_text(SERVICE)
+        (UNITS / f"{UNIT}.service").write_text(SERVICE.format(exe=unit_command("grimoire-netl")))
         (UNITS / f"{UNIT}.timer").write_text(TIMER)
         _systemctl("daemon-reload", check=True)
         _systemctl("enable", "--now", f"{UNIT}.timer", check=True)

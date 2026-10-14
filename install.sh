@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Install Grimoire for the current user (no sudo). Run it from wherever you downloaded Grimoire; run it again from a
-# newer download to upgrade. Afterwards the download can be moved or deleted.
+# Install Grimoire Linux for the current user (no sudo). Run it from wherever you downloaded Grimoire; run it again from a
+# newer download to upgrade. Afterwards the download can be moved or deleted. (Distro packages install it system-wide
+# instead: see packaging/.)
 #   - copies the app into ~/.local/share/grimoire/app (everything runs from there)
 #   - links the commands into ~/.local/bin and adds the app-menu entry, plus VaultL's (each spell's Install button
 #     on the home page adds its own; ./install.sh --all adds every spell's launcher)
@@ -70,9 +71,10 @@ cp "$APP/grimoire/assets/clover5.svg" "$DATA/icons/hicolor/scalable/apps/grimoir
 cat > "$DATA/applications/grimoire.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Grimoire
-GenericName=Personal tools
-Comment=Your spells: MuraL wallpapers and more
+Name=Grimoire Linux
+GenericName=Desktop toolkit
+Comment=Black & white tools for KDE Plasma: customization, crosshair, files, system monitor, terminal and more
+Keywords=grimoire;customize;theme;wallpaper;ricing;crosshair;file manager;system monitor;terminal;screenshot;
 Exec=$BIN/grimoire %u
 Icon=grimoire
 Categories=Utility;Settings;
@@ -108,7 +110,7 @@ EOF
 cat > "$DATA/applications/grimoire-tray.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Grimoire Tray
+Name=Grimoire Linux Tray
 GenericName=Tray icon
 Comment=Live CPU/RAM in the system tray, plus crosshair, tidy and performance mode
 Exec=$BIN/grimoire-tray
@@ -126,4 +128,4 @@ if [ "${1:-}" = "--all" ]; then standalone install all; fi
 update-desktop-database "$DATA/applications" 2>/dev/null || true
 
 case ":$PATH:" in *":$BIN:"*) ;; *) echo "Note: add $BIN to your PATH to run grimoire from a terminal." ;; esac
-echo "Grimoire installed in $APP. Launch it from the app menu or run: grimoire"
+echo "Grimoire Linux installed in $APP. Launch it from the app menu or run: grimoire"

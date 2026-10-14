@@ -16,7 +16,7 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMainWindow
 
-from grimoire.paths import DATA
+from grimoire.paths import DATA, packaged
 from grimoire.spells import SPELLS
 
 _app = None
@@ -24,6 +24,7 @@ _app = None
 # when the download is moved or deleted; a checkout that was never installed links to itself
 INSTALLED = DATA / "app" / "bin"
 BIN = INSTALLED if (INSTALLED / "grimoire").is_file() else Path(__file__).resolve().parent.parent / "bin"
+SYSTEM_APPS = Path("/usr/share/applications")      # a distro package's menu entries
 # extra desktop-entry lines; VaultL is also the default folder handler
 EXTRA = {"vaultl": {"GenericName": "File Manager", "Categories": "Utility;System;FileTools;FileManager;",
                     "MimeType": "inode/directory;"},
@@ -49,7 +50,8 @@ def available(sid: str) -> bool:
 
 
 def installed(sid: str) -> bool:
-    return _paths(sid)[1].exists()
+    """Its menu entry exists: yours, or the one a distro package ships system-wide."""
+    return _paths(sid)[1].exists() or bool(packaged() and (SYSTEM_APPS / f"grimoire-{sid}.desktop").exists())
 
 
 def app_icon(glyph_name: str, size: int = 256) -> QPixmap:
@@ -83,7 +85,7 @@ def install(sid: str):
     global _app
     _app = QApplication.instance() or QApplication([])   # drawing the icon needs an app (CLI use)
     app_icon(spell.icon).save(str(icon))
-    fields = {"Type": "Application", "Name": spell.name, "GenericName": "Grimoire spell", "Comment": spell.tagline,
+    fields = {"Type": "Application", "Name": spell.name, "GenericName": "Grimoire Linux spell", "Comment": spell.tagline,
               "Exec": f"{cmd} %u" if sid in EXTRA else str(cmd), "Icon": f"grimoire-{sid}", "Terminal": "false",
               "Categories": "Utility;", "StartupWMClass": f"grimoire-{sid}"} | EXTRA.get(sid, {})
     entry.write_text("[Desktop Entry]\n" + "".join(f"{k}={v}\n" for k, v in fields.items()))

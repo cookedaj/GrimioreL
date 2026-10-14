@@ -114,7 +114,7 @@ def build(look_id: str, ident: str):
     (dest / "metadata.json").write_text(json.dumps({           # same shape as Plasma's own themes
         "KPlugin": {"Id": ident, "Name": f"Grimoire {look.name}", "Description": "Black & white style from Grimoire MuraL",
                     "Authors": [{"Name": "cookedaj"}], "Category": "", "EnabledByDefault": True,
-                    "License": "GPL-2.0-or-later", "Version": "1.0", "Website": ""},
+                    "License": "GPL-3.0-or-later", "Version": "1.0", "Website": ""},
         "X-Plasma-API": "5.0",
     }, indent=2))
 

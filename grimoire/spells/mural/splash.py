@@ -46,7 +46,7 @@ def build(design_id: str, opts: dict, dest: Path):
     (dest / "metadata.json").write_text(json.dumps({
         "KPackageStructure": "Plasma/LookAndFeel",
         "KPlugin": {"Id": PACKAGE_ID, "Name": "Grimoire", "Description": "Grimoire splash (MuraL)",
-                    "Authors": [{"Name": "cookedaj"}], "License": "GPL-2.0-or-later", "Version": "1.0"},
+                    "Authors": [{"Name": "cookedaj"}], "License": "GPL-3.0-or-later", "Version": "1.0"},
         "X-Plasma-APIVersion": "2",
     }, indent=2))
 

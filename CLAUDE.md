@@ -1,7 +1,10 @@
-# Grimoire — notes for Claude
+# Grimoire Linux — notes for Claude
 
 A black & white suite of desktop tools ("spells") for KDE Plasma 6 (Wayland), written in Python + PySide6.
-Public repo: github.com/cookedaj/Grimoire. Runs on the owner's own Kubuntu 26.04 machine.
+Public repo: github.com/cookedaj/grimoire-linux (old names redirect). Runs on the owner's own Kubuntu 26.04 machine.
+Product name "Grimoire Linux" (`grimoire.NAME`) wherever users see it; the package, commands (`grimoire*`), config
+folders, desktop file ids and app ids keep the short name `grimoire` so existing installs keep working. GPL-3.0-or-later:
+new files start with an `SPDX-License-Identifier: GPL-3.0-or-later` line (after any shebang).
 
 ## Spells
 | Spell | Package | What |
@@ -71,7 +74,7 @@ the keyring only with throwaway attributes you delete. Threat model: README "Sig
 Dependencies are Ubuntu's `python3-pyside6.*` packages (no pip on this system); `uv` is available for side tools.
 
 ## Git
-Branch `main`, push to `origin` (github.com/cookedaj/Grimoire). Commit messages: a short title + bullet body.
+Branch `main`, push to `origin` (github.com/cookedaj/grimoire-linux). Commit messages: a short title + bullet body.
 Parallel work goes in git worktrees under `.worktrees/<name>` (gitignored, skipped by `install.sh`), never as sibling
 folders next to the repo; remove them with `git worktree remove` once merged, keep the branch.
 

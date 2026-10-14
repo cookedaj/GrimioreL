@@ -56,7 +56,7 @@ def set_open_at_login(on: bool):
     f = autostart_file()
     if on:
         f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text("[Desktop Entry]\nType=Application\nName=Grimoire\nComment=Open Grimoire at login\n"
+        f.write_text("[Desktop Entry]\nType=Application\nName=Grimoire Linux\nComment=Open Grimoire Linux at login\n"
                      f"Exec={command('grimoire')}\nIcon=grimoire\nX-KDE-autostart-phase=2\n")
     else:
         f.unlink(missing_ok=True)          # a file Grimoire wrote itself

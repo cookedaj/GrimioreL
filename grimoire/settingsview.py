@@ -11,7 +11,7 @@ from PySide6.QtGui import QDesktopServices, QGuiApplication, QImage, QKeySequenc
 from PySide6.QtWidgets import (QCheckBox, QDialog, QFileDialog, QFrame, QHBoxLayout, QKeySequenceEdit, QLabel,
                                QPushButton, QScrollArea, QStackedWidget, QVBoxLayout, QWidget)
 
-from grimoire import __version__
+from grimoire import NAME, __version__
 from grimoire.glyphs import clover, glyph
 from grimoire.jobs import POOL, Job
 from grimoire.widgets import Switch
@@ -756,7 +756,7 @@ class GeneralPanel(QWidget):
         self.login = Switch()
         self.login.setChecked(prefs.open_at_login())
         self.login.toggled.connect(self._login)
-        lay.addWidget(Row("Open Grimoire at login", "Opens the hub when Plasma starts.", [self.login]))
+        lay.addWidget(Row("Open Grimoire Linux at login", "Opens the hub when Plasma starts.", [self.login]))
         self.status = _label("", "Status")
         self.status.hide()
         lay.addWidget(self.status)
@@ -773,7 +773,7 @@ class GeneralPanel(QWidget):
         al.addWidget(logo)
         col = QVBoxLayout()
         col.setSpacing(2)
-        col.addWidget(_label("Grimoire", "RowTitle"))
+        col.addWidget(_label(NAME, "RowTitle"))
         sha = update.installed().get("sha", "unknown")
         built = f" · {update.short(sha)}" if sha != "unknown" else ""
         col.addWidget(_label(f"Version {__version__}{built} · black & white tools for KDE Plasma", "Muted"))

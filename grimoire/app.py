@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QFrame, QG
                                QMainWindow, QMessageBox, QPushButton, QScrollArea, QStackedWidget, QVBoxLayout,
                                QWidget)
 
-from grimoire import standalone
+from grimoire import NAME, standalone
 from grimoire.glyphs import clover, glyph
 from grimoire.paths import ASSETS
 from grimoire.settingsview import SettingsPage
@@ -182,7 +182,7 @@ class Home(QWidget):
 class Window(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Grimoire")
+        self.setWindowTitle(NAME)
         self.resize(1440, 880)
         self.setMinimumSize(1100, 680)
 
@@ -201,7 +201,7 @@ class Window(QMainWindow):
         logo = QLabel()
         logo.setPixmap(clover(34))
         logo.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        logo.setToolTip("Grimoire")
+        logo.setToolTip(NAME)
         rl.addWidget(logo)
         rl.addSpacing(22)
 
@@ -275,7 +275,7 @@ def style_app(app: QApplication):
 
 def main():
     app = QApplication(sys.argv)
-    app.setApplicationName("Grimoire")
+    app.setApplicationName(NAME)
     app.setDesktopFileName("grimoire")
     style_app(app)
     win = Window()

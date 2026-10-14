@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QAbstractButton, QButtonGroup, QCheckBox, QColorD
                                QGridLayout, QHBoxLayout, QInputDialog, QLabel, QMenu, QMessageBox, QPushButton,
                                QScrollArea, QVBoxLayout, QWidget)
 
-from grimoire.paths import CONFIG, HOME
+from grimoire.paths import CONFIG, HOME, command
 from grimoire.spells.mural import library as mural_library
 from grimoire.spells.sightc import draw, overlay
 from grimoire.spells.sightc.config import (COLORS, LIMITS, PRESETS, STYLES, Crosshair, load_profiles, save_profiles)
@@ -616,6 +616,6 @@ class SightCPage(QWidget):
             AUTOSTART.parent.mkdir(parents=True, exist_ok=True)
             AUTOSTART.write_text(
                 "[Desktop Entry]\nType=Application\nName=Grimoire SightsL\nComment=Crosshair overlay\n"
-                f"Exec={HOME}/.local/bin/grimoire-sightc on\nIcon=grimoire\nX-KDE-autostart-phase=2\n")
+                f"Exec={command('grimoire-sightc')} on\nIcon=grimoire\nX-KDE-autostart-phase=2\n")
         else:
             AUTOSTART.unlink(missing_ok=True)

@@ -22,7 +22,7 @@ import traceback
 
 import psutil
 
-from grimoire.paths import ASSETS, CACHE, CONFIG, DATA, HOME
+from grimoire.paths import ASSETS, CACHE, CONFIG, DATA, HOME, unit_command
 
 SETTINGS = CONFIG / "systeml-alerts.json"
 STATE = CACHE / "systeml-alerts-state.json"
@@ -50,7 +50,7 @@ Description=Grimoire SystemL: check memory, temperatures, disks and stuck apps
 
 [Service]
 Type=oneshot
-ExecStart=%h/.local/bin/grimoire-systeml alerts check
+ExecStart={exe} alerts check
 Nice=10
 IOSchedulingClass=idle
 """
@@ -352,7 +352,7 @@ def set_enabled(on: bool):
     """Install and start (or stop) the systemd user timer."""
     if on:
         UNITS.mkdir(parents=True, exist_ok=True)
-        (UNITS / f"{UNIT}.service").write_text(SERVICE)
+        (UNITS / f"{UNIT}.service").write_text(SERVICE.format(exe=unit_command("grimoire-systeml")))
         (UNITS / f"{UNIT}.timer").write_text(TIMER)
         subprocess.run(["systemctl", "--user", "daemon-reload"], check=True, timeout=30)
         subprocess.run(["systemctl", "--user", "enable", "--now", f"{UNIT}.timer"], check=True, capture_output=True,

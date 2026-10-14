@@ -49,7 +49,7 @@ def _sightsl() -> list[Hotkey]:
 
 
 COMMANDS = [   # id, name, bin name + args; shown only when that command exists in bin/
-    ("open", "Open Grimoire", ("grimoire",)),
+    ("open", "Open Grimoire Linux", ("grimoire",)),
     ("tidy", "Tidy Downloads now", ("grimoire-vaultl", "tidy", "run")),
     ("crosshair", "Show/hide crosshair (start it if it's off)", ("grimoire-sightc", "toggle")),
     ("terminal", "Open TerminalL", ("grimoire-terminall",)),

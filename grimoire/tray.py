@@ -17,8 +17,9 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
-from grimoire import standalone
+from grimoire import NAME
 from grimoire.glyphs import glyph, meter
+from grimoire import paths
 from grimoire.paths import CACHE, CONFIG
 
 SETTINGS = CONFIG / "tray.json"
@@ -28,9 +29,8 @@ TEMP_EVERY = 5               # sensors are read every 5th tick (10 s): they're t
 
 # ---------------------------------------------------------------- launching and autostart
 def command(name: str) -> Path:
-    """The ~/.local/bin link when installed (what autostart entries run), else the copy this runs from."""
-    link = Path.home() / ".local/bin" / name
-    return link if link.exists() else standalone.BIN / name
+    """The ~/.local/bin link when installed (what autostart entries run), else a package's or this copy's command."""
+    return paths.command(name)
 
 
 def launch(name: str, *args: str):
@@ -51,7 +51,7 @@ def set_autostart(on: bool):
     f = autostart_file()
     if on:
         f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text("[Desktop Entry]\nType=Application\nName=Grimoire tray\nComment=Live CPU/RAM and quick spells\n"
+        f.write_text("[Desktop Entry]\nType=Application\nName=Grimoire Linux tray\nComment=Live CPU/RAM and quick spells\n"
                      f"Exec={command('grimoire-tray')}\nIcon=grimoire\nX-KDE-autostart-phase=2\n")
     else:
         f.unlink(missing_ok=True)          # a file Grimoire wrote itself
@@ -113,7 +113,7 @@ class Tray(QObject):
         super().__init__()
         self.settings = load_settings()
         self.icon = QSystemTrayIcon()
-        self.icon.setToolTip("Grimoire")
+        self.icon.setToolTip(NAME)
         self.icon.activated.connect(self._activated)
         self.menu = self._build_menu()
         self.icon.setContextMenu(self.menu)
@@ -142,13 +142,13 @@ class Tray(QObject):
     def _build_menu(self) -> QMenu:
         from grimoire.spells import SPELLS
         m = QMenu()
-        m.addSection("Grimoire")
+        m.addSection(NAME)
         self.a_cross = self._action(m, "Crosshair", self._toggle_crosshair, checkable=True)
         self._action(m, "Next crosshair profile", self._next_crosshair, "forward")
         self.a_tidy = self._action(m, "Tidy Downloads now", self._tidy, "tidy")
         self.a_perf = self._action(m, "Performance mode", self._toggle_perf, checkable=True)
         m.addSeparator()
-        self._action(m, "Open Grimoire", lambda: launch("grimoire"), "home")
+        self._action(m, "Open Grimoire Linux", lambda: launch("grimoire"), "home")
         for s in SPELLS:
             self._action(m, s.name, lambda _=False, sid=s.id: launch("grimoire", sid), s.icon)
         m.addSeparator()
@@ -262,13 +262,13 @@ class Tray(QObject):
 
 def run():
     app = QApplication(sys.argv[:1])
-    app.setApplicationName("Grimoire tray")
+    app.setApplicationName(f"{NAME} tray")
     app.setDesktopFileName("grimoire-tray")
     app.setQuitOnLastWindowClosed(False)
     from grimoire.app import style_app
     style_app(app)
     if running():
-        print("Grimoire's tray is already running.")
+        print(f"{NAME}'s tray is already running.")
         s = QLocalSocket()                     # tells the running one, which says so in a notification
         s.connectToServer(socket_path())
         s.waitForConnected(300)
@@ -279,7 +279,7 @@ def run():
     server.listen(socket_path())
     tray = Tray()
     server.newConnection.connect(lambda: (server.nextPendingConnection().disconnectFromServer(),
-                                          tray.notify("Grimoire tray", "Already running, look in the system tray")))
+                                          tray.notify(f"{NAME} tray", "Already running, look in the system tray")))
     tray.icon.show()
     for sig in (signal.SIGTERM, signal.SIGINT):    # quit cleanly (the icon's 2 s timer lets Python see the signal)
         signal.signal(sig, lambda *_: app.quit())

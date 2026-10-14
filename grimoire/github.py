@@ -30,7 +30,7 @@ GIST_FILE = "grimoire-settings.grimoire-backup.b64"
 GIST_DESCRIPTION = "Grimoire settings backup (made by Grimoire; keep this gist secret)"
 MAX_GIST = 10 << 20                  # base64 text; settings backups are a few KB
 MAX_BODY = 16 << 20
-UA = f"Grimoire/{__version__} (settings sync)"
+UA = f"Grimoire-Linux/{__version__} (settings sync)"
 
 
 class GitHubError(RuntimeError):

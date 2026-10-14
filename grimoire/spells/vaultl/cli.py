@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 from grimoire.fsutil import tilde
-from grimoire.paths import HOME
+from grimoire.paths import HOME, unit_command
 from grimoire.spells.vaultl import tidy
 
 UNITS = HOME / ".config/systemd/user"
@@ -17,7 +17,7 @@ Description=Grimoire VaultL: sort ~/Downloads and clean stale installers
 
 [Service]
 Type=oneshot
-ExecStart=%h/.local/bin/grimoire-tidyl run
+ExecStart={exe} run
 Nice=10
 IOSchedulingClass=idle
 """
@@ -41,7 +41,7 @@ def set_auto(on: bool):
     s.save()
     if on:
         UNITS.mkdir(parents=True, exist_ok=True)
-        (UNITS / "grimoire-tidyl.service").write_text(SERVICE)
+        (UNITS / "grimoire-tidyl.service").write_text(SERVICE.format(exe=unit_command("grimoire-tidyl")))
         (UNITS / "grimoire-tidyl.timer").write_text(TIMER)
         subprocess.run(["systemctl", "--user", "daemon-reload"], check=True)
         subprocess.run(["systemctl", "--user", "enable", "--now", "grimoire-tidyl.timer"], check=True,

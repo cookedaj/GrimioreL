@@ -2,7 +2,7 @@
 Name=Grimoire
 Description=Black & white login screen from Grimoire MuraL
 Author=cookedaj
-License=GPL-2.0-or-later
+License=GPL-3.0-or-later
 Type=sddm-theme
 Version=1.0
 MainScript=Main.qml
