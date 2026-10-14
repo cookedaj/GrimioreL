@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Remove Grimoire Linux for the current user (no sudo). With a distro package, run this before removing the package
-# to clear the per-user parts (timers, autostart, menu entries a spell's Install button added).
-#   ./uninstall.sh            remove the app, its commands, menu entries, wallpaper plugin, auto-tidy and alert
-#                             timers and SightsL and tray autostart (and stops the tray); keep your settings so a
-#                             later install picks them up
+# to clear the per-user parts (timers, autostart, LaunchL, menu entries a spell's Install button added).
+#   ./uninstall.sh            remove the app, its commands, menu entries, wallpaper plugin, LaunchL widget (putting
+#                             Kickoff back first if LaunchL replaced it), auto-tidy and alert timers and SightsL and
+#                             tray autostart (and stops the tray); keep your settings so a later install picks them up
 #   ./uninstall.sh --purge    also move Grimoire's settings, logs and cache to the Trash
 # Desktops still showing MuraL's wallpaper are switched to Plasma's own image wallpaper first (MuraL's current
 # picture, copied to ~/Pictures/Wallpapers), so no screen goes blank. With --purge, any wallpaper or lock-screen
@@ -171,6 +171,19 @@ run rm -f "$CONFIG/autostart/grimoire-sightc.desktop" "$CONFIG/autostart/grimoir
 # wallpapers in use, before their plugin and pictures go
 release_wallpapers
 if [ -n "$PURGE" ]; then release_lock_screen; fi
+
+# LaunchL: put the old launcher back in the panel first, then remove the widget. If that can't be done (Plasma not
+# running, or LaunchL added by hand), the widget stays so the panel isn't left with a broken placeholder.
+LAUNCHL="$DATA/plasma/plasmoids/com.cookedaj.grimoire.launchl"
+if [ -d "$LAUNCHL" ]; then
+    if [ -d "$APP/grimoire" ] && PYTHONPATH="$APP" python3 -P -m grimoire.spells.launchl uninstall; then
+        rm -rf "$LAUNCHL"
+    elif [ ! -d "$APP/grimoire" ]; then
+        rm -rf "$LAUNCHL"
+    else
+        echo "LaunchL's widget was kept (see above). Remove it later from the panel, then delete $LAUNCHL."
+    fi
+fi
 
 # commands (only links, never a file someone put there), menu entries and icons Grimoire generated
 for link in "$BIN"/grimoire*; do

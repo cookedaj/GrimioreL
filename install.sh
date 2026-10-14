@@ -6,7 +6,8 @@
 #   - copies the app into ~/.local/share/grimoire/app (everything runs from there)
 #   - links the commands into ~/.local/bin and adds the app-menu entry, plus VaultL's (each spell's Install button
 #     on the home page adds its own; ./install.sh --all adds every spell's launcher)
-#   - copies the MuraL wallpaper plugin into Plasma
+#   - copies the MuraL wallpaper plugin and the LaunchL launcher widget into Plasma (LaunchL only takes Kickoff's
+#     place when you ask, on its page)
 #   - adds the Grimoire Tray menu entry (it starts at login only once you turn that on)
 #   - records the commit it came from (app/INSTALLED.json), so Grimoire can tell when there's an update
 # Settings stay in ~/.config/grimoire and ~/.local/share/grimoire; ./uninstall.sh removes the app again.
@@ -57,7 +58,7 @@ PY
 fi
 
 # 2. commands: point every grimoire* link at the installed copy; drop links an old install left dangling
-mkdir -p "$BIN" "$DATA/applications" "$DATA/plasma/wallpapers" "$DATA/icons/hicolor/scalable/apps"
+mkdir -p "$BIN" "$DATA/applications" "$DATA/plasma/wallpapers" "$DATA/plasma/plasmoids" "$DATA/icons/hicolor/scalable/apps"
 for cmd in "$APP"/bin/grimoire*; do ln -sfn "$cmd" "$BIN/$(basename "$cmd")"; done
 for link in "$BIN"/grimoire*; do
     if [ -L "$link" ] && [ ! -e "$link" ]; then rm -f "$link"; fi
@@ -68,6 +69,10 @@ PLUGIN="$DATA/plasma/wallpapers/com.cookedaj.grimoire.mural"
 rm -rf "$PLUGIN"
 cp -r "$APP/plasma/com.cookedaj.grimoire.mural" "$PLUGIN"
 cp "$APP/grimoire/assets/clover5.svg" "$DATA/icons/hicolor/scalable/apps/grimoire.svg"
+# the LaunchL panel widget, the same way (a panel already showing it picks the new version up when Plasma restarts)
+LAUNCHL="$DATA/plasma/plasmoids/com.cookedaj.grimoire.launchl"
+rm -rf "$LAUNCHL"
+cp -r "$APP/plasma/com.cookedaj.grimoire.launchl" "$LAUNCHL"
 
 cat > "$DATA/applications/grimoire.desktop" <<EOF
 [Desktop Entry]
@@ -126,6 +131,9 @@ standalone() { PYTHONPATH="$APP" QT_QPA_PLATFORM=offscreen python3 -m grimoire.s
 standalone install vaultl >/dev/null
 standalone refresh
 if [ "${1:-}" = "--all" ]; then standalone install all; fi
+# Grimoire's spells and their icons for LaunchL's search
+PYTHONPATH="$APP" QT_QPA_PLATFORM=offscreen python3 -P -c "from grimoire.spells.launchl import panel; panel.write_spells()" \
+    2>/dev/null || true
 update-desktop-database "$DATA/applications" 2>/dev/null || true
 
 case ":$PATH:" in *":$BIN:"*) ;; *) echo "Note: add $BIN to your PATH to run grimoire from a terminal." ;; esac

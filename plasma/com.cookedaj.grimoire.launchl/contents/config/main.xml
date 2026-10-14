@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <!-- Favorites are shared by all launchers; the client id only keeps their order. Grimoire's "Replace launcher"
+       (grimoire/spells/launchl/panel.py) sets favoritesClient to the replaced Kickoff's, so the order carries over. -->
+  <group name="General">
+    <entry name="favoritesClient" type="String">
+      <label>Activity-stats client whose favorites order LaunchL uses (empty: its own)</label>
+      <default></default>
+    </entry>
+    <entry name="favorites" type="StringList">
+      <label>Favorites to start with when this LaunchL has none yet</label>
+      <default>preferred://browser,preferred://filemanager,org.kde.konsole.desktop,systemsettings.desktop,grimoire.desktop</default>
+    </entry>
+    <entry name="favoritesPortedToKAstats" type="Bool">
+      <default>false</default>
+    </entry>
+    <entry name="systemApplications" type="StringList">
+      <label>Apps listed first under Places</label>
+      <default>systemsettings.desktop,org.kde.kinfocenter.desktop,org.kde.discover.desktop,grimoire.desktop</default>
+    </entry>
+    <entry name="alphaSort" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="pin" type="Bool">
+      <label>Keep the menu open when it loses focus</label>
+      <default>false</default>
+    </entry>
+    <entry name="grimoireInSearch" type="Bool">
+      <label>Show Grimoire's spells and actions in search results</label>
+      <default>true</default>
+    </entry>
+  </group>
+</kcfg>
