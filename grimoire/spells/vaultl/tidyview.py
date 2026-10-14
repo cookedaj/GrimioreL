@@ -1,11 +1,13 @@
 """VaultL's tidy panels (TidyL before the merge): sorting rules, activity log with undo, big files and
-duplicates. The sidebar's Tidy section picks the panel; the header carries Tidy now, Undo and the auto-tidy switch."""
+duplicates. The sidebar's Tidy section picks the panel; the header carries Tidy now, Undo and the auto-tidy switch.
+Tidy now always shows its preview first: nothing moves until the user has seen (and can untick) every file."""
+import copy
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QFileDialog, QHBoxLayout, QHeaderView, QLabel,
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel,
                                QListWidget, QListWidgetItem, QMessageBox, QPushButton, QSpinBox, QStackedWidget,
                                QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
@@ -23,6 +25,116 @@ PANELS = [("Rules", "tidy", "Auto-sort rules", "Where each kind of download goes
 
 class _Signals(QObject):
     done = Signal(str, object)        # kind, result
+
+
+class PreviewDialog(QDialog):
+    """Tidy now's dry run: every planned move and cleanup, each with a tick box (untick to leave it alone this
+    time) and an "Always skip" box (remember it in settings so tidy never touches that file)."""
+    COLS = ["File", "Goes to", "Rule", "Always skip"]
+
+    def __init__(self, p: tidy.Preview, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Tidy preview")
+        self.resize(940, 560)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(22, 18, 22, 16)
+        lay.setSpacing(10)
+        title = QLabel("Tidy preview")
+        title.setObjectName("Title")
+        lay.addWidget(title)
+        sub = QLabel("Nothing has moved yet. Untick anything you want left alone this time.")
+        sub.setObjectName("Subtitle")
+        lay.addWidget(sub)
+
+        self.tree = QTreeWidget()
+        self.tree.setHeaderLabels(self.COLS)
+        self.tree.setRootIsDecorated(False)
+        self.tree.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        hh = self.tree.header()
+        hh.setStretchLastSection(False)
+        hh.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        for c, width in ((1, 300), (2, 110), (3, 100)):
+            self.tree.setColumnWidth(c, width)
+        self.moves = self._group(f"Would move {cli.plural(len(p.moves), 'file')}",
+                                 [(f, (tilde(dest.parent), rule)) for f, dest, rule in p.moves], p.moves)
+        self.cleanups = self._group(f"Would send {cli.plural(len(p.cleanups), 'file')} to the Trash",
+                                    [(f, (f"Trash · {reason}", rule)) for f, rule, reason in p.cleanups], p.cleanups)
+        self._syncing = False
+        self.tree.itemChanged.connect(self._changed)
+        lay.addWidget(self.tree, 1)
+
+        foot = QHBoxLayout()
+        self.count = QLabel()
+        self.count.setObjectName("Muted")
+        foot.addWidget(self.count, 1)
+        cancel = QPushButton("Cancel")
+        cancel.clicked.connect(self.reject)
+        self.run_btn = QPushButton("Run")
+        self.run_btn.setObjectName("Primary")
+        self.run_btn.setMinimumWidth(110)
+        self.run_btn.clicked.connect(self.accept)
+        foot.addWidget(cancel)
+        foot.addWidget(self.run_btn)
+        lay.addLayout(foot)
+        self._changed()
+
+    def _group(self, label, rows, entries) -> QTreeWidgetItem | None:
+        if not rows:
+            return None
+        top = QTreeWidgetItem([label, "", "", ""])
+        top.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)   # ticks the whole group
+        top.setCheckState(0, Qt.CheckState.Checked)
+        f = top.font(0)
+        f.setBold(True)
+        top.setFont(0, f)
+        self.tree.addTopLevelItem(top)
+        for (path, (where, rule)), entry in zip(rows, entries):
+            item = QTreeWidgetItem([path.name, where, rule, ""])
+            item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(0, Qt.CheckState.Checked)
+            item.setCheckState(3, Qt.CheckState.Unchecked)
+            item.setToolTip(0, tilde(path))
+            item.setData(0, Qt.ItemDataRole.UserRole, entry)
+            for c in (1, 2):
+                item.setForeground(c, Qt.GlobalColor.gray)
+            top.addChild(item)
+        top.setExpanded(True)
+        return top
+
+    def _rows(self, top):
+        return [top.child(i) for i in range(top.childCount())] if top else []
+
+    def _changed(self, item=None, col=0):
+        if item is not None and not self._syncing:
+            self._syncing = True                              # the ticks below fire itemChanged again
+            on = item.checkState(col) == Qt.CheckState.Checked
+            if item.parent() is None:                        # a group row: tick/untick all of it
+                for row in self._rows(item):
+                    row.setCheckState(0, item.checkState(0))
+                    if on:
+                        row.setCheckState(3, Qt.CheckState.Unchecked)
+            elif col == 3 and on:
+                item.setCheckState(0, Qt.CheckState.Unchecked)   # always skip implies skip now
+            elif col == 0 and on:
+                item.setCheckState(3, Qt.CheckState.Unchecked)
+            if item.parent() is not None:
+                top = item.parent()
+                states = {r.checkState(0) for r in self._rows(top)}
+                top.setCheckState(0, states.pop() if len(states) == 1 else Qt.CheckState.PartiallyChecked)
+            self._syncing = False
+        ticked = self.chosen()[0]
+        a, cl = ticked.moves, ticked.cleanups
+        self.count.setText(f"{cli.plural(len(a), 'move')} and {cli.plural(len(cl), 'file')} to the Trash ticked. "
+                           "Moves can be undone; trashed files can be restored from the Trash.")
+        self.run_btn.setEnabled(bool(a or cl))
+
+    def chosen(self) -> tuple[tidy.Preview, list[Path]]:
+        """(the ticked part of the preview, files to always skip)."""
+        ticked = lambda top: [i.data(0, Qt.ItemDataRole.UserRole) for i in self._rows(top)
+                              if i.checkState(0) == Qt.CheckState.Checked]
+        skip = [i.data(0, Qt.ItemDataRole.UserRole)[0] for top in (self.moves, self.cleanups)
+                for i in self._rows(top) if i.checkState(3) == Qt.CheckState.Checked]
+        return tidy.Preview(ticked(self.moves), ticked(self.cleanups)), skip
 
 
 class TidyPanel(QWidget):
@@ -67,6 +179,10 @@ class TidyPanel(QWidget):
         self.status = QLabel()
         self.status.setObjectName("Muted")
         lay.addWidget(self.status)
+        self.next_line = QLabel()                     # live dry run, on the Rules and Activity panels
+        self.next_line.setWordWrap(True)
+        lay.addWidget(self.next_line)
+        self._next_timer = QTimer(self, interval=30_000, timeout=self.refresh_next)
 
         self.views = QStackedWidget()
         self.views.addWidget(self._rules_view())
@@ -85,6 +201,38 @@ class TidyPanel(QWidget):
         self.subtitle.setText(sub)
         if i == 1:
             self._refresh_activity()
+        self.next_line.setVisible(i in (0, 1))
+        self.refresh_next()
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        self._next_timer.start()
+        self.refresh_next()
+
+    def hideEvent(self, e):
+        super().hideEvent(e)
+        self._next_timer.stop()
+
+    def refresh_next(self):
+        """Re-run the dry run in the background for the "Next auto-tidy will…" line."""
+        if self.views.currentIndex() in (0, 1) and self.isVisible():
+            settings, sig = copy.deepcopy(self.settings), self._sig    # the worker never sees a half-edited rule
+            POOL.start(Job(lambda: tidy.preview(settings), lambda result: sig.done.emit("next", result)))
+
+    def _show_next(self, p: tidy.Preview):
+        if p.error:
+            self.next_line.setText(p.error)
+            return
+        on = self.auto_btn.text().endswith("ON")
+        if not (p.moves or p.cleanups):
+            self.next_line.setText("Next auto-tidy has nothing to do right now." if on
+                                   else "Auto-tidy is paused. Nothing to tidy right now.")
+            return
+        what = f"move {cli.plural(len(p.moves), 'file')}"
+        if p.cleanups:
+            what += f" and send {cli.plural(len(p.cleanups), 'file')} to the Trash"
+        lead = "Next auto-tidy will" if on else "Auto-tidy is paused; Tidy now would"
+        self.next_line.setText(f"{lead} {what}. Tidy now shows the list first.")
 
     def watch_dir(self) -> Path:
         return tidy.expand(self.settings.watch)
@@ -101,6 +249,7 @@ class TidyPanel(QWidget):
         on = cli.timer_active()
         self.auto_btn.setText("Auto-tidy: ON" if on else "Auto-tidy: OFF")
         self.status.setText(self.summary())
+        self.refresh_next()
 
     def _toggle_auto(self):
         try:
@@ -111,12 +260,31 @@ class TidyPanel(QWidget):
         self.changed.emit()
 
     def tidy_now(self) -> str:
-        r = tidy.run(self.settings)
+        """Show the preview; run only what the user leaves ticked, and only on Run."""
+        p = tidy.preview(self.settings)
+        if p.error or not (p.moves or p.cleanups):
+            msg = p.error or "Nothing to tidy right now."
+            self.status.setText(msg)
+            self.refresh_next()
+            return msg
+        d = PreviewDialog(p, self)
+        if d.exec() != QDialog.DialogCode.Accepted:
+            self.status.setText("Tidy cancelled. Nothing moved.")
+            return "Tidy cancelled. Nothing moved."
+        approved, skip = d.chosen()
+        return self._run(approved, skip)
+
+    def _run(self, approved: tidy.Preview, skip) -> str:
+        if skip:
+            self.settings.skip_always(skip)
+            self._refresh_skipped()
+        r = tidy.run(self.settings, approved)
         msg = f"Sorted {r['moved']} file(s), cleaned {r['cleaned']} stale file(s)."
         if r["errors"]:
             msg += "  Problems: " + "; ".join(r["errors"][:3])
         self.status.setText(msg)
         self._refresh_activity()
+        self.refresh_next()
         self.changed.emit()
         return msg
 
@@ -125,6 +293,7 @@ class TidyPanel(QWidget):
         msg = f"Moved {n} file(s) back." if n else "Nothing to undo."
         self.status.setText(msg)
         self._refresh_activity()
+        self.refresh_next()
         self.changed.emit()
         return msg
 
@@ -174,11 +343,35 @@ class TidyPanel(QWidget):
         note.setObjectName("Muted")
         note.setWordWrap(True)
         v.addWidget(note)
+        row = QHBoxLayout()
+        self.skipped = QLabel()
+        self.skipped.setObjectName("Muted")
+        row.addWidget(self.skipped, 1)
+        self.forget_btn = QPushButton("Stop skipping them")
+        self.forget_btn.clicked.connect(self._forget_skipped)
+        row.addWidget(self.forget_btn)
+        v.addLayout(row)
+        self._refresh_skipped()
         return w
+
+    def _refresh_skipped(self):
+        n = len(self.settings.ignore)
+        self.skipped.setText(f"{cli.plural(n, 'file')} you chose to always skip: "
+                             + ", ".join(Path(p).name for p in self.settings.ignore[:4]) + ("…" if n > 4 else ""))
+        self.skipped.setToolTip("\n".join(tilde(p) for p in self.settings.ignore))
+        for w in (self.skipped, self.forget_btn):
+            w.setVisible(bool(n))
+
+    def _forget_skipped(self):
+        self.settings.ignore = []
+        self.settings.save()
+        self._refresh_skipped()
+        self.refresh_next()
 
     def _set(self, rule, key, value):
         setattr(rule, key, value)
         self.settings.save()
+        self.refresh_next()
 
     def _pick_dest(self, rule, btn):
         start = str(tidy.expand(rule.dest)) if tidy.expand(rule.dest).exists() else str(HOME)
@@ -187,6 +380,7 @@ class TidyPanel(QWidget):
             rule.dest = tilde(d)
             btn.setText(rule.dest)
             self.settings.save()
+            self.refresh_next()
 
     # ------------------------------------------------------------------ activity
     def _activity_view(self) -> QWidget:
@@ -308,7 +502,9 @@ class TidyPanel(QWidget):
         POOL.start(Job(fn, lambda result: sig.done.emit(kind, result)))
 
     def _on_done(self, kind, result):
-        if kind == "big":
+        if kind == "next":
+            self._show_next(result)
+        elif kind == "big":
             self.big.setRowCount(0)
             for n, p in result:
                 r = self.big.rowCount()
