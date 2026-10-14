@@ -4,8 +4,8 @@ from datetime import datetime
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QFont, QIcon, QPalette
-from PySide6.QtWidgets import (QApplication, QButtonGroup, QFrame, QGridLayout, QHBoxLayout, QLabel, QMainWindow,
-                               QMessageBox, QPushButton, QStackedWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QFrame, QGridLayout, QHBoxLayout, QLabel,
+                               QMainWindow, QMessageBox, QPushButton, QStackedWidget, QVBoxLayout, QWidget)
 
 from grimoire import __version__, standalone
 from grimoire.glyphs import clover, glyph
@@ -106,6 +106,26 @@ class SpellCard(QFrame):
             self._on_open()
 
 
+class TrayToggle(QCheckBox):
+    """Opt-in: Grimoire's tray icon at login. Turning it on also starts the tray now."""
+    def __init__(self):
+        from grimoire import tray
+        super().__init__("Tray icon at login")
+        self.setToolTip("Live CPU and RAM in the system tray, plus crosshair, tidy Downloads, performance mode "
+                        "and every spell in its menu")
+        self.setChecked(tray.autostart_on())
+        self.toggled.connect(self._set)
+
+    def _set(self, on: bool):
+        from grimoire import tray
+        try:
+            tray.set_autostart(on)
+            if on and not tray.running():
+                tray.launch("grimoire-tray")
+        except OSError as err:
+            QMessageBox.warning(self, "Tray icon", f"Couldn't change it: {err}")
+
+
 class Home(QWidget):
     def __init__(self, open_spell):
         super().__init__()
@@ -121,7 +141,9 @@ class Home(QWidget):
         sub = QLabel("Your spells. Personal tools for this machine, all in black and white.")
         sub.setObjectName("Muted")
         lay.addWidget(sub)
-        lay.addSpacing(34)
+        lay.addSpacing(14)
+        lay.addWidget(TrayToggle())
+        lay.addSpacing(20)
         lay.addWidget(spaced("SPELLS", 10, 4))
         lay.addSpacing(10)
 

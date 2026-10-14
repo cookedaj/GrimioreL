@@ -50,6 +50,11 @@ Command-line helpers: `grimoire-sightc on|off|toggle|next`, `grimoire-vaultl [fo
 `grimoire-vaultl tidy run|undo|enable|disable|status`. The old `grimoire-filel` and `grimoire-tidyl` commands
 still work and open VaultL.
 
+**Tray icon**: `grimoire-tray` (or "Grimoire Tray" in the app menu) puts live CPU/RAM bars in the system tray,
+with the crosshair, the next crosshair profile, "Tidy Downloads now", Performance mode and every spell in its menu.
+Tick "Tray icon at login" on Grimoire's home page (or "Start tray at login" in its menu, or
+`grimoire-tray autostart on`) to start it with Plasma.
+
 To make VaultL the default file manager: `xdg-mime default grimoire-vaultl.desktop inode/directory`
 (switch back any time in System Settings → Default Applications → File manager).
 
@@ -65,7 +70,8 @@ It replaces the installed copy and keeps your settings, timer and autostart.
 ~/.local/share/grimoire/app/uninstall.sh --purge    # also moves settings, logs and cache to the Trash
 ```
 
-This removes the app, its commands and menu entries, the wallpaper plugin, the auto-tidy timer and SightsL's autostart.
+This removes the app, its commands and menu entries, the wallpaper plugin, the auto-tidy timer, SightsL's and the
+tray's autostart (and stops the tray).
 Looks and tweaks you applied stay as they are, so turn off MuraL themes and OptimizeL switches in Grimoire first
 if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/share/grimoire`.
 
@@ -91,6 +97,11 @@ if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/sha
   profile, KDE settings, autostart overrides, `~/.config/environment.d`) keep their old values in
   `~/.local/share/grimoire/optimizel.json`. Nothing deletes your files; the apt tweak only clears downloaded
   `.deb` installers.
+- **Tray** (`grimoire/tray.py`) reads CPU and RAM every 2 s (temperatures every 10 s) and only redraws its icon
+  when a bar would look different. Performance mode (`grimoire/spells/optimizel/perfmode.py`) turns on, through
+  OptimizeL, whichever of these are off: the performance power profile, file indexing paused, and split-lock
+  throttling off (the one system change, so it asks for your password). It remembers what it flipped in
+  `~/.local/share/grimoire/performance-mode.json`, and "off" turns back exactly those.
 - **SystemL** reads the machine with psutil and `/proc` once a second, only while its window is on screen.
   Per-app history is written once a minute to `~/.local/share/grimoire/systeml-history.json` (a week, busiest
   apps only). Your own processes, user services and startup apps change directly; anything else (another user's
