@@ -177,6 +177,7 @@ class Banner(QWidget):
 
 def _label(text, name="", wrap=True, selectable=False):
     lab = QLabel(text)
+    lab.setTextFormat(Qt.TextFormat.PlainText)      # commit messages from GitHub, never as HTML
     if name:
         lab.setObjectName(name)
     lab.setWordWrap(wrap)

@@ -24,6 +24,7 @@ SECTIONS = [("hotkeys", "Hotkeys", "keyboard"), ("backup", "Backup & restore", "
 
 def _label(text="", name="", wrap=True):
     lab = QLabel(text)
+    lab.setTextFormat(Qt.TextFormat.PlainText)      # shows names from backups and GitHub, never as HTML
     if name:
         lab.setObjectName(name)
     lab.setWordWrap(wrap)
