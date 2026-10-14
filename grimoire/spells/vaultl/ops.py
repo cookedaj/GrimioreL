@@ -65,6 +65,9 @@ def restore(paths: list[Path]) -> list[str]:
         if not orig:
             errors.append(f"{p.name}: no record of where it came from")
             continue
+        if not Path(orig).is_absolute():                  # the home Trash records absolute paths only; a relative
+            errors.append(f"{p.name}: its record doesn't say a full path")    # one would land wherever we run
+            continue
         try:
             target = free_name(Path(orig))
             target.parent.mkdir(parents=True, exist_ok=True)

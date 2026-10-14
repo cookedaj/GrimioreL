@@ -294,7 +294,7 @@ def undo_last() -> int:
     for e in entries:
         if e.get("batch") == batch and e["action"] == "move":
             src, dst = Path(e["to"]), Path(e["from"])
-            if src.exists() and not dst.exists():
+            if src.exists() and not dst.exists() and not dst.is_symlink():    # never over anything new
                 try:
                     shutil.move(str(src), str(dst))
                     back.append(str(dst))

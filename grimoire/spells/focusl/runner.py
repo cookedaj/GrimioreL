@@ -164,8 +164,7 @@ class Session:
         c = store._read(store.CONTROL, None)
         if not isinstance(c, dict) or c.get("id") == self._control_id:
             return
-        self._control_id = c.get("id")
-        store.CONTROL.unlink(missing_ok=True)
+        self._control_id = c.get("id")                      # not unlinked: a command sent just now would go too
         cmd = c.get("cmd")
         log(f"command: {cmd}")
         if cmd == "pause":
@@ -221,6 +220,8 @@ def _lock():
     for _ in range(10):                                      # a client may hold a shared lock for a moment
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            os.ftruncate(fd, 0)                              # our pid, so stop() reaches us before the first
+            os.write(fd, str(os.getpid()).encode())         # state is written (e.g. during the password prompt)
             return fd
         except BlockingIOError:
             time.sleep(0.1)
@@ -255,7 +256,7 @@ def run() -> int:
 
 def runner_pid() -> int | None:
     try:
-        pid = int(store.load_state().get("pid"))
+        pid = int(store.LOCK.read_text().strip() or store.load_state().get("pid"))
         cmd = Path(f"/proc/{pid}/cmdline").read_bytes()
     except (OSError, ValueError, TypeError):
         return None

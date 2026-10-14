@@ -162,7 +162,7 @@ class SightCPage(QWidget):
         self._load_into_controls()
         self._loading = False
         self._refresh_running()
-        QTimer(self, interval=1500, timeout=self._refresh_running).start()
+        self._running_timer = QTimer(self, interval=1500, timeout=self._refresh_running)   # only while shown
         # the next-crosshair hotkey (or another Grimoire window) can change the file under us
         self._watcher = QFileSystemWatcher([str(CONFIG)], self)
         self._watcher.directoryChanged.connect(self._file_changed)
@@ -593,8 +593,14 @@ class SightCPage(QWidget):
     # ------------------------------------------------------------------ overlay process
     def showEvent(self, e):
         super().showEvent(e)
+        self._refresh_running()
+        self._running_timer.start()
         self.key_toggle.setText(overlay.hotkey_text(overlay.ACTION))       # may have been rebound in Settings
         self.key_next.setText(overlay.hotkey_text(overlay.NEXT_ACTION))
+
+    def hideEvent(self, e):
+        super().hideEvent(e)
+        self._running_timer.stop()
 
     def _toggle_overlay(self):
         was_on = overlay.running_pid() is not None

@@ -7,6 +7,8 @@ watched Downloads folder gets a bar with Tidy now and Undo.
 Shortcuts follow Dolphin: Alt+Left/Right/Up, Backspace, F2, Del, Ctrl+C/X/V, Ctrl+A, Ctrl+H, Ctrl+L, Ctrl+F,
 Ctrl+Shift+N, F5, F4 (terminal here), Enter to open.
 """
+import os
+import stat
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -39,6 +41,7 @@ EDIT_TRIGGERS = QAbstractItemView.EditTrigger.EditKeyPressed | QAbstractItemView
 THUMBS.setMaxThreadCount(3)
 GRID = QSize(128, 132)
 ICON = 72
+THUMB_CACHE = 1500
 
 
 class _Signals(QObject):
@@ -103,6 +106,11 @@ class GridDelegate(QStyledItemDelegate):
             sig = self.page._sig
 
             def work():
+                try:
+                    if not stat.S_ISREG(os.stat(fpath).st_mode):     # a FIFO named .png would block forever
+                        return QImage()
+                except OSError:
+                    return QImage()
                 reader = QImageReader(fpath)
                 reader.setAutoTransform(True)
                 size = reader.size()
@@ -117,14 +125,19 @@ class GridDelegate(QStyledItemDelegate):
         self.pending.discard(fpath)
         if not img.isNull():
             self.cache[fpath] = QPixmap.fromImage(img)
+            while len(self.cache) > THUMB_CACHE:              # ~80 KB each: forget the oldest, not every photo seen
+                del self.cache[next(iter(self.cache))]
             self.page.grid.viewport().update()
 
 
 class FileModel(QFileSystemModel):
     """QFileSystemModel whose drag & drop respects the Trash: a drop into it goes through gio trash (so the item
     gets its .trashinfo and Restore can put it back), and nothing is moved out of or around inside it (that
-    would orphan the records; Restore and Delete forever are the ways out)."""
+    would orphan the records; Restore and Delete forever are the ways out). Other copies and moves go through
+    ops.transfer like Paste: Qt's own drop silently fails on a name clash, a folder copy or a move to
+    another drive."""
     trash_drop = Signal(list)
+    transfer_drop = Signal(list, str, bool)           # sources, destination folder, move
     refused = Signal(str)
 
     def dropMimeData(self, data, action, row, column, parent):
@@ -140,6 +153,10 @@ class FileModel(QFileSystemModel):
         if len(loose) != len(sources):
             self.refused.emit("Items in the Trash can't be dragged out. Use Restore to put them back.")
             return False
+        if action in (Qt.DropAction.CopyAction, Qt.DropAction.MoveAction) and dest is not None:
+            if sources and dest.is_dir():
+                self.transfer_drop.emit(sources, str(dest), action == Qt.DropAction.MoveAction)
+            return False                              # ops.transfer does the work in the background
         return super().dropMimeData(data, action, row, column, parent)
 
 
@@ -156,6 +173,7 @@ class VaultLPage(QWidget):
 
         self.model = FileModel(self)
         self.model.trash_drop.connect(self._trash_paths)
+        self.model.transfer_drop.connect(lambda srcs, dest, move: self._transfer(srcs, Path(dest), move))
         self.model.refused.connect(lambda msg: self.status.setText(msg))
         self.model.setRootPath("/")
         self.model.setReadOnly(False)                     # rename + drag & drop moves
@@ -658,7 +676,7 @@ class VaultLPage(QWidget):
             THUMBS.start(Job(lambda p=p: ops.folder_size(p), lambda r, p=p: sig.sized.emit(str(p), *r)))
         else:
             lines.append(f"{human(st.st_size)} · {self.model.type(self.model.index(str(p)))}")
-            ext = p.suffix.lower()
+            ext = p.suffix.lower() if stat.S_ISREG(st.st_mode) else ""   # reading a FIFO/device would hang the UI
             if ext in IMAGE_EXT:
                 reader = QImageReader(str(p))
                 reader.setAutoTransform(True)
@@ -769,12 +787,16 @@ class VaultLPage(QWidget):
             return
         sources = [Path(u.toLocalFile()) for u in data.urls() if u.isLocalFile()]
         move = bytes(data.data("application/x-kde-cutselection")) == b"1"
-        dest, sig = self.cwd, self._sig
+        self._transfer(sources, self.cwd, move)
+        if move:
+            QGuiApplication.clipboard().clear()
+
+    def _transfer(self, sources: list[Path], dest: Path, move: bool):
+        """Paste and drag & drop: copy or move in the background, never over an existing name."""
+        sig = self._sig
         self.status.setText(f"{'Moving' if move else 'Copying'} {len(sources)} item(s)…")
         THUMBS.start(Job(lambda: ops.transfer(sources, dest, move),
                           lambda r: sig.transferred.emit(r[0], r[1], "moved" if move else "copied")))
-        if move:
-            QGuiApplication.clipboard().clear()
 
     def _transfer_done(self, done: int, errors: list, verb: str):
         msg = f"{verb.capitalize()} {done} item{'s' if done != 1 else ''}."
