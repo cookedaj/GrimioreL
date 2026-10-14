@@ -92,6 +92,16 @@ def _terminall_status() -> str:
     return status()
 
 
+def _launchl():
+    from grimoire.spells.launchl.page import LaunchLPage
+    return LaunchLPage()
+
+
+def _launchl_status() -> str:
+    from grimoire.spells.launchl import panel
+    return panel.status()
+
+
 SPELLS = [
     Spell("mural", "MuraL", "Every screen and surface: wallpaper, lock, login, boot, taskbar, windows, colors, "
           "icons, fonts, cursor, terminal, plus the community store", _mural, "mural", _mural_status),
@@ -105,4 +115,7 @@ SPELLS = [
           "apps, disks and background alerts", _systeml, "system", _systeml_status),
     Spell("terminall", "TerminalL", "Your terminal: tabs and splits, full color, scrollback search, profiles and "
           "saved commands, opening right in VaultL's folder", _terminall, "terminall", _terminall_status),
+    Spell("launchl", "LaunchL", "Your app launcher in Kickoff's place: favorites, categories, places, search with "
+          "files, sums and Grimoire's spells, and the leave buttons. Meta opens it", _launchl, "launchl",
+          _launchl_status),
 ]

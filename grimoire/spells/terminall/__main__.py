@@ -1,6 +1,7 @@
 """TerminalL as its own window.
 
     python3 -m grimoire.spells.terminall [folder or file:// URL]     open with a tab in that folder
+    python3 -m grimoire.spells.terminall -e COMMAND [folder]         ...and run COMMAND in it (LaunchL's ">cmd")
 """
 import sys
 from pathlib import Path
@@ -20,6 +21,9 @@ def main(argv: list[str]):
     app.setDesktopFileName("grimoire-terminall")
     style_app(app)
     app.setWindowIcon(QIcon(app_icon("terminall")))
+    command = ""
+    if argv[:1] == ["-e"] and len(argv) > 1:
+        command, argv = argv[1], argv[2:]
     arg = argv[0] if argv else ""
     if arg.startswith("file://"):
         arg = unquote(urlparse(arg).path)
@@ -48,6 +52,8 @@ def main(argv: list[str]):
     win.resize(1100, 700)
     win.setMinimumSize(520, 320)
     win.show()
+    if command and page.ok and page.active_view():
+        page.active_view().send_text(command + "\r")      # typed into the shell, so it stays open afterwards
     sys.exit(app.exec())
 
 
