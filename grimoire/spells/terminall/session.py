@@ -186,6 +186,7 @@ class Session(QObject):
             os.close(self.pidfd)
             self.pidfd = -1
         LIVE.discard(self)
+        self.deleteLater()                     # parented to the page: it would keep its scrollback until the page goes
         _reaping.append(self.proc)
         if _reaper is None:
             _reaper = QTimer()
