@@ -53,7 +53,7 @@ Exec=$BIN/grimoire %u
 Icon=grimoire
 Categories=Utility;Settings;
 StartupWMClass=grimoire
-Actions=mural;sightc;vaultl;optimizel;systeml;
+Actions=mural;sightc;vaultl;optimizel;systeml;terminall;
 
 [Desktop Action mural]
 Name=MuraL
@@ -74,6 +74,10 @@ Exec=$BIN/grimoire optimizel
 [Desktop Action systeml]
 Name=SystemL (system monitor)
 Exec=$BIN/grimoire systeml
+
+[Desktop Action terminall]
+Name=TerminalL (terminal)
+Exec=$BIN/grimoire terminall
 EOF
 
 # 4. standalone spells: VaultL always (it's the file manager; FileL's and TidyL's old entries become hidden

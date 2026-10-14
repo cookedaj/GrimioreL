@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QFileSystemModel, QFrame, QHBo
 from grimoire.fsutil import human, tilde
 from grimoire.glyphs import glyph
 from grimoire.jobs import Job
-from grimoire.paths import HOME
+from grimoire.paths import CACHE, HOME
 from grimoire.spells.vaultl import ops
 from grimoire.spells.vaultl.tidyview import PANELS, TidyPanel
 
@@ -441,6 +441,10 @@ class VaultLPage(QWidget):
             self.status.setText(f"Can't open {tilde(path)}")
             return
         self.cwd = path
+        try:                                              # TerminalL's "New tab in VaultL's folder" reads this
+            (CACHE / "vaultl-folder").write_text(str(path))
+        except OSError:
+            pass
         self.body.setCurrentIndex(0)
         self.tools.clearSelection()
         if record:

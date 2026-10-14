@@ -10,21 +10,22 @@ One app, one look: a slim icon rail, monochrome line icons, and every spell buil
 | **VaultL** | A file manager with tidying built in (FileL and TidyL, merged). Places & drives sidebar, breadcrumbs, grid with image thumbnails or a details list, preview panel, Trash with restore, KDE-compatible copy/cut/paste, Dolphin's keyboard shortcuts. Its **Tidy** section keeps `~/Downloads` sorted by file type in the background, sends stale installers/archives to the Trash, and finds big files and duplicates; Downloads gets a bar with Tidy now and Undo. Never deletes: everything goes to the Trash, and every move can be undone. Runs inside Grimoire or as its own window, and can be the default for opening folders. |
 | **OptimizeL** | Scans the PC and lays out ~24 speed tweaks as on/off switches, grouped by power, memory (zram, earlyoom), storage & boot, network (BBR), services, startup apps, desktop and gaming. Every switch is written to persistent config, so it survives restarts, and turning it off restores exactly what was there. Also lists what's already set the fast way. |
 | **SystemL** | A system monitor in place of KDE System Monitor. Live graphs for CPU (and every core), memory, swap, disk, network, GPU, temperatures and load; a process list with search, sorting, a tree view, end/force quit, pause and priority; per-app history (what was busy an hour, a day or a week ago) and the top offenders right now; systemd services (system and yours) with start, stop, restart, boot on/off and logs; startup apps; and disks with usage and live read/write. Quick actions empty swap, restart the Plasma desktop and jump to OptimizeL. |
+| **TerminalL** | A terminal in Grimoire's black & white. Your own shell on a real PTY in tabs that split side by side or top and bottom; full 16/256/true color as programs ask for it, Unicode and wide characters, mouse support for apps like htop and vim, scrollback with search, Ctrl+Shift+C/V and middle-click paste, Ctrl+= / Ctrl+- zoom, profiles (font, size, cursor, scrollback), a palette of saved commands (Ctrl+Shift+P), and new tabs right in VaultL's folder. |
 
 ## Requirements
 
 - KDE Plasma 6 (Wayland is best; tested on Kubuntu 26.04)
 - Python 3.12+ with PySide6 and Pillow, plus layer-shell-qt (SightsL), Qt Multimedia (video wallpapers),
-  ffmpeg (video thumbnails) and rsync (installer):
+  ffmpeg (video thumbnails), rsync (installer) and pyte (TerminalL):
 
   ```bash
   # Ubuntu / Kubuntu / Debian
   sudo apt install python3-pyside6.{qtcore,qtgui,qtwidgets,qtsvg,qtdbus,qtqml,qtquick} python3-pil python3-psutil \
-      qml6-module-org-kde-layershell qml6-module-qtmultimedia ffmpeg rsync
+      qml6-module-org-kde-layershell qml6-module-qtmultimedia ffmpeg rsync python3-pyte
   # Fedora
-  sudo dnf install python3-pyside6 python3-pillow python3-psutil layer-shell-qt qt6-qtmultimedia ffmpeg-free rsync
+  sudo dnf install python3-pyside6 python3-pillow python3-psutil layer-shell-qt qt6-qtmultimedia ffmpeg-free rsync python3-pyte
   # Arch / Manjaro / EndeavourOS
-  sudo pacman -S pyside6 python-pillow python-psutil layer-shell-qt qt6-multimedia ffmpeg rsync
+  sudo pacman -S pyside6 python-pillow python-psutil layer-shell-qt qt6-multimedia ffmpeg rsync python-pyte
   ```
 
 ## Install
@@ -44,10 +45,10 @@ from that copy, so you can move or delete the download afterwards. If `grimoire`
 add `~/.local/bin` to your `PATH` (or log out and back in).
 
 Every spell also runs as its own app: press **Install** on its card on the home page (or use `./install.sh --all`),
-or run `grimoire-mural`, `grimoire-sightc`, `grimoire-vaultl`, `grimoire-optimizel`, `grimoire-systeml` directly.
+or run `grimoire-mural`, `grimoire-sightc`, `grimoire-vaultl`, `grimoire-optimizel`, `grimoire-systeml`, `grimoire-terminall` directly.
 
 Command-line helpers: `grimoire-sightc on|off|toggle|next`, `grimoire-vaultl [folder]`,
-`grimoire-vaultl tidy run|undo|enable|disable|status`. The old `grimoire-filel` and `grimoire-tidyl` commands
+`grimoire-vaultl tidy run|undo|enable|disable|status`, `grimoire-terminall [folder]`. The old `grimoire-filel` and `grimoire-tidyl` commands
 still work and open VaultL.
 
 To make VaultL the default file manager: `xdg-mime default grimoire-vaultl.desktop inode/directory`
@@ -96,6 +97,10 @@ if you want them undone. Settings live in `~/.config/grimoire` and `~/.local/sha
   apps only). Your own processes, user services and startup apps change directly; anything else (another user's
   process, system services, emptying swap) goes through `pkexec` to `grimoire/spells/systeml/root-helper.sh`,
   which checks every argument and refuses to stop the processes and services that keep the session alive.
+- **TerminalL** runs your login shell (`$SHELL -l`) on a real PTY with `TERM=xterm-256color`; the screen is
+  emulated by [pyte](https://github.com/selectel/pyte) (`python3-pyte`), with scrollback, the alternate screen and a
+  few xterm extras added on top. Without pyte the page just shows the install command. Profiles and saved commands
+  live in `~/.config/grimoire/terminall.json`. "New tab in VaultL's folder" uses the folder VaultL last showed.
 
 ## Layout
 
@@ -108,6 +113,7 @@ grimoire/            the app (PySide6)
   spells/vaultl/     VaultL window, file operations, tidy engine, tidy panels, CLI/timer
   spells/optimizel/  OptimizeL tweak catalog, root helper, page
   spells/systeml/    SystemL readings, graphs, per-app history, actions, root helper, page
+  spells/terminall/  TerminalL screen state (pyte), PTY sessions, keys, terminal view, page
 plasma/              the MuraL wallpaper plugin
 bin/                 launchers
 install.sh           copies the app into ~/.local/share/grimoire/app and links it in
