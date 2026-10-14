@@ -5,7 +5,7 @@
     places behave exactly like the stock launcher.
 
     SPDX-FileCopyrightText: 2026 cookedaj
-    SPDX-License-Identifier: GPL-2.0-or-later
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 import QtQuick
 import QtQuick.Layouts
@@ -205,7 +205,7 @@ PlasmoidItem {
 
     Plasmoid.contextualActions: [
         PlasmaCore.Action {
-            text: i18n("Open Grimoire")
+            text: i18n("Open Grimoire Linux")
             icon.name: "grimoire"
             onTriggered: launchl.runDetached("grimoire launchl")
         },

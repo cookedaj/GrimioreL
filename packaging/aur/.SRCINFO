@@ -19,6 +19,7 @@ pkgbase = grimoire-linux-git
 	depends = plasma-workspace
 	depends = glib2
 	depends = polkit
+	depends = kpackage
 	optdepends = spectacle: ShotL screenshots
 	optdepends = ffmpeg: video wallpaper thumbnails and ShotL recordings
 	optdepends = python-gobject: ShotL screen recording

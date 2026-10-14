@@ -3,7 +3,7 @@
     the search field keeps focus, so typing always goes to the search.
 
     SPDX-FileCopyrightText: 2026 cookedaj
-    SPDX-License-Identifier: GPL-2.0-or-later
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 import QtQuick
 import QtQuick.Controls as QQC2

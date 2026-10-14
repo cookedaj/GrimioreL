@@ -3,13 +3,13 @@
     "KPlugin": {
         "Authors": [{ "Name": "cookedaj" }],
         "Category": "Application Launchers",
-        "Description": "Grimoire LaunchL: a black & white application launcher with Grimoire's spells in its search",
+        "Description": "Grimoire Linux LaunchL: a black & white application launcher with Grimoire's spells in its search",
         "Icon": "grimoire",
         "Id": "com.cookedaj.grimoire.launchl",
-        "License": "GPL-2.0-or-later",
-        "Name": "LaunchL (Grimoire)",
+        "License": "GPL-3.0-or-later",
+        "Name": "LaunchL (Grimoire Linux)",
         "Version": "1.0",
-        "Website": "https://github.com/cookedaj/Grimoire"
+        "Website": "https://github.com/cookedaj/grimoire-linux"
     },
     "X-Plasma-API-Minimum-Version": "6.0",
     "X-Plasma-Provides": ["org.kde.plasma.launchermenu"]

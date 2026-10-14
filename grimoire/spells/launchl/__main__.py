@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """LaunchL from the command line.
 
     python3 -m grimoire.spells.launchl status

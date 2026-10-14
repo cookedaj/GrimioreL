@@ -13,7 +13,9 @@
 #   /usr/share/plasma/wallpapers/     MuraL's wallpaper plugin
 #   /usr/share/metainfo/              AppStream data, so Discover and other software centers can list it
 #
-# Nothing per user happens here: timers, autostart entries and hotkeys are written by the app itself when you turn
+# LaunchL's panel widget isn't installed system-wide: its page installs it for you with kpackagetool6 (from
+# /usr/share/grimoire-linux/plasma) together with the spell list its search reads, and swaps it for Kickoff.
+# Nothing else per user happens here: timers, autostart entries and hotkeys are written by the app itself when you turn
 # them on, and point at /usr/bin. Run /usr/share/grimoire-linux/uninstall.sh as yourself before removing the package
 # to clear those.
 set -euo pipefail

@@ -4,7 +4,7 @@
     confirmations and availability (no Sleep where it can't) apply.
 
     SPDX-FileCopyrightText: 2026 cookedaj
-    SPDX-License-Identifier: GPL-2.0-or-later
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 import QtQuick
 import QtQuick.Layouts

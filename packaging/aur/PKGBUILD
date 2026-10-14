@@ -28,6 +28,7 @@ depends=(
     'plasma-workspace'    # plasma-apply-*, plasmashell scripting
     'glib2'               # gio trash
     'polkit'              # pkexec for the root helpers
+    'kpackage'            # kpackagetool6 installs the LaunchL widget
 )
 optdepends=(
     'spectacle: ShotL screenshots'

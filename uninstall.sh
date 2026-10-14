@@ -175,10 +175,12 @@ if [ -n "$PURGE" ]; then release_lock_screen; fi
 # LaunchL: put the old launcher back in the panel first, then remove the widget. If that can't be done (Plasma not
 # running, or LaunchL added by hand), the widget stays so the panel isn't left with a broken placeholder.
 LAUNCHL="$DATA/plasma/plasmoids/com.cookedaj.grimoire.launchl"
+CODE="$APP"                                                      # a distro package's copy when there's no per-user one
+if [ ! -d "$CODE/grimoire" ]; then CODE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"; fi
 if [ -d "$LAUNCHL" ]; then
-    if [ -d "$APP/grimoire" ] && PYTHONPATH="$APP" python3 -P -m grimoire.spells.launchl uninstall; then
+    if [ -d "$CODE/grimoire" ] && PYTHONPATH="$CODE" python3 -P -m grimoire.spells.launchl uninstall; then
         rm -rf "$LAUNCHL"
-    elif [ ! -d "$APP/grimoire" ]; then
+    elif [ ! -d "$CODE/grimoire" ]; then
         rm -rf "$LAUNCHL"
     else
         echo "LaunchL's widget was kept (see above). Remove it later from the panel, then delete $LAUNCHL."

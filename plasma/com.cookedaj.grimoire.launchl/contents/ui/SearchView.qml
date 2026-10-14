@@ -4,7 +4,7 @@
     both so the arrow keys and Enter treat them as a single list.
 
     SPDX-FileCopyrightText: 2026 cookedaj
-    SPDX-License-Identifier: GPL-2.0-or-later
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 import QtQuick
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """LaunchL and Plasma: install the widget package, find the launcher in the panels, swap Kickoff for LaunchL in its
 exact spot and put Kickoff back exactly as it was.
 
