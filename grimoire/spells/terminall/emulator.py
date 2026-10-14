@@ -172,10 +172,38 @@ class Screen(pyte.Screen):
         return self.history[i] if i < h else self.buffer[i - h]
 
 
+class _Guarded:
+    """The screen as pyte's parser sees it: a handler that raises (extra parameters, an `ESC [ 5 J` pyte has no
+    case for) is skipped instead of killing the parser, which is a generator and never recovers from an error."""
+
+    def __init__(self, screen: Screen):
+        self._screen = screen
+
+    def __getattr__(self, name):
+        attr = getattr(self._screen, name)
+        if not callable(attr):
+            return attr
+
+        def safe(*args, **kwargs):
+            try:
+                return attr(*args, **kwargs)
+            except Exception:
+                return None
+        return safe
+
+
 class Stream(pyte.Stream):
     """pyte's stream with the CSI finals it lacks."""
     csi = dict(pyte.Stream.csi, b="repeat_char", S="scroll_up", T="scroll_down", q="cursor_style",
                s="save_cursor_csi", u="restore_cursor_csi", t="window_ops")
+
+    def attach(self, screen):
+        super().attach(_Guarded(screen))
+
+    def restart(self):
+        """A fresh parser, for when the old one died anyway."""
+        self._parser = self._parser_fsm()
+        self._taking_plain_text = next(self._parser)
 
 
 # sequences handled (or dropped) before pyte sees them; pyte would print most of them as text
@@ -231,5 +259,5 @@ class Feeder:
         text = _SEQ.sub(self._sub, text)
         try:
             self.stream.feed(text)
-        except Exception:      # a sequence pyte can't handle must never take the terminal down; it resets itself
-            pass
+        except Exception:      # a sequence pyte can't handle must never take the terminal down
+            self.stream.restart()
